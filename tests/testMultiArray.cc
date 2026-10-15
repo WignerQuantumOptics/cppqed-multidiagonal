@@ -121,7 +121,7 @@ TEST_CASE("Boost.Serialization round trip restores extents and data", "[multiarr
 }
 
 
-TEST_CASE("load() re-seats the inherited dataView span — finding #3", "[multiarray][serialization][contract]")
+TEST_CASE("load() re-seats the inherited dataView span — finding F3", "[multiarray][serialization][contract]")
 {
   auto src = iota<1>({4});
   std::stringstream ss{std::ios::in|std::ios::out|std::ios::binary};

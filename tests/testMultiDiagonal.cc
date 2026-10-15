@@ -207,7 +207,7 @@ TEST_CASE("composition: number operator a†|a", "[multidiagonal][composition]")
 }
 
 
-TEST_CASE("composition: a|a† keeps the full Hilbert dimension — finding #1", "[multidiagonal][composition]")
+TEST_CASE("composition: a|a† keeps the full Hilbert dimension — finding F1", "[multidiagonal][composition]")
 {
   auto a = destroy(4);
   auto aad = a | hermitianConjugateOf(a);
@@ -227,7 +227,7 @@ TEST_CASE("truncated commutator [a,a†]: identity except the top level", "[mult
 }
 
 
-TEST_CASE("composition accumulates contributions across diagonal pairs — finding #1b", "[multidiagonal][composition]")
+TEST_CASE("composition accumulates contributions across diagonal pairs — finding F1b", "[multidiagonal][composition]")
 {
   auto sx = singleDiag(+1,{1.}) + singleDiag(-1,{1.});
   CHECK(approxEqual(densify(sx|sx), CMatrix::Identity(2,2)));   // two pairs merge on s=0
@@ -351,7 +351,7 @@ TEST_CASE("rank-2 composition is genuinely rank-general", "[multidiagonal][compo
 
 // ── serialization ────────────────────────────────────────────────────────────
 
-TEST_CASE("JSON serialization of MultiDiagonal — finding #2", "[multidiagonal][json]")
+TEST_CASE("JSON serialization of MultiDiagonal — finding F2", "[multidiagonal][json]")
 {
   auto md = destroy(3) + hermitianConjugateOf(destroy(3));
   json::value jv;
