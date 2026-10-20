@@ -2,7 +2,9 @@
 
 Header-only C++23 library for operators on tensor-product Hilbert spaces that are
 **multidiagonal**: every nonzero matrix element moves a fixed number of quanta per axis.
-Extracted from C++QED v3 (github.com/vukics/cppqed), which consumes it via FetchContent.
+Extracted from C++QED v3 (github.com/vukics/cppqed). C++QED does not consume it yet: it
+still builds against its own stale copies of these headers; switching to SHA-pinned
+FetchContent of this library is planned there (cppqed C-01).
 It is being prepared for standalone publication, so API stability, honest documentation
 and test coverage matter more than feature growth.
 
@@ -11,18 +13,23 @@ Released as v0.2.0 (signed-offset refactor), with a Zenodo DOI. License: BSL-1.0
 ## Layout
 
 ```
-include/multidiagonal/
+include/
   Traits.h            FWD, Hana/JSON setup, passByValue_v, ReferenceMF/ConstReferenceMF
   MultiArray.h        rank-R strided array: MultiArrayView (non-owning), MultiArray (owning, move-only)
   MultiArrayComplex.h dcomp specializations, directProduct, twoTimesRealPartOf…, Eigen interop
-  SliceIterator.h     compile-time axis slicing: filterIn/filterOut, sliceRange<retainedAxes>
   MultiDiagonal.h     the operator algebra, including identity() and composition
-tests/                Catch2 v3 suites, one per header
+tests/                Catch2 v3 suites: testMultiArray, testMultiArrayComplex, testMultiDiagonal
+benchmarks/           benchmarkMultiDiagonal.cc, plot.py
 cmake/                package config template
 ```
 
-The headers sit under `include/multidiagonal/` so that they never collide with
-C++QED's own `Traits.h`. Always include them as `<multidiagonal/X.h>`.
+- The headers currently sit **flat** in `include/` and are included as `<X.h>`.
+  - That collides with C++QED's own `Traits.h`.
+  - Moving them to `include/multidiagonal/` and including them as `<multidiagonal/X.h>`
+    is planned (M-01).
+- There is no `SliceIterator.h` here. It exists only in C++QED (`CPPQEDutils/`), and
+  where it should live is an open decision (cppqed C-04). `MultiArray.h:55` still refers
+  to it.
 
 The library is header-only and exposed as an INTERFACE target `cppqed::multidiagonal`.
 Do not add translation units. Everything defined at namespace scope in a header must be
