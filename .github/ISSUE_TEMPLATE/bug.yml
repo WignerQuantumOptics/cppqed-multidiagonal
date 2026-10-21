@@ -1,7 +1,7 @@
 name: Bug
 description: Wrong results, a crash, or code that should compile but doesn't
 type: Bug
-projects: ["WignerQuantumOptics/125201538"]
+projects: ["WignerQuantumOptics/1"]
 body:
   - type: textarea
     id: what

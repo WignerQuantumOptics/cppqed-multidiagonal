@@ -1,6 +1,6 @@
 name: Other
 description: Feature, task, refactor, docs, or a design decision (set the issue type after opening)
-projects: ["WignerQuantumOptics/125201538"]
+projects: ["WignerQuantumOptics/1"]
 body:
   - type: textarea
     id: description
