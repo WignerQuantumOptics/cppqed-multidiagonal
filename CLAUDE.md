@@ -8,7 +8,7 @@ FetchContent of this library is planned there (cppqed C-01).
 It is being prepared for standalone publication, so API stability, honest documentation
 and test coverage matter more than feature growth.
 
-Released as v0.2.0 (signed-offset refactor), with a Zenodo DOI. License: BSL-1.0.
+Released as v0.2.0 (signed-offset refactor). No DOI yet. License: BSL-1.0.
 
 ## Layout
 
@@ -174,8 +174,9 @@ ctest --test-dir build --output-on-failure
 
 ## Versioning and releases
 
-- SemVer, with annotated tags that carry detailed messages. Zenodo mints a DOI per
-  GitHub release.
+- SemVer, with annotated tags that carry detailed messages.
+- Zenodo is not connected yet. A DOI per GitHub release (via Zenodo's GitHub integration)
+  is a possible later step, e.g. before the paper submission.
 - Draft tag messages and changelogs, but let András create and push tags and releases.
 
 ## Working rules (Wigner Research Centre institutional policy)
