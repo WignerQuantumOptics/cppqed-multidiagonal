@@ -1,10 +1,10 @@
 # cppqed-multidiagonal
 
-[![CI](https://github.com/vukics/cppqed-multidiagonal/actions/workflows/ci.yml/badge.svg)](https://github.com/vukics/cppqed-multidiagonal/actions/workflows/ci.yml)
-[![Documentation](https://img.shields.io/badge/docs-github.io-blue)](https://vukics.github.io/cppqed-multidiagonal/)
+[![CI](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/actions/workflows/ci.yml/badge.svg)](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/actions/workflows/ci.yml)
+[![Documentation](https://img.shields.io/badge/docs-github.io-blue)](https://wignerquantumoptics.github.io/cppqed-multidiagonal/)
 [![License](https://img.shields.io/badge/license-BSL--1.0-green)](LICENSE.txt)
 
-A header-only C++ library implementing sparse multidiagonal operator algebra for quantum systems of arbitrary arity, extracted from the [C++QED](https://github.com/vukics/cppqed) framework.
+A header-only C++ library implementing sparse multidiagonal operator algebra for quantum systems of arbitrary arity, extracted from the [C++QED](https://github.com/WignerQuantumOptics/cppqed) framework.
 
 ## What is a multidiagonal operator?
 
@@ -18,7 +18,7 @@ with $\mathbb{K}_m$ an **arbitrary** set of *signed* offsets per subsystem axis.
 
 ## The signed-offset representation
 
-Each diagonal is keyed by a signed offset per axis — positive = upper, negative = lower, zero = main diagonal — making the offset map a homomorphism from $(\mathbb{Z}^R,+)$ into the operator algebra:
+Each diagonal is keyed by a signed offset per axis — positive = upper, negative = lower, zero = main diagonal. The offset counts the quanta a diagonal moves along each axis, and the algebra reduces to arithmetic on these counts:
 
 - **composition**: $\text{offset}_{A|B} = \text{offset}_A + \text{offset}_B$ per axis, for arbitrary rank
 - **Hermitian conjugation**: negation of all offsets (plus conjugation of the stored values)
@@ -67,7 +67,7 @@ ctest --test-dir build --output-on-failure
 ### As a submodule (recommended for C++QED development)
 
 ```bash
-git submodule add https://github.com/vukics/cppqed-multidiagonal extern/cppqed-multidiagonal
+git submodule add https://github.com/WignerQuantumOptics/cppqed-multidiagonal extern/cppqed-multidiagonal
 ```
 
 In your `CMakeLists.txt`:

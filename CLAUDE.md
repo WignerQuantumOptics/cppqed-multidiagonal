@@ -2,7 +2,7 @@
 
 Header-only C++23 library for operators on tensor-product Hilbert spaces that are
 **multidiagonal**: every nonzero matrix element moves a fixed number of quanta per axis.
-Extracted from C++QED v3 (github.com/vukics/cppqed). C++QED does not consume it yet: it
+Extracted from C++QED v3 (github.com/WignerQuantumOptics/cppqed). C++QED does not consume it yet: it
 still builds against its own stale copies of these headers; switching to SHA-pinned
 FetchContent of this library is planned there (cppqed C-01).
 It is being prepared for standalone publication, so API stability, honest documentation
@@ -117,7 +117,7 @@ ctest --test-dir build --output-on-failure
     path; F8 missing serialization include; F9 rank-1 constructor ambiguity; F10 narrowing
     at the Eigen::Map boundary; F11 sign-compare in `checkBounds`.
   - Do not extend the F-series. A new finding gets a GitHub issue; cite its number in the
-    test name and the commit message (`#N` in this repo, `vukics/cppqed-multidiagonal#N`
+    test name and the commit message (`#N` in this repo, `WignerQuantumOptics/cppqed-multidiagonal#N`
     from elsewhere).
 
 ## Benchmarks

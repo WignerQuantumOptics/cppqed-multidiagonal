@@ -1,6 +1,6 @@
 \mainpage cppqed-multidiagonal
 
-A C++20 library implementing sparse multidiagonal operator algebra for quantum systems of arbitrary arity, extracted from the [C++QED](https://github.com/vukics/cppqed) framework.
+A C++20 library implementing sparse multidiagonal operator algebra for quantum systems of arbitrary arity, extracted from the [C++QED](https://github.com/WignerQuantumOptics/cppqed) framework.
 
 ## What is a multidiagonal operator?
 
