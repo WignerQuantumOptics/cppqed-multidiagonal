@@ -1,0 +1,4 @@
+# Blank issues are disabled so that every issue opened in the browser goes through a
+# template, and the templates add it to the "C++QED v3" Project (the organization plan
+# allows only one built-in auto-add workflow, which is used for cppqed).
+blank_issues_enabled: false

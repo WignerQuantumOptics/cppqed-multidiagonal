@@ -1,0 +1,30 @@
+name: Bug
+description: Wrong results, a crash, or code that should compile but doesn't
+type: Bug
+projects: ["WignerQuantumOptics/125201538"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens
+      description: Observed behaviour, including compiler or runtime error messages.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should happen
+      description: For wrong matrix elements, compare against the truncated dense result.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: A short program or Catch2 test case.
+      render: cpp
+  - type: input
+    id: environment
+    attributes:
+      label: Commit, compiler, build type
+      placeholder: "e.g. 6dc2567, GCC 14.2, Debug"
