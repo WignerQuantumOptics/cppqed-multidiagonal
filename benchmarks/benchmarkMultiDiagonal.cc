@@ -25,7 +25,7 @@
 //
 // usage: benchmarkMultiDiagonal [--smoke] [bench ...]
 //        bench ∈ {apply1,compose1,construct1,applyJC,composeJC,constructJC,picture1}; none = all
-#include "MultiDiagonal.h"
+#include <multidiagonal/MultiDiagonal.h>
 
 #include <Eigen/SparseCore>
 

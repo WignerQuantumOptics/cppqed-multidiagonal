@@ -1,6 +1,6 @@
 // Copyright András Vukics 2006–2026. Distributed under the Boost Software License, Version 1.0. (See accompanying file LICENSE.txt)
 // Downstream smoke test: the number operator a†|a applied to Fock states, and JSON output.
-#include "MultiDiagonal.h"
+#include <multidiagonal/MultiDiagonal.h>
 
 #include <cmath>
 #include <cstdio>

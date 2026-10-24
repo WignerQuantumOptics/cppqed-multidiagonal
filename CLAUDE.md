@@ -13,20 +13,20 @@ Released as v0.2.0 (signed-offset refactor). No DOI yet. License: BSL-1.0.
 ## Layout
 
 ```
-include/
+include/multidiagonal/
   Traits.h            FWD, Hana/JSON setup, passByValue_v, ReferenceMF/ConstReferenceMF
   MultiArray.h        rank-R strided array: MultiArrayView (non-owning), MultiArray (owning, move-only)
   MultiArrayComplex.h dcomp specializations, directProduct, twoTimesRealPartOf…, Eigen interop
   MultiDiagonal.h     the operator algebra, including identity() and composition
 tests/                Catch2 v3 suites: testMultiArray, testMultiArrayComplex, testMultiDiagonal
+  consumer/           downstream CMake project for the CI consumer job
 benchmarks/           benchmarkMultiDiagonal.cc, plot.py
 cmake/                package config template
 ```
 
-- The headers currently sit **flat** in `include/` and are included as `<X.h>`.
-  - That collides with C++QED's own `Traits.h`.
-  - Moving them to `include/multidiagonal/` and including them as `<multidiagonal/X.h>`
-    is planned (M-01).
+- Consumers include the headers as `<multidiagonal/X.h>`, and they install there (#2).
+  The prefix keeps `Traits.h` from colliding with C++QED's own. Within the library the
+  headers include each other with quotes, which resolve to the sibling file first.
 - There is no `SliceIterator.h` here. It exists only in C++QED (`CPPQEDutils/`), and
   where it should live is an open decision (cppqed C-04). `MultiArray.h:55` still refers
   to it.

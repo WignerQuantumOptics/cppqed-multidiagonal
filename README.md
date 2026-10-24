@@ -48,7 +48,7 @@ The truncated algebra is represented *exactly*, including its physical deviation
 - C++23 compiler (GCC ≥ 13, Clang ≥ 17)
 - [Boost](https://www.boost.org/) ≥ 1.80 (Hana, JSON, Serialization) — header-only use plus Boost.JSON/Serialization
 - [Eigen3](https://eigen.tuxfamily.org/) ≥ 3.4
-- CMake ≥ 3.24 (for the build/test/install machinery; as a header-only library it can also be consumed by simply adding `include/` to the include path)
+- CMake ≥ 3.24 (for the build/test/install machinery; as a header-only library it can also be consumed by simply adding `include/` to the include path and writing `#include <multidiagonal/MultiDiagonal.h>`)
 
 ## Building and testing
 
@@ -88,15 +88,18 @@ find_package(cppqed-multidiagonal REQUIRED)
 target_link_libraries(MyTarget PUBLIC cppqed::multidiagonal)
 ```
 
+Either way, the headers are included with their directory prefix, e.g. `#include <multidiagonal/MultiDiagonal.h>`.
+
 ## Repository structure
 ```
-include/
+include/multidiagonal/
   Traits.h — FWD, Boost.Hana/JSON setup, passByValue_v, ReferenceMF
   MultiArray.h — generic rank-N array with strided view
   MultiArrayComplex.h — dcomp specializations, directProduct, Eigen interop
   MultiDiagonal.h — multidiagonal operator algebra (incl. identity and composition)
 tests/
   testMultiArray.cc, testMultiArrayComplex.cc, testMultiDiagonal.cc
+  consumer/ — downstream project used by CI (find_package and FetchContent)
 cmake/
   cppqed-multidiagonalConfig.cmake.in
 ```

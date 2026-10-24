@@ -1,5 +1,5 @@
 // Part of the cppqed-multidiagonal test suite. BSL-1.0.
-#include "MultiArray.h"
+#include <multidiagonal/MultiArray.h>
 
 #include <catch2/catch_test_macros.hpp>
 
