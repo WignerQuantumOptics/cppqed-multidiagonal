@@ -81,6 +81,24 @@ TEST_CASE("vectorize and matricize are no-copy Eigen maps", "[complex][eigen]")
 }
 
 
+TEST_CASE("const vectorize and matricize compile and map read-only — #3", "[complex][eigen][contract]")
+{
+  MultiArray<dcomp,2> m{{2,2}, multiarray::zeroInit<dcomp>};
+  m(0,0)=1.; m(1,0)=2i; m(0,1)=3.; m(1,1)=4i;
+  const auto& cm = m;
+
+  auto vec = vectorize(cm);
+  STATIC_REQUIRE(std::is_same_v<decltype(vec), Eigen::Map<const CVector>>);
+  CHECK(vec.data() == m.dataStorage().data());
+  CHECK(vec.sum() == 4.+6i);
+
+  auto mat = matricize(cm);
+  STATIC_REQUIRE(std::is_same_v<decltype(mat), Eigen::Map<const CMatrix>>);
+  CHECK(mat.data() == m.dataStorage().data());
+  CHECK(mat.trace() == 1.+4i);
+}
+
+
 TEST_CASE("halveExtents", "[complex]")
 {
   CHECK((halveExtents(Extents<4>{2,3,2,3}) == Extents<2>{2,3}));

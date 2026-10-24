@@ -83,7 +83,7 @@ auto vectorize(MultiArray<dcomp,RANK>& ma)
 template <size_t RANK>
 auto vectorize(const MultiArray<dcomp,RANK>& ma)
 {
-  return Eigen::Map<CVector>{ma.dataStorage().data(), Eigen::Index(ma.dataView.size())};
+  return Eigen::Map<const CVector>{ma.dataStorage().data(), Eigen::Index(ma.dataView.size())};
 }
 
 
@@ -121,7 +121,7 @@ template <size_t TWO_TIMES_RANK>
 auto matricize(const MultiArray<dcomp,TWO_TIMES_RANK>& ma)
 {
   const Eigen::Index matrixDim = Eigen::Index(multiarray::calculateExtent(halveExtents(ma.extents)));
-  return Eigen::Map<CMatrix>{ma.dataStorage().data(), matrixDim, matrixDim};
+  return Eigen::Map<const CMatrix>{ma.dataStorage().data(), matrixDim, matrixDim};
 }
 
 
