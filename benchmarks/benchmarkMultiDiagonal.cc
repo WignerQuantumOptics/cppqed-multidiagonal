@@ -390,7 +390,8 @@ void jaynesCummingsCompositionBench(bool smoke)
 
 // ── benchmark: rank-2 operator assembly ─────────────────────────────────────
 // Times the full JC Hamiltonian build: MultiDiagonal via the algebra (⊗, +, scalar·)
-// vs hand-rolled Kronecker triplets + compression. Correctness is covered by applyJC.
+// vs hand-rolled Kronecker triplets + compression. Both builds are validated against each
+// other (applied to a random state) before timing, independently of applyJC.
 
 void jaynesCummingsConstructionBench(bool smoke)
 {
@@ -398,6 +399,17 @@ void jaynesCummingsConstructionBench(bool smoke)
 
   for (size_t N : sweep(smoke)) {
     const size_t d = makeJCmd(N,false).diagonals.size();
+
+    { // validate one instance of each before timing
+      auto jc = makeJCmd(N,false);
+      auto S  = makeJCsparse<Eigen::RowMajor>(N,false);
+      auto psi = randomState({N,2},56789u);
+      MultiArray<dcomp,2> dpsidt{{N,2},multiarray::zeroInit<dcomp>};
+      jc(0.,psi,dpsidt);
+      const CVector ref = S*CVector(vectorize(psi));
+      validate("constructJC",N,CVector(vectorize(dpsidt)),ref);
+    }
+
     emit("constructJC","multidiagonal",N,d,
          medianPerOpNs([&]{ auto jc = makeJCmd(N,false); doNotOptimize(jc.diagonals.size()); },target,reps));
     emit("constructJC","eigen_sparse",N,d,

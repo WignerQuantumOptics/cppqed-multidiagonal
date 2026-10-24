@@ -67,9 +67,9 @@ ctest --test-dir build --output-on-failure
 - Direct product `A * B` concatenates the offset arrays and takes the `directProduct` of
   the diagonals.
 - Hermitian conjugation negates the key **and** conjugates the values. (Not to be confused
-  with F4, which concerned the dense `hermitianConjugateSelf`.) **The value conjugation is
-  currently untested:** every conjugated operator in the suite is real, so deleting
-  `conj(diag)` still passes all tests. Add a complex-valued test against the dense adjoint.
+  with F4, which concerned the dense `hermitianConjugateSelf`.) The value conjugation is
+  covered by complex-valued tests against the dense adjoint (#4); keep at least one
+  conjugated operator in the suite genuinely complex.
 - Application `y += A ψ` has accumulate semantics. Callers in C++QED apply H/i; the
   library does not care about that convention.
 - **No frequency or interaction-picture information lives here.** This is a decided

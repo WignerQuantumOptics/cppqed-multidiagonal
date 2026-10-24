@@ -45,6 +45,19 @@ TEST_CASE("directProduct: values, layout, custom combiner", "[complex]")
 }
 
 
+TEST_CASE("directProduct applies the custom combiner to complex input — #4", "[complex]")
+{
+  auto m1 = carray({1.+1i, 2.-1i});
+  auto m2 = carray({1i, 3.+2i, -1.-1i});
+  auto d  = directProduct(m1, m2, [] (dcomp a, dcomp b) {return a*conj(b);});
+  REQUIRE((d.extents == Extents<2>{2,3}));
+  for (size_t i=0;i<2;++i) for (size_t j=0;j<3;++j) {
+    CHECK(d(i,j) == m1(i)*conj(m2(j)));
+    CHECK(d(i,j) != m1(i)*m2(j));                 // the input is genuinely complex
+  }
+}
+
+
 TEST_CASE("in-place conj and Frobenius norm", "[complex]")
 {
   auto m = carray({1.+2i, -3i});

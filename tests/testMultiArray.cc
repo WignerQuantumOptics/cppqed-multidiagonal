@@ -93,6 +93,21 @@ TEST_CASE("copy is deep; assignTo copies source into *this; isEqual", "[multiarr
 }
 
 
+TEST_CASE("isEqual detects a single differing element; extent mismatch throws in debug — #4", "[multiarray]")
+{
+  auto m = iota<2>({2,3});
+  auto c = copy(m);
+  c(1,2) = -1.;                                    // last element in storage order
+  CHECK_FALSE(isEqual(c.constView(), m.constView()));
+  c(1,2) = m(1,2); c(0,0) = -1.;                   // first element
+  CHECK_FALSE(isEqual(c.constView(), m.constView()));
+#ifndef NDEBUG
+  auto t = iota<2>({3,2});                         // same size, transposed shape
+  CHECK_THROWS_AS(isEqual(t.constView(), m.constView()), std::runtime_error);
+#endif
+}
+
+
 TEST_CASE("concatenate std::arrays", "[multiarray]")
 {
   constexpr auto r = concatenate(std::array<size_t,2>{1,2}, std::array<size_t,3>{3,4,5});
@@ -118,6 +133,21 @@ TEST_CASE("Boost.Serialization round trip restores extents and data", "[multiarr
   { boost::archive::binary_iarchive ia{ss}; ia >> dst; }
   CHECK((dst.extents == src.extents));
   CHECK(dst.dataStorage() == src.dataStorage());  // deliberately bypasses dataView (see next test)
+}
+
+
+TEST_CASE("Boost.Serialization round trip restores strides and offset — #4", "[multiarray][serialization]")
+{
+  auto src = iota<3>({2,3,4});
+  std::stringstream ss{std::ios::in|std::ios::out|std::ios::binary};
+  { boost::archive::binary_oarchive oa{ss}; oa << src; }
+  MultiArray<double,3> dst{{4,1,1}};               // strides {1,4,4} before loading
+  dst.offset = 5;                                  // poison: load() must reset it
+  { boost::archive::binary_iarchive ia{ss}; ia >> dst; }
+  CHECK((dst.strides == src.strides));
+  CHECK((dst.strides == Extents<3>{1,2,6}));
+  CHECK(dst.offset == 0);
+  CHECK(isEqual(dst.constView(), src.constView()));   // element access through strides and offset
 }
 
 

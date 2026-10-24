@@ -17,6 +17,11 @@ bool approxEqual(const CMatrix& A, const CMatrix& B)
   return A.rows()==B.rows() && A.cols()==B.cols() && (A-B).norm() < tol;
 }
 
+bool relApproxEqual(const CMatrix& A, const CMatrix& B)   // for operators with large norms
+{
+  return A.rows()==B.rows() && A.cols()==B.cols() && (A-B).norm() < tol*B.norm();
+}
+
 CMatrix kron(const CMatrix& A, const CMatrix& B)   // A = slow factor, B = fast factor
 {
   CMatrix res{A.rows()*B.rows(), A.cols()*B.cols()};
@@ -71,6 +76,17 @@ CMatrix denseDestroy(size_t dim)
 }
 
 MultiDiagonal<1> sigmaMinus() {return singleDiag(+1,{1.});}   // ⟨0|σ⁻|1⟩ = 1
+
+/// Complex tridiagonal on dimension `dim`, all three bands, no element real; `s` varies the values.
+MultiDiagonal<1> complexTridiag(size_t dim, double s)
+{
+  auto band = [=] (size_t n, dcomp c) {
+    std::vector<dcomp> v(n);
+    for (size_t k=0;k<n;++k) v[k]=c*dcomp(1.+double(k),s-double(k));
+    return v;
+  };
+  return singleDiag(-1,band(dim-1,1i)) + singleDiag(0,band(dim,1.)) + singleDiag(+1,band(dim-1,0.5-1i));
+}
 
 CMatrix denseSigmaMinus() {CMatrix s{CMatrix::Zero(2,2)}; s(0,1)=1.; return s;}
 
@@ -155,6 +171,18 @@ TEST_CASE("Hermitian conjugation matches the dense adjoint; involution", "[multi
   auto a = destroy(6);
   CHECK(approxEqual(densify(hermitianConjugateOf(a)), denseDestroy(6).adjoint()));
   CHECK(approxEqual(densify(hermitianConjugateOf(hermitianConjugateOf(a))), denseDestroy(6)));
+}
+
+
+TEST_CASE("Hermitian conjugation conjugates complex diagonal values — #4", "[multidiagonal][contract]")
+{
+  auto a = complexTridiag(4,0.3);
+  const CMatrix da = densify(a);
+  REQUIRE(da.imag().norm() > 1.);                   // a real operator cannot detect a missing conj
+  CHECK(approxEqual(densify(hermitianConjugateOf(a)), da.adjoint()));
+
+  auto x = complexTridiag(3,0.3) * complexTridiag(2,-1.2) * complexTridiag(4,2.1);
+  CHECK(approxEqual(densify(hermitianConjugateOf(x)), densify(x).adjoint()));
 }
 
 
@@ -346,6 +374,28 @@ TEST_CASE("rank-2 composition is genuinely rank-general", "[multidiagonal][compo
   CHECK(approxEqual(densify(lhs), kron((ds*ds.adjoint()).eval(), (da*da).eval())));
   REQUIRE(lhs.diagonals.size() == 1);
   CHECK((lhs.diagonals.begin()->first == MultiDiagonal<2>::Offsets{+2,0}));
+}
+
+
+TEST_CASE("rank-3 application and composition with colliding offsets — #4", "[multidiagonal][composition][directproduct]")
+{
+  // extents {3,2,4}: axis 0 fastest, so the dense matrix is kron(axis 2, kron(axis 1, axis 0))
+  auto A0 = complexTridiag(3,0.3), A1 = complexTridiag(2,-1.2), A2 = complexTridiag(4,2.1);
+  auto B0 = complexTridiag(3,1.7), B1 = complexTridiag(2,0.4),  B2 = complexTridiag(4,-0.8);
+
+  const CMatrix dA = kron(densify(A2), kron(densify(A1), densify(A0)));
+  const CMatrix dB = kron(densify(B2), kron(densify(B1), densify(B0)));
+
+  auto A = A0 * A1 * A2;
+  auto X = A + B0 * B1 * B2;                        // not a product operator
+  REQUIRE(A.diagonals.size() == 27);
+  CHECK(approxEqual(densify(A), dA));
+  CHECK(approxEqual(densify(X), (dA+dB).eval()));
+
+  auto XX = X | X;                                  // 27×27 pairs onto 5·3·5 offsets (|±2| exceeds axis 1)
+  CHECK(XX.diagonals.size() == 75);
+  CHECK(relApproxEqual(densify(XX), ((dA+dB)*(dA+dB)).eval()));
+  CHECK(relApproxEqual(densify(X | hermitianConjugateOf(X)), ((dA+dB)*(dA+dB).adjoint()).eval()));
 }
 
 
