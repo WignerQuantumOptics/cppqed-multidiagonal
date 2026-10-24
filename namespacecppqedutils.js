@@ -4,7 +4,7 @@ var namespacecppqedutils =
       [ "StorageType", "namespacecppqedutils_1_1multiarray.html#a34604eaec6dcff606e5f8975d1407209", null ],
       [ "calculateExtent", "namespacecppqedutils_1_1multiarray.html#a218d434137539b1d518baf503fb783aa", null ],
       [ "calculateStrides", "namespacecppqedutils_1_1multiarray.html#ad7a2d893811f70de1c658fc8fa1ed535", null ],
-      [ "copyInit", "namespacecppqedutils_1_1multiarray.html#a2c672ba587310288c8683491aaa8c854", null ],
+      [ "copyInit", "namespacecppqedutils_1_1multiarray.html#a283315f1273cb1e14b7ad8c5c98d11ad", null ],
       [ "noInit", "namespacecppqedutils_1_1multiarray.html#ada33ace45527080579f4830f35c73cc5", null ],
       [ "zeroInit", "namespacecppqedutils_1_1multiarray.html#a052eb2fc720fbfd4b5a4f9aded9e0f22", null ]
     ] ],

@@ -14,7 +14,7 @@ var searchData=
   ['constview_11',['constView',['../classcppqedutils_1_1MultiArray.html#ab3e4bc547cff0885d729617779e1bca2',1,'cppqedutils::MultiArray']]],
   ['conventions_12',['Operator conventions',['../structquantumoperator_1_1MultiDiagonal.html#autotoc_md2',1,'']]],
   ['copy_13',['copy',['../structquantumoperator_1_1MultiDiagonal.html#ae106344eac3d23cc6b24bca7a6a18961',1,'quantumoperator::MultiDiagonal::copy'],['../classcppqedutils_1_1MultiArray.html#ad3480a87945e421d5d9c556cd8ba7386',1,'cppqedutils::MultiArray::copy']]],
-  ['copyinit_14',['copyInit',['../namespacecppqedutils_1_1multiarray.html#a2c672ba587310288c8683491aaa8c854',1,'cppqedutils::multiarray']]],
+  ['copyinit_14',['copyInit',['../namespacecppqedutils_1_1multiarray.html#a283315f1273cb1e14b7ad8c5c98d11ad',1,'cppqedutils::multiarray']]],
   ['cppqed_20multidiagonal_15',['cppqed-multidiagonal',['../index.html',1,'']]],
   ['cppqedutils_16',['cppqedutils',['../namespacecppqedutils.html',1,'']]],
   ['cppqedutils_3a_3amultiarray_17',['multiarray',['../namespacecppqedutils_1_1multiarray.html',1,'cppqedutils']]],

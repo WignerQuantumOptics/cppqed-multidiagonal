@@ -7,5 +7,5 @@ var searchData=
   ['concatenate_4',['concatenate',['../namespacecppqedutils.html#a0de254aca3e4a1751e0e2170b43c833b',1,'cppqedutils']]],
   ['conj_5',['conj',['../namespacecppqedutils.html#a19f0ba415c1cc857889fa6890bc66534',1,'cppqedutils']]],
   ['constview_6',['constView',['../classcppqedutils_1_1MultiArray.html#ab3e4bc547cff0885d729617779e1bca2',1,'cppqedutils::MultiArray']]],
-  ['copyinit_7',['copyInit',['../namespacecppqedutils_1_1multiarray.html#a2c672ba587310288c8683491aaa8c854',1,'cppqedutils::multiarray']]]
+  ['copyinit_7',['copyInit',['../namespacecppqedutils_1_1multiarray.html#a283315f1273cb1e14b7ad8c5c98d11ad',1,'cppqedutils::multiarray']]]
 ];
