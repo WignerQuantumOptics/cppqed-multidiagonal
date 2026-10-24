@@ -21,6 +21,8 @@ find_package(Eigen3 REQUIRED NO_MODULE)
 add_library(cppqed-multidiagonal INTERFACE)
 
 add_library(cppqed::multidiagonal ALIAS cppqed-multidiagonal)
+# the installed package must define the same name as the alias (#21)
+set_target_properties(cppqed-multidiagonal PROPERTIES EXPORT_NAME multidiagonal)
 
 target_include_directories(cppqed-multidiagonal
   INTERFACE
