@@ -132,7 +132,7 @@ public:
    */
   T& operator() (Extents<RANK> idx) const
   {
-    std::apply([this] (auto ... args) { checkBounds(args ...); },idx);
+    std::apply([this] (auto ... args) { this->checkBounds(args ...); },idx);
 
     return dataView[std::ranges::fold_left( std::views::zip(idx,strides), offset,
                                             [&] (auto init, auto ids) {return init+get<0>(ids)*get<1>(ids);} ) ];
@@ -251,7 +251,7 @@ using StorageType = std::vector<T>;
 
 /// @brief Initializer that copies from a sized range, checking that its size matches the requested extent.
 template <typename T>
-const auto copyInit(const std::ranges::sized_range auto& input) {return [&] (size_t e) {
+auto copyInit(const std::ranges::sized_range auto& input) {return [&] (size_t e) {
   if (size(input) != e) throw std::runtime_error("Extent mismatch in MultiArray copyInit: "+std::to_string(size(input))+" "+std::to_string(e));
   return StorageType<T>(begin(input),end(input));
 };}
