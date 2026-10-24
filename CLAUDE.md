@@ -44,8 +44,12 @@ ctest --test-dir build --output-on-failure
 ```
 
 - A Debug build enables the bounds and dimension checks, and the tests exercise them.
-  CI runs Debug×Release × GCC/Clang, so code must compile warning-free under
-  `-Wall -Wextra -Wpedantic` on both compilers.
+  CI runs Debug×Release × GCC/Clang with `CMAKE_COMPILE_WARNING_AS_ERROR=ON`, so code
+  must compile warning-free under `-Wall -Wextra -Wpedantic` on both compilers.
+- CI also runs an ASan+UBSan job (Clang Debug, tests and benchmark smoke) and a consumer
+  job: `tests/consumer` is a separate CMake project that uses the library via
+  `find_package` after install and via FetchContent at the pushed SHA. Runners are pinned
+  to `ubuntu-24.04` and actions to commit SHAs.
 - C++23 is required (`0uz` literals, `std::ranges::fold_left`), which means roughly
   GCC ≥ 13 or Clang ≥ 17.
 - The configure step may download dependencies through FetchContent (Catch2, …).

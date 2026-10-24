@@ -5,16 +5,19 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         compiler: [g++-14, clang++-18]
         build_type: [Debug, Release]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Install dependencies
         run: |
@@ -26,6 +29,7 @@ jobs:
           cmake -B build -G Ninja
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
+          -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
       - name: Build
         run: cmake --build build
@@ -36,3 +40,69 @@ jobs:
       - name: Benchmark smoke run
         if: matrix.build_type == 'Release'
         run: ./build/benchmarks/cppqed-multidiagonal-benchmarks --smoke > /dev/null
+
+  sanitizers:
+    runs-on: ubuntu-24.04
+    env:
+      SANITIZE: -fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer
+      ASAN_OPTIONS: detect_leaks=1:abort_on_error=1
+      UBSAN_OPTIONS: print_stacktrace=1
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libboost-all-dev libeigen3-dev clang-18
+
+      - name: Configure
+        run: >
+          cmake -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_CXX_COMPILER=clang++-18
+          -DCMAKE_CXX_FLAGS="$SANITIZE"
+          -DCMAKE_EXE_LINKER_FLAGS="$SANITIZE"
+          -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Benchmark smoke run
+        run: ./build/benchmarks/cppqed-multidiagonal-benchmarks --smoke > /dev/null
+
+  # tests/consumer is a separate downstream project: the library must work installed
+  # (find_package) and as a pinned FetchContent subproject, under the documented target name.
+  consumer:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0   # FetchContent clones this checkout at github.sha
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libboost-all-dev libeigen3-dev g++-14
+
+      - name: Install the library
+        run: |
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-14 -DBUILD_TESTING=OFF
+          cmake --install build --prefix "$RUNNER_TEMP/prefix"
+
+      - name: Consume via find_package
+        run: |
+          cmake -S tests/consumer -B consumer-fp -G Ninja -DCMAKE_CXX_COMPILER=g++-14 \
+          -DCMAKE_COMPILE_WARNING_AS_ERROR=ON -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/prefix"
+          cmake --build consumer-fp
+          ./consumer-fp/consumer
+
+      - name: Consume via FetchContent at the pinned commit
+        run: |
+          cmake -S tests/consumer -B consumer-fc -G Ninja -DCMAKE_CXX_COMPILER=g++-14 \
+          -DCMAKE_COMPILE_WARNING_AS_ERROR=ON -DMULTIDIAGONAL_CONSUME=FetchContent \
+          -DMULTIDIAGONAL_GIT_REPOSITORY="$GITHUB_WORKSPACE" -DMULTIDIAGONAL_GIT_TAG=${{ github.sha }}
+          cmake --build consumer-fc
+          ./consumer-fc/consumer
