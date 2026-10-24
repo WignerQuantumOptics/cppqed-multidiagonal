@@ -1,9 +1,9 @@
-<map id="include/Traits.h" name="include/Traits.h">
-<area shape="rect" id="Node000001" title=" " alt="" coords="151,5,271,31"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="5,79,128,104"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="189,33,104,75,101,70,186,28"/>
-<area shape="rect" id="Node000003" title=" " alt="" coords="152,79,269,104"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="213,31,213,65,208,65,208,31"/>
-<area shape="rect" id="Node000004" title=" " alt="" coords="294,79,386,104"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="233,28,308,69,305,74,230,33"/>
+<map id="include/multidiagonal/Traits.h" name="include/multidiagonal/Traits.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="129,5,292,45"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,93,128,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="177,48,101,89,99,84,175,43"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="152,93,269,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="213,46,213,79,208,79,208,46"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="294,93,386,119"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="243,43,311,84,308,88,241,48"/>
 </map>
