@@ -2,13 +2,13 @@
 
 Header-only C++23 library for operators on tensor-product Hilbert spaces that are
 **multidiagonal**: every nonzero matrix element moves a fixed number of quanta per axis.
-Extracted from C++QED v3 (github.com/WignerQuantumOptics/cppqed). C++QED does not consume it yet: it
-still builds against its own stale copies of these headers; switching to SHA-pinned
-FetchContent of this library is planned there (cppqed C-01).
+Extracted from C++QED v3 (github.com/WignerQuantumOptics/cppqed), which consumes it through
+FetchContent pinned to a commit SHA (or an installed version ≥ 0.3). A change here reaches
+C++QED only when its pin is bumped; its jc_qjmc regression test must still pass then.
 It is being prepared for standalone publication, so API stability, honest documentation
 and test coverage matter more than feature growth.
 
-Released as v0.2.0 (signed-offset refactor). No DOI yet. License: BSL-1.0.
+Released as v0.3.0 (headers under `include/multidiagonal/`). No DOI yet. License: BSL-1.0.
 
 ## Layout
 
@@ -181,7 +181,10 @@ ctest --test-dir build --output-on-failure
 - SemVer, with annotated tags that carry detailed messages.
 - Zenodo is not connected yet. A DOI per GitHub release (via Zenodo's GitHub integration)
   is a possible later step, e.g. before the paper submission.
-- Draft tag messages and changelogs, but let András create and push tags and releases.
+- Versioning is Claude's call (András, 2026-10-26): version numbers (0.x: a breaking change
+  bumps the minor version), when to release, the version in `CMakeLists.txt` and
+  `CITATION.cff`, the annotated tag, the GitHub release notes, and the release milestones.
+  Deleting or moving a pushed tag still needs András's OK.
 
 ## Working rules (Wigner Research Centre institutional policy)
 

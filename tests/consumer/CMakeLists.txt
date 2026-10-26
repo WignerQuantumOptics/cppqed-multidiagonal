@@ -15,7 +15,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(MULTIDIAGONAL_CONSUME "find_package" CACHE STRING "find_package or FetchContent")
 
 if(MULTIDIAGONAL_CONSUME STREQUAL "find_package")
-  find_package(cppqed-multidiagonal 0.2 REQUIRED)
+  find_package(cppqed-multidiagonal 0.3 REQUIRED)   # first version with <multidiagonal/X.h>
 elseif(MULTIDIAGONAL_CONSUME STREQUAL "FetchContent")
   include(FetchContent)
   FetchContent_Declare(cppqed-multidiagonal
