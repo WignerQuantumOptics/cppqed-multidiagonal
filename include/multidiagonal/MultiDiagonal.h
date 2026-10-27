@@ -25,7 +25,8 @@ using namespace cppqedutils;
 ///
 /// ### Representation
 /// Each diagonal is keyed by a **signed offset** per axis: positive = upper, negative = lower,
-/// zero = main. The offset map is a homomorphism from \f$(\mathbb{Z}^R,+)\f$ into the operator algebra:
+/// zero = main. The offset counts the quanta a diagonal moves along each axis, and the algebra reduces
+/// to arithmetic on these counts:
 /// - composition: \f$\text{offset}_{A|B} = \text{offset}_A + \text{offset}_B\f$ (per axis)
 /// - Hermitian conjugation: negation of all offsets
 /// - direct product: concatenation of offset arrays
@@ -40,15 +41,17 @@ using namespace cppqedutils;
 /// are stored explicitly as zeros to preserve it.
 ///
 /// ### Time dependence
-/// `MultiDiagonal` is time-independent. Interaction-picture time dependence — diagonal elements
-/// of the form \f$\alpha_{m,n} e^{\delta_{m,n} t}\f$ with complex \f$\delta\f$ — is handled by
-/// a derived type in CPPQEDcore that adds a parallel frequency `MultiDiagonal` and `propagate(t)`
-/// bookkeeping. This separation keeps `MultiDiagonal` a clean, unconditionally time-independent algebraic type.
+/// `MultiDiagonal` is time-independent and carries no frequencies. Interaction-picture time dependence —
+/// diagonal elements of the form \f$\alpha_{m,n} e^{\delta_{m,n} t}\f$ with complex \f$\delta\f$ — belongs
+/// to the consumer: in C++QED the trajectory owns the interaction picture, and where phase tabulation is
+/// needed, the physics layer keeps a separate `(coefficients, frequencies)` pair of `MultiDiagonal`s.
+/// This is a deliberate design boundary.
 ///
 /// ### Operator conventions
-/// - `operator()` applies \f$H/i\f$ (not \f$H\f$) to the state vector, consistent with the framework convention.
-/// - \f$H\f$ need not be Hermitian: in QJMC and Master equation contexts it is the full effective
-///   non-Hermitian Hamiltonian \f$H_\text{eff} = H_\text{phys} - \frac{i}{2}\sum_k J_k^\dagger J_k\f$.
+/// - `operator()` accumulates \f$A\psi\f$ into `dpsidt` for the stored operator \f$A\f$, with no factor
+///   \f$1/i\f$. C++QED's Hamiltonians add \f$H/i\cdot\psi\f$, so they store \f$A=H/i\f$.
+/// - The stored operator need not be Hermitian: in QJMC and Master equation contexts \f$H\f$ is the full
+///   effective Hamiltonian \f$H_\text{eff} = H_\text{phys} - \frac{i}{2}\sum_k J_k^\dagger J_k\f$.
 template <size_t RANK>
 struct MultiDiagonal
 {
@@ -76,8 +79,8 @@ struct MultiDiagonal
 
   Diagonals diagonals;
 
-  /// @brief Applies the operator as \f$H/i\f$: accumulates `dpsidt(idxLHS) += diag(idxDiag) * psi(idxRHS)`
-  /// for each diagonal. Per axis, rows run in \f$[o^-,D-o^+)\f$ and columns in \f$[o^+,D-o^-)\f$.
+  /// @brief Accumulates the operator's action on @p psi into @p dpsidt: `dpsidt(idxLHS) += diag(idxDiag) * psi(idxRHS)`
+  /// for each diagonal, with no factor \f$1/i\f$ (see the operator conventions above). Per axis, rows run in \f$[o^-,D-o^+)\f$ and columns in \f$[o^+,D-o^-)\f$.
   void operator () (double, MultiArrayConstView<dcomp,RANK> psi, MultiArrayView<dcomp,RANK> dpsidt) const
   {
     if (diagonals.empty()) return;
@@ -225,7 +228,7 @@ struct MultiDiagonal
 ///
 /// For each pair of diagonals — \f$A\f$ at signed offsets \f$p\f$, \f$B\f$ at \f$q\f$ (per axis,
 /// dimension \f$D\f$) — the contribution lands on the result diagonal at
-/// \f[ s = p + q \qquad\text{(the offset homomorphism).} \f]
+/// \f[ s = p + q \qquad\text{(the quanta moved add up).} \f]
 /// With the storage convention \f$d[k]=M_{k+o^-,k+o^+}\f$, entry \f$k\f$ of the result receives
 /// \f[ r[k] \mathrel{+}= d_A[k+i_A]\, d_B[k+i_B], \qquad i_A = s^--p^-, \quad i_B = s^-+p-q^-, \f]
 /// valid on the window

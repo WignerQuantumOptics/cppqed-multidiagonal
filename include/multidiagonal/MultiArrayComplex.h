@@ -179,9 +179,10 @@ void hermitianConjugateSelf(MultiArray<dcomp,TWO_TIMES_RANK>& ma)
 
 /// @brief In-place replacement of a rank-`2R` matrix view @p mav with `M + M†` (twice its Hermitian part).
 ///
-/// For each pair `(i,j)` with `j >= i`, sets `mav(i,j) = mav(i,j) + conj(mav(j,i))` and
-/// `mav(j,i) = conj(mav(i,j))`. The diagonal becomes `2*re(mav(i,i))`.
-/// Used in the Lindblad master equation to enforce Hermiticity after each ODE step.
+/// The diagonal becomes `2*re(mav(i,i))`. For each pair `i < j`, `mav(i,j)` becomes
+/// `mav(i,j) + conj(mav(j,i))`, and `mav(j,i)` its conjugate.
+/// C++QED's master equation uses it to complete \f$(H_\text{eff}/i)\rho\f$ to
+/// \f$(H_\text{eff}/i)\rho + \rho\,(H_\text{eff}/i)^\dagger\f$, and to make \f$\rho\f$ exactly Hermitian after each step.
 template <size_t TWO_TIMES_RANK>
 void twoTimesRealPartOfSelf(MultiArrayView<dcomp,TWO_TIMES_RANK> mav)
 {
