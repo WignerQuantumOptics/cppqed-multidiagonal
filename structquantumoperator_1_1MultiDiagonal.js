@@ -6,7 +6,7 @@ var structquantumoperator_1_1MultiDiagonal =
     [ "Offsets", "structquantumoperator_1_1MultiDiagonal.html#acc7d3d0a41c8b663f539f6f88dd7963a", null ],
     [ "MultiDiagonal", "structquantumoperator_1_1MultiDiagonal.html#af2b41f50101343757c8b82e2f6151027", null ],
     [ "MultiDiagonal", "structquantumoperator_1_1MultiDiagonal.html#ad455d05a45152cca1b39efefc378e379", null ],
-    [ "MultiDiagonal", "structquantumoperator_1_1MultiDiagonal.html#ab27d08a97f40c04137599d1579c8194b", null ],
+    [ "MultiDiagonal", "structquantumoperator_1_1MultiDiagonal.html#a9761edb0ccfdfdc27953ce926af15f93", null ],
     [ "dagger", "structquantumoperator_1_1MultiDiagonal.html#a1f4700b58845b984f93d13a1273935a0", null ],
     [ "hermitianConjugate", "structquantumoperator_1_1MultiDiagonal.html#abc6f3181c1acb94ede9a0d9c84d70c0d", null ],
     [ "operator()", "structquantumoperator_1_1MultiDiagonal.html#a581a47a31a0293f8e17f89738e2034dd", null ],
@@ -27,7 +27,7 @@ var structquantumoperator_1_1MultiDiagonal =
     [ "operator-", "structquantumoperator_1_1MultiDiagonal.html#a65f765098920962aceabbc04642a28e5", null ],
     [ "operator/", "structquantumoperator_1_1MultiDiagonal.html#a9479556c5972a4f92b4d5e456f125714", null ],
     [ "tag_invoke", "structquantumoperator_1_1MultiDiagonal.html#a3a71231d0a020e838124fb5dcb36d257", null ],
-    [ "twoTimesImagPartOf", "structquantumoperator_1_1MultiDiagonal.html#abfd1dbfdffb676094474c0805c64df79", null ],
+    [ "twoITimesImagPartOf", "structquantumoperator_1_1MultiDiagonal.html#a2876049efccbe178d468931472784f57", null ],
     [ "twoTimesRealPartOf", "structquantumoperator_1_1MultiDiagonal.html#a462f4d5cd073ec58dd4721733ddbc5db", null ],
     [ "diagonals", "structquantumoperator_1_1MultiDiagonal.html#a8dee2038fd153f62a535b682e4108679", null ]
 ];

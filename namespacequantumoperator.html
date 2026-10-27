@@ -34,7 +34,7 @@ window.MathJax = {
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.1.0</span>
+   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.4.0</span>
    </div>
    <div id="projectbrief">Multidiagonal sparse operator algebra for C++QED</div>
   </td>
@@ -161,7 +161,7 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
 
 <p>Composition (matrix product) of two <code><a class="el" href="structquantumoperator_1_1MultiDiagonal.html" title="A sparse matrix storing an arbitrary set of diagonals, closed under composition, direct product,...">MultiDiagonal</a></code> operators of arbitrary rank: \((A|B)_{rc} = \sum_m A_{rm} B_{mc}\). </p>
 <p>For each pair of diagonals — \(A\) at signed offsets \(p\), \(B\) at \(q\) (per axis, dimension \(D\)) — the contribution lands on the result diagonal at </p><p class="formulaDsp">
-\[ s = p + q \qquad\text{(the offset homomorphism).} \]
+\[ s = p + q \qquad\text{(the quanta moved add up).} \]
 </p>
 <p> With the storage convention \(d[k]=M_{k+o^-,k+o^+}\), entry \(k\) of the result receives </p><p class="formulaDsp">
 \[ r[k] \mathrel{+}= d_A[k+i_A]\, d_B[k+i_B], \qquad i_A = s^--p^-, \quad i_B = s^-+p-q^-, \]

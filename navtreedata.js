@@ -25,13 +25,22 @@
 var NAVTREE =
 [
   [ "cppqed-multidiagonal", "index.html", [
+    [ "What is a multidiagonal operator?", "index.html#autotoc_md4", null ],
+    [ "The signed-offset representation", "index.html#autotoc_md5", null ],
+    [ "Why not <tt>Tridiagonal</tt>?", "index.html#autotoc_md6", null ],
+    [ "Features", "index.html#autotoc_md7", null ],
+    [ "Performance", "index.html#autotoc_md8", null ],
+    [ "Requirements", "index.html#autotoc_md9", null ],
+    [ "Building and testing", "index.html#autotoc_md10", null ],
+    [ "Integration into a CMake project", "index.html#autotoc_md11", [
+      [ "Via FetchContent (as C++QED does)", "index.html#autotoc_md12", null ],
+      [ "Via <tt>find_package</tt> (after installation)", "index.html#autotoc_md13", null ]
+    ] ],
+    [ "Repository structure", "index.html#autotoc_md14", null ],
+    [ "License", "index.html#autotoc_md15", null ],
+    [ "Authors", "index.html#autotoc_md16", null ],
     [ "Todo List", "todo.html", null ],
     [ "Namespaces", "namespaces.html", [
-      [ "What is a multidiagonal operator?", "index.html#autotoc_md3", null ],
-      [ "Why not Tridiagonal?", "index.html#autotoc_md4", null ],
-      [ "Features", "index.html#autotoc_md5", null ],
-      [ "Requirements", "index.html#autotoc_md6", null ],
-      [ "Repository structure", "index.html#autotoc_md7", null ],
       [ "Namespace List", "namespaces.html", "namespaces_dup" ],
       [ "Namespace Members", "namespacemembers.html", [
         [ "All", "namespacemembers.html", null ],
@@ -68,7 +77,7 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "MultiArrayComplex_8h.html",
-"structquantumoperator_1_1MultiDiagonal.html#ab27d08a97f40c04137599d1579c8194b"
+"structquantumoperator_1_1MultiDiagonal.html#a6944e78b47a4742b1c5f52ac8e376410"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

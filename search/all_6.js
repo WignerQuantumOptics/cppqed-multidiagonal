@@ -1,9 +1,9 @@
 var searchData=
 [
-  ['halveextents_0',['halveExtents',['../namespacecppqedutils.html#ad90ffa9fea16396093143790aad2f73d',1,'cppqedutils']]],
-  ['hasimagpart_1',['hasImagPart',['../MultiArrayComplex_8h.html#ac91801433b28b92545b9e743d7df2c9c',1,'MultiArrayComplex.h']]],
-  ['hasrealpart_2',['hasRealPart',['../MultiArrayComplex_8h.html#a8a10a86cbf709aa1b372e23e20ace1b6',1,'MultiArrayComplex.h']]],
-  ['hermitianconjugate_3',['hermitianConjugate',['../structquantumoperator_1_1MultiDiagonal.html#abc6f3181c1acb94ede9a0d9c84d70c0d',1,'quantumoperator::MultiDiagonal']]],
-  ['hermitianconjugateof_4',['hermitianConjugateOf',['../structquantumoperator_1_1MultiDiagonal.html#ab32de4ad2aab3d28f0120882d6b1a2aa',1,'quantumoperator::MultiDiagonal']]],
-  ['hermitianconjugateself_5',['hermitianConjugateSelf',['../namespacecppqedutils.html#a4ef43662a4bc8a7a481bdcac14dbe9a9',1,'cppqedutils']]]
+  ['features_0',['Features',['../index.html#autotoc_md7',1,'']]],
+  ['fetchcontent_20as_20c_20qed_20does_1',['Via FetchContent (as C++QED does)',['../index.html#autotoc_md12',1,'']]],
+  ['find_5fpackage_20tt_20after_20installation_2',['Via &lt;tt&gt;find_package&lt;/tt&gt; (after installation)',['../index.html#autotoc_md13',1,'']]],
+  ['frobeniusnorm_3',['frobeniusNorm',['../namespacecppqedutils.html#af77e0bcc9939ac341fc15ca6a581652b',1,'cppqedutils']]],
+  ['frobeniusnormsqr_4',['frobeniusNormSqr',['../namespacecppqedutils.html#ae818004f3455b17694e44fd19567d62c',1,'cppqedutils']]],
+  ['fwd_5',['FWD',['../Traits_8h.html#a868eaefc70f7695a5a597bf7cf597586',1,'Traits.h']]]
 ];

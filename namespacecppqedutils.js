@@ -1,13 +1,6 @@
 var namespacecppqedutils =
 [
-    [ "multiarray", "namespacecppqedutils_1_1multiarray.html", [
-      [ "StorageType", "namespacecppqedutils_1_1multiarray.html#a34604eaec6dcff606e5f8975d1407209", null ],
-      [ "calculateExtent", "namespacecppqedutils_1_1multiarray.html#a218d434137539b1d518baf503fb783aa", null ],
-      [ "calculateStrides", "namespacecppqedutils_1_1multiarray.html#ad7a2d893811f70de1c658fc8fa1ed535", null ],
-      [ "copyInit", "namespacecppqedutils_1_1multiarray.html#a283315f1273cb1e14b7ad8c5c98d11ad", null ],
-      [ "noInit", "namespacecppqedutils_1_1multiarray.html#ada33ace45527080579f4830f35c73cc5", null ],
-      [ "zeroInit", "namespacecppqedutils_1_1multiarray.html#a052eb2fc720fbfd4b5a4f9aded9e0f22", null ]
-    ] ],
+    [ "multiarray", "namespacecppqedutils_1_1multiarray.html", "namespacecppqedutils_1_1multiarray" ],
     [ "ConstReferenceMF", "structcppqedutils_1_1ConstReferenceMF.html", null ],
     [ "ConstReferenceMF< MultiArrayView< T, RANK > >", "structcppqedutils_1_1ConstReferenceMF_3_01MultiArrayView_3_01T_00_01RANK_01_4_01_4.html", null ],
     [ "MultiArray", "classcppqedutils_1_1MultiArray.html", "classcppqedutils_1_1MultiArray" ],
@@ -20,6 +13,7 @@ var namespacecppqedutils =
     [ "LogTree", "namespacecppqedutils.html#a480a4ec4d6e454c41e415d564a3f17bd", null ],
     [ "MultiArrayConstView", "namespacecppqedutils.html#a77bff64643f60f47027234f355af174c", null ],
     [ "Reference", "namespacecppqedutils.html#a8be2a1ed08a8f9a96245a3d48a1e6c23", null ],
+    [ "checkContiguous", "namespacecppqedutils.html#ae84009efe1906422466ce26c4baf021f", null ],
     [ "checkExtents", "namespacecppqedutils.html#a4e857d2c3ab1bc098826ff161cbef0e0", null ],
     [ "concatenate", "namespacecppqedutils.html#a0de254aca3e4a1751e0e2170b43c833b", null ],
     [ "conj", "namespacecppqedutils.html#a19f0ba415c1cc857889fa6890bc66534", null ],
@@ -27,7 +21,7 @@ var namespacecppqedutils =
     [ "frobeniusNorm", "namespacecppqedutils.html#af77e0bcc9939ac341fc15ca6a581652b", null ],
     [ "frobeniusNormSqr", "namespacecppqedutils.html#ae818004f3455b17694e44fd19567d62c", null ],
     [ "halveExtents", "namespacecppqedutils.html#ad90ffa9fea16396093143790aad2f73d", null ],
-    [ "hermitianConjugateSelf", "namespacecppqedutils.html#a4ef43662a4bc8a7a481bdcac14dbe9a9", null ],
+    [ "hermitianConjugateSelf", "namespacecppqedutils.html#a2b8f3a2cc99f33abbbf6c5356e07380a", null ],
     [ "incrementMultiIndex", "namespacecppqedutils.html#a6b1af49dd0fd177720dd2d480571b5ab", null ],
     [ "incrementMultiIndex", "namespacecppqedutils.html#a37b9ee023c9c5595ee756959815f8b57", null ],
     [ "isEqual", "namespacecppqedutils.html#ad51dbed55074c93b20e6e01409a52375", null ],

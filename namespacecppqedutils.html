@@ -34,7 +34,7 @@ window.MathJax = {
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.1.0</span>
+   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.4.0</span>
    </div>
    <div id="projectbrief">Multidiagonal sparse operator algebra for C++QED</div>
   </td>
@@ -173,7 +173,7 @@ Functions</h2></td></tr>
 <tr class="separator:a0de254aca3e4a1751e0e2170b43c833b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a37b9ee023c9c5595ee756959815f8b57" id="r_a37b9ee023c9c5595ee756959815f8b57"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> RANK&gt; </td></tr>
 <tr class="memitem:a37b9ee023c9c5595ee756959815f8b57"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">auto</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils.html#a37b9ee023c9c5595ee756959815f8b57">incrementMultiIndex</a> (<a class="el" href="namespacecppqedutils.html#a12ee1aa9bcc9f978ca426b857c3f85ae">Extents</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">idx</a>, <a class="el" href="namespacecppqedutils.html#a12ee1aa9bcc9f978ca426b857c3f85ae">Extents</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; extents)</td></tr>
-<tr class="memdesc:a37b9ee023c9c5595ee756959815f8b57"><td class="mdescLeft">&#160;</td><td class="mdescRight">Increments a multi-index in row-major (last-index-fastest) order, in-place.  <br /></td></tr>
+<tr class="memdesc:a37b9ee023c9c5595ee756959815f8b57"><td class="mdescLeft">&#160;</td><td class="mdescRight">Increments a multi-index in last-index-fastest order, in-place.  <br /></td></tr>
 <tr class="separator:a37b9ee023c9c5595ee756959815f8b57"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6b1af49dd0fd177720dd2d480571b5ab" id="r_a6b1af49dd0fd177720dd2d480571b5ab"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">auto</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecppqedutils.html#a6b1af49dd0fd177720dd2d480571b5ab">incrementMultiIndex</a> (<a class="el" href="namespacecppqedutils.html#a12ee1aa9bcc9f978ca426b857c3f85ae">Extents</a>&lt; 0 &gt; &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">idx</a>, <a class="el" href="namespacecppqedutils.html#a12ee1aa9bcc9f978ca426b857c3f85ae">Extents</a>&lt; 0 &gt;)</td></tr>
 <tr class="memdesc:a6b1af49dd0fd177720dd2d480571b5ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rank-0 no-op overload of <code>incrementMultiIndex</code> to satisfy template instantiation for degenerate cases.  <br /></td></tr>
@@ -186,6 +186,10 @@ Functions</h2></td></tr>
 <tr class="memitem:ad51dbed55074c93b20e6e01409a52375"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">bool</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils.html#ad51dbed55074c93b20e6e01409a52375">isEqual</a> (<a class="el" href="namespacecppqedutils.html#a77bff64643f60f47027234f355af174c">MultiArrayConstView</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">T1</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">m1</a>, <a class="el" href="namespacecppqedutils.html#a77bff64643f60f47027234f355af174c">MultiArrayConstView</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">T2</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">m2</a>)</td></tr>
 <tr class="memdesc:ad51dbed55074c93b20e6e01409a52375"><td class="mdescLeft">&#160;</td><td class="mdescRight">Element-by-element equality test. Traverses all elements via <code>incrementMultiIndex</code>.  <br /></td></tr>
 <tr class="separator:ad51dbed55074c93b20e6e01409a52375"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae84009efe1906422466ce26c4baf021f" id="r_ae84009efe1906422466ce26c4baf021f"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">typename</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a> , <a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> RANK&gt; </td></tr>
+<tr class="memitem:ae84009efe1906422466ce26c4baf021f"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils.html#ae84009efe1906422466ce26c4baf021f">checkContiguous</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">MultiArrayView</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">mav</a>, std::string <a class="el" href="classcppqedutils_1_1MultiArrayView.html">message</a>)</td></tr>
+<tr class="memdesc:ae84009efe1906422466ce26c4baf021f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Debug-mode check that a view covers its storage as an owning <code><a class="el" href="classcppqedutils_1_1MultiArray.html" title="Owning, move-only, rank-RANK array. Non-copyable; follows value semantics regarding constness.">MultiArray</a></code> of the same extents would: offset 0 and first-index-fastest strides. Throws <code>std::invalid_argument</code> otherwise. For functions that address the flat storage directly; a sub-block or slice view fails it.  <br /></td></tr>
+<tr class="separator:ae84009efe1906422466ce26c4baf021f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aea9045d42f9d2b05866a7fbdbb7a3a73" id="r_aea9045d42f9d2b05866a7fbdbb7a3a73"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> RANK&gt; </td></tr>
 <tr class="memitem:aea9045d42f9d2b05866a7fbdbb7a3a73"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">auto</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils.html#aea9045d42f9d2b05866a7fbdbb7a3a73">vectorize</a> (<a class="el" href="classcppqedutils_1_1MultiArray.html">MultiArray</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">ma</a>)</td></tr>
 <tr class="memdesc:aea9045d42f9d2b05866a7fbdbb7a3a73"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maps a mutable <code><a class="el" href="classcppqedutils_1_1MultiArray.html" title="Owning, move-only, rank-RANK array. Non-copyable; follows value semantics regarding constness.">MultiArray</a>&lt;dcomp,RANK&gt;</code> to an Eigen column vector (no data copy).  <br /></td></tr>
@@ -223,10 +227,10 @@ requires ( !(<a class="el" href="classcppqedutils_1_1MultiArrayView.html">TWO_TI
 <tr class="memitem:af77e0bcc9939ac341fc15ca6a581652b"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">double</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils.html#af77e0bcc9939ac341fc15ca6a581652b">frobeniusNorm</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="classcppqedutils_1_1MultiArray.html">MultiArray</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">ma</a>)</td></tr>
 <tr class="memdesc:af77e0bcc9939ac341fc15ca6a581652b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frobenius norm: \(\sqrt{\sum_{i}|a_i|^2}\).  <br /></td></tr>
 <tr class="separator:af77e0bcc9939ac341fc15ca6a581652b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4ef43662a4bc8a7a481bdcac14dbe9a9" id="r_a4ef43662a4bc8a7a481bdcac14dbe9a9"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> TWO_TIMES_RANK&gt; </td></tr>
-<tr class="memitem:a4ef43662a4bc8a7a481bdcac14dbe9a9"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils.html#a4ef43662a4bc8a7a481bdcac14dbe9a9">hermitianConjugateSelf</a> (<a class="el" href="classcppqedutils_1_1MultiArray.html">MultiArray</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">TWO_TIMES_RANK</a> &gt; &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">ma</a>)</td></tr>
-<tr class="memdesc:a4ef43662a4bc8a7a481bdcac14dbe9a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">In-place Hermitian conjugation of a rank-<code>2R</code> array interpreted as a square matrix.  <br /></td></tr>
-<tr class="separator:a4ef43662a4bc8a7a481bdcac14dbe9a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2b8f3a2cc99f33abbbf6c5356e07380a" id="r_a2b8f3a2cc99f33abbbf6c5356e07380a"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> TWO_TIMES_RANK&gt; </td></tr>
+<tr class="memitem:a2b8f3a2cc99f33abbbf6c5356e07380a"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils.html#a2b8f3a2cc99f33abbbf6c5356e07380a">hermitianConjugateSelf</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">MultiArrayView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">TWO_TIMES_RANK</a> &gt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">mav</a>)</td></tr>
+<tr class="memdesc:a2b8f3a2cc99f33abbbf6c5356e07380a"><td class="mdescLeft">&#160;</td><td class="mdescRight">In-place Hermitian conjugation of a rank-<code>2R</code> matrix view <code>mav</code>.  <br /></td></tr>
+<tr class="separator:a2b8f3a2cc99f33abbbf6c5356e07380a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0a6a48cecc095920cb37af768a52bd30" id="r_a0a6a48cecc095920cb37af768a52bd30"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> TWO_TIMES_RANK&gt; </td></tr>
 <tr class="memitem:a0a6a48cecc095920cb37af768a52bd30"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils.html#a0a6a48cecc095920cb37af768a52bd30">twoTimesRealPartOfSelf</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">MultiArrayView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">TWO_TIMES_RANK</a> &gt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">mav</a>)</td></tr>
 <tr class="memdesc:a0a6a48cecc095920cb37af768a52bd30"><td class="mdescLeft">&#160;</td><td class="mdescRight">In-place replacement of a rank-<code>2R</code> matrix view <code>mav</code> with <code>M + M†</code> (twice its Hermitian part).  <br /></td></tr>
@@ -343,6 +347,38 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">typenam
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
+<a id="ae84009efe1906422466ce26c4baf021f" name="ae84009efe1906422466ce26c4baf021f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae84009efe1906422466ce26c4baf021f">&#9670;&#160;</a></span>checkContiguous()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">typename</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a> , <a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> RANK&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a> cppqedutils::checkContiguous </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">MultiArrayView</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt;&#160;</td>
+          <td class="paramname"><em>mav</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>message</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Debug-mode check that a view covers its storage as an owning <code><a class="el" href="classcppqedutils_1_1MultiArray.html" title="Owning, move-only, rank-RANK array. Non-copyable; follows value semantics regarding constness.">MultiArray</a></code> of the same extents would: offset 0 and first-index-fastest strides. Throws <code>std::invalid_argument</code> otherwise. For functions that address the flat storage directly; a sub-block or slice view fails it. </p>
+
+</div>
+</div>
 <a id="a4e857d2c3ab1bc098826ff161cbef0e0" name="a4e857d2c3ab1bc098826ff161cbef0e0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4e857d2c3ab1bc098826ff161cbef0e0">&#9670;&#160;</a></span>checkExtents()</h2>
 
@@ -556,8 +592,8 @@ requires ( !(<a class="el" href="classcppqedutils_1_1MultiArrayView.html">TWO_TI
 
 </div>
 </div>
-<a id="a4ef43662a4bc8a7a481bdcac14dbe9a9" name="a4ef43662a4bc8a7a481bdcac14dbe9a9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4ef43662a4bc8a7a481bdcac14dbe9a9">&#9670;&#160;</a></span>hermitianConjugateSelf()</h2>
+<a id="a2b8f3a2cc99f33abbbf6c5356e07380a" name="a2b8f3a2cc99f33abbbf6c5356e07380a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2b8f3a2cc99f33abbbf6c5356e07380a">&#9670;&#160;</a></span>hermitianConjugateSelf()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -567,15 +603,15 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
         <tr>
           <td class="memname"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a> cppqedutils::hermitianConjugateSelf </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcppqedutils_1_1MultiArray.html">MultiArray</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">TWO_TIMES_RANK</a> &gt; &amp;&#160;</td>
-          <td class="paramname"><em>ma</em></td><td>)</td>
+          <td class="paramtype"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">MultiArrayView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">TWO_TIMES_RANK</a> &gt;&#160;</td>
+          <td class="paramname"><em>mav</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>In-place Hermitian conjugation of a rank-<code>2R</code> array interpreted as a square matrix. </p>
-<p>Transposes and conjugates simultaneously: swaps <code>(i,j)</code> and <code>(j,i)</code> while conjugating both, then conjugates the diagonal in place. Operates directly on flat storage. </p>
+<p>In-place Hermitian conjugation of a rank-<code>2R</code> matrix view <code>mav</code>. </p>
+<p>Conjugates the diagonal, and swaps <code>(i,j)</code> and <code>(j,i)</code> while conjugating both. Operates directly on flat storage, so <code>mav</code> must be full and contiguous (checked by <code>checkContiguous</code> in debug builds); pass an owning array as <code>ma.mutableView()</code>. </p>
 
 </div>
 </div>
@@ -645,7 +681,8 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
       </table>
 </div><div class="memdoc">
 
-<p>Increments a multi-index in row-major (last-index-fastest) order, in-place. </p>
+<p>Increments a multi-index in last-index-fastest order, in-place. </p>
+<dl class="section note"><dt>Note</dt><dd>The iteration order is the opposite of the memory order: storage is first-index-fastest (see <code><a class="el" href="namespacecppqedutils_1_1multiarray.html#ad7a2d893811f70de1c658fc8fa1ed535" title="Computes first-index-fastest strides from extents (std::layout_left; column-major for rank 2): stride...">multiarray::calculateStrides</a></code>), so successive multi-indices are not adjacent in memory unless all axes but the last have extent 1.</dd></dl>
 <p>The iteration pattern is: increment the last index; on overflow, reset it to zero and carry to the previous index. The loop termination guard is <code>idx[0] != extents[0]</code> — once the leading index overflows the array is exhausted. The final increment leaves <code>idx</code> in an out-of-bounds state, consistent with how unchecked iterators work.</p>
 <dl class="section note"><dt>Note</dt><dd>TODO: formulate as a <code>std::ranges</code>-compliant range; see <code>SliceIterator.h</code> for a draft. </dd></dl>
 
@@ -774,7 +811,7 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
 </div><div class="memdoc">
 
 <p>In-place replacement of a rank-<code>2R</code> matrix view <code>mav</code> with <code>M + M†</code> (twice its Hermitian part). </p>
-<p>For each pair <code>(i,j)</code> with <code>j &gt;= i</code>, sets <code>mav(i,j) = mav(i,j) + conj(mav(j,i))</code> and <code>mav(j,i) = conj(mav(i,j))</code>. The diagonal becomes <code>2*re(mav(i,i))</code>. Used in the Lindblad master equation to enforce Hermiticity after each ODE step. </p>
+<p>The diagonal becomes <code>2*re(mav(i,i))</code>. For each pair <code>i &lt; j</code>, <code>mav(i,j)</code> becomes <code>mav(i,j) + conj(mav(j,i))</code>, and <code>mav(j,i)</code> its conjugate. C++QED's master equation uses it to complete \((H_\text{eff}/i)\rho\) to \((H_\text{eff}/i)\rho + \rho\,(H_\text{eff}/i)^\dagger\), and to make \(\rho\) exactly Hermitian after each step. Operates directly on flat storage, so <code>mav</code> must be full and contiguous (checked by <code>checkContiguous</code> in debug builds). </p>
 
 </div>
 </div>

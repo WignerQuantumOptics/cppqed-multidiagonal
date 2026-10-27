@@ -12,7 +12,7 @@ var MultiArrayComplex_8h =
     [ "halveExtents", "MultiArrayComplex_8h.html#ad90ffa9fea16396093143790aad2f73d", null ],
     [ "hasImagPart", "MultiArrayComplex_8h.html#ac91801433b28b92545b9e743d7df2c9c", null ],
     [ "hasRealPart", "MultiArrayComplex_8h.html#a8a10a86cbf709aa1b372e23e20ace1b6", null ],
-    [ "hermitianConjugateSelf", "MultiArrayComplex_8h.html#a4ef43662a4bc8a7a481bdcac14dbe9a9", null ],
+    [ "hermitianConjugateSelf", "MultiArrayComplex_8h.html#a2b8f3a2cc99f33abbbf6c5356e07380a", null ],
     [ "isNonZero", "MultiArrayComplex_8h.html#a4761c797a4986e510d2714cfdacc7769", null ],
     [ "matricize", "MultiArrayComplex_8h.html#a57d6434d8b5f7d42ac1781f32db287d8", null ],
     [ "matricize", "MultiArrayComplex_8h.html#a9330eae6785ec4abc27d3588130b07b1", null ],

@@ -34,7 +34,7 @@ window.MathJax = {
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.1.0</span>
+   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.4.0</span>
    </div>
    <div id="projectbrief">Multidiagonal sparse operator algebra for C++QED</div>
   </td>
@@ -137,10 +137,11 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ad455d05a45152cca1b39efefc378e379"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad207eaa005b7d8e7c99647f835765c99" id="r_ad207eaa005b7d8e7c99647f835765c99"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html#ad207eaa005b7d8e7c99647f835765c99">operator=</a> (<a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a> &amp;&amp;)=<a class="el" href="classcppqedutils_1_1MultiArrayView.html">default</a></td></tr>
 <tr class="separator:ad207eaa005b7d8e7c99647f835765c99"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab27d08a97f40c04137599d1579c8194b" id="r_ab27d08a97f40c04137599d1579c8194b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html#ab27d08a97f40c04137599d1579c8194b">MultiDiagonal</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">auto</a> &amp;&amp;... <a class="el" href="classcppqedutils_1_1MultiArrayView.html">args</a>)</td></tr>
-<tr class="separator:ab27d08a97f40c04137599d1579c8194b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9761edb0ccfdfdc27953ce926af15f93" id="r_a9761edb0ccfdfdc27953ce926af15f93"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html#a9761edb0ccfdfdc27953ce926af15f93">MultiDiagonal</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">auto</a> &amp;&amp;... <a class="el" href="classcppqedutils_1_1MultiArrayView.html">args</a>)</td></tr>
+<tr class="memdesc:a9761edb0ccfdfdc27953ce926af15f93"><td class="mdescLeft">&#160;</td><td class="mdescRight">Forwards <code>args</code> to the diagonal map. Constrained, so that a non-const lvalue <code><a class="el" href="structquantumoperator_1_1MultiDiagonal.html" title="A sparse matrix storing an arbitrary set of diagonals, closed under composition, direct product,...">MultiDiagonal</a></code> reaches the deleted copy constructor rather than this one.  <br /></td></tr>
+<tr class="separator:a9761edb0ccfdfdc27953ce926af15f93"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a581a47a31a0293f8e17f89738e2034dd" id="r_a581a47a31a0293f8e17f89738e2034dd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html#a581a47a31a0293f8e17f89738e2034dd">operator()</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">double</a>, <a class="el" href="namespacecppqedutils.html#a77bff64643f60f47027234f355af174c">MultiArrayConstView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">psi</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">MultiArrayView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">dpsidt</a>) <a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a></td></tr>
-<tr class="memdesc:a581a47a31a0293f8e17f89738e2034dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Applies the operator as \(H/i\): accumulates <code>dpsidt(idxLHS) += diag(idxDiag) * psi(idxRHS)</code> for each diagonal. Per axis, rows run in \([o^-,D-o^+)\) and columns in \([o^+,D-o^-)\).  <br /></td></tr>
+<tr class="memdesc:a581a47a31a0293f8e17f89738e2034dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Accumulates the operator's action on <code>psi</code> into <code>dpsidt:</code> <code>dpsidt(idxLHS) += diag(idxDiag) * psi(idxRHS)</code> for each diagonal, with no factor \(1/i\) (see the operator conventions above). Per axis, rows run in \([o^-,D-o^+)\) and columns in \([o^+,D-o^-)\).  <br /></td></tr>
 <tr class="separator:a581a47a31a0293f8e17f89738e2034dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
@@ -167,9 +168,11 @@ Friends</h2></td></tr>
 <tr class="memitem:ab32de4ad2aab3d28f0120882d6b1a2aa" id="r_ab32de4ad2aab3d28f0120882d6b1a2aa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html#ab32de4ad2aab3d28f0120882d6b1a2aa">hermitianConjugateOf</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a> &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">md</a>)</td></tr>
 <tr class="separator:ab32de4ad2aab3d28f0120882d6b1a2aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a462f4d5cd073ec58dd4721733ddbc5db" id="r_a462f4d5cd073ec58dd4721733ddbc5db"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html#a462f4d5cd073ec58dd4721733ddbc5db">twoTimesRealPartOf</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a> &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">md</a>)</td></tr>
+<tr class="memdesc:a462f4d5cd073ec58dd4721733ddbc5db"><td class="mdescLeft">&#160;</td><td class="mdescRight">\(A+A^\dagger = 2\,\mathrm{Re}A\), which is Hermitian.  <br /></td></tr>
 <tr class="separator:a462f4d5cd073ec58dd4721733ddbc5db"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abfd1dbfdffb676094474c0805c64df79" id="r_abfd1dbfdffb676094474c0805c64df79"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html#abfd1dbfdffb676094474c0805c64df79">twoTimesImagPartOf</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a> &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">md</a>)</td></tr>
-<tr class="separator:abfd1dbfdffb676094474c0805c64df79"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2876049efccbe178d468931472784f57" id="r_a2876049efccbe178d468931472784f57"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html#a2876049efccbe178d468931472784f57">twoITimesImagPartOf</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a> &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">md</a>)</td></tr>
+<tr class="memdesc:a2876049efccbe178d468931472784f57"><td class="mdescLeft">&#160;</td><td class="mdescRight">\(A-A^\dagger = 2i\,\mathrm{Im}A\), which is anti-Hermitian.  <br /></td></tr>
+<tr class="separator:a2876049efccbe178d468931472784f57"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader">Algebra</h2></td></tr>
 <tr><td class="ititle" colspan="2"><dl class="section note"><dt>Note</dt><dd>Boost.Operator cannot be used since <code><a class="el" href="structquantumoperator_1_1MultiDiagonal.html" title="A sparse matrix storing an arbitrary set of diagonals, closed under composition, direct product,...">MultiDiagonal</a></code> is not copyable. </dd></dl>
@@ -212,7 +215,7 @@ struct quantumoperator::MultiDiagonal&lt; RANK &gt;</div><p>A sparse matrix stor
 </ul>
 <h3><a class="anchor" id="autotoc_md0"></a>
 Representation</h3>
-<p>Each diagonal is keyed by a <b>signed offset</b> per axis: positive = upper, negative = lower, zero = main. The offset map is a homomorphism from \((\mathbb{Z}^R,+)\) into the operator algebra:</p><ul>
+<p>Each diagonal is keyed by a <b>signed offset</b> per axis: positive = upper, negative = lower, zero = main. The offset counts the quanta a diagonal moves along each axis, and the algebra reduces to arithmetic on these counts:</p><ul>
 <li>composition: \(\text{offset}_{A|B} = \text{offset}_A + \text{offset}_B\) (per axis)</li>
 <li>Hermitian conjugation: negation of all offsets</li>
 <li>direct product: concatenation of offset arrays</li>
@@ -220,15 +223,15 @@ Representation</h3>
 <p><b>Storage convention.</b> The diagonal at signed offset \(o\) (per axis, dimension \(D\)) has extent \(D-|o|\), and entry \(k\in[0,D-|o|)\) holds the matrix element </p><p class="formulaDsp">
 \[ d[k] = A_{k+o^-,\;k+o^+}, \qquad o^\pm = \max(\pm o,0). \]
 </p>
-<p> This min(row,col)-anchored indexing is symmetric under transposition, so Hermitian conjugation negates the key and conjugates the values <b>without reindexing</b>. The invariant \(\text{extent}_i + |o_i| = D_i\) holds for every diagonal and is enforced by <code>calculateAndCheckDimensions</code>; entries that are structurally zero (created e.g. by composition) are stored explicitly as zeros to preserve it.</p>
+<p> This min(row,col)-anchored indexing is symmetric under transposition, so Hermitian conjugation negates the key and conjugates the values <b>without reindexing</b>. The invariant \(\text{extent}_i + |o_i| = D_i\) holds for every diagonal and is enforced by <code>calculateAndCheckDimensions</code>; entries that are structurally zero (created e.g. by composition) are stored explicitly as zeros to preserve it. A diagonal with \(|o_i|=D_i\) on some axis has no entries (e.g. \(a\) for a cutoff of 1); it is a structural zero, and application skips it.</p>
 <h3><a class="anchor" id="autotoc_md1"></a>
 Time dependence</h3>
-<p><code><a class="el" href="structquantumoperator_1_1MultiDiagonal.html" title="A sparse matrix storing an arbitrary set of diagonals, closed under composition, direct product,...">MultiDiagonal</a></code> is time-independent. Interaction-picture time dependence — diagonal elements of the form \(\alpha_{m,n} e^{\delta_{m,n} t}\) with complex \(\delta\) — is handled by a derived type in CPPQEDcore that adds a parallel frequency <code><a class="el" href="structquantumoperator_1_1MultiDiagonal.html" title="A sparse matrix storing an arbitrary set of diagonals, closed under composition, direct product,...">MultiDiagonal</a></code> and <code>propagate(t)</code> bookkeeping. This separation keeps <code><a class="el" href="structquantumoperator_1_1MultiDiagonal.html" title="A sparse matrix storing an arbitrary set of diagonals, closed under composition, direct product,...">MultiDiagonal</a></code> a clean, unconditionally time-independent algebraic type.</p>
+<p><code><a class="el" href="structquantumoperator_1_1MultiDiagonal.html" title="A sparse matrix storing an arbitrary set of diagonals, closed under composition, direct product,...">MultiDiagonal</a></code> is time-independent and carries no frequencies. Interaction-picture time dependence — diagonal elements of the form \(\alpha_{m,n} e^{\delta_{m,n} t}\) with complex \(\delta\) — belongs to the consumer: in C++QED the trajectory owns the interaction picture, and where phase tabulation is needed, the physics layer keeps a separate <code>(coefficients, frequencies)</code> pair of <code><a class="el" href="structquantumoperator_1_1MultiDiagonal.html" title="A sparse matrix storing an arbitrary set of diagonals, closed under composition, direct product,...">MultiDiagonal</a></code>s. This is a deliberate design boundary.</p>
 <h3><a class="anchor" id="autotoc_md2"></a>
 Operator conventions</h3>
 <ul>
-<li><code>operator()</code> applies \(H/i\) (not \(H\)) to the state vector, consistent with the framework convention.</li>
-<li>\(H\) need not be Hermitian: in QJMC and Master equation contexts it is the full effective non-Hermitian Hamiltonian \(H_\text{eff} = H_\text{phys} - \frac{i}{2}\sum_k J_k^\dagger J_k\). </li>
+<li><code>operator()</code> accumulates \(A\psi\) into <code>dpsidt</code> for the stored operator \(A\), with no factor \(1/i\). C++QED's Hamiltonians add \(H/i\cdot\psi\), so they store \(A=H/i\).</li>
+<li>The stored operator need not be Hermitian: in QJMC and Master equation contexts \(H\) is the full effective Hamiltonian \(H_\text{eff} = H_\text{phys} - \frac{i}{2}\sum_k J_k^\dagger J_k\). </li>
 </ul>
 </div><h2 class="groupheader">Member Typedef Documentation</h2>
 <a id="a5346d9ee29af9a7681d9b029d6ddf5d1" name="a5346d9ee29af9a7681d9b029d6ddf5d1"></a>
@@ -357,8 +360,8 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
 
 </div>
 </div>
-<a id="ab27d08a97f40c04137599d1579c8194b" name="ab27d08a97f40c04137599d1579c8194b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab27d08a97f40c04137599d1579c8194b">&#9670;&#160;</a></span>MultiDiagonal() <span class="overload">[3/3]</span></h2>
+<a id="a9761edb0ccfdfdc27953ce926af15f93" name="a9761edb0ccfdfdc27953ce926af15f93"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9761edb0ccfdfdc27953ce926af15f93">&#9670;&#160;</a></span>MultiDiagonal() <span class="overload">[3/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -382,6 +385,8 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Forwards <code>args</code> to the diagonal map. Constrained, so that a non-const lvalue <code><a class="el" href="structquantumoperator_1_1MultiDiagonal.html" title="A sparse matrix storing an arbitrary set of diagonals, closed under composition, direct product,...">MultiDiagonal</a></code> reaches the deleted copy constructor rather than this one. </p>
 
 </div>
 </div>
@@ -484,7 +489,7 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
 </table>
 </div><div class="memdoc">
 
-<p>Applies the operator as \(H/i\): accumulates <code>dpsidt(idxLHS) += diag(idxDiag) * psi(idxRHS)</code> for each diagonal. Per axis, rows run in \([o^-,D-o^+)\) and columns in \([o^+,D-o^-)\). </p>
+<p>Accumulates the operator's action on <code>psi</code> into <code>dpsidt:</code> <code>dpsidt(idxLHS) += diag(idxDiag) * psi(idxRHS)</code> for each diagonal, with no factor \(1/i\) (see the operator conventions above). Per axis, rows run in \([o^-,D-o^+)\) and columns in \([o^+,D-o^-)\). </p>
 
 </div>
 </div>
@@ -1041,8 +1046,8 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
 
 </div>
 </div>
-<a id="abfd1dbfdffb676094474c0805c64df79" name="abfd1dbfdffb676094474c0805c64df79"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abfd1dbfdffb676094474c0805c64df79">&#9670;&#160;</a></span>twoTimesImagPartOf</h2>
+<a id="a2876049efccbe178d468931472784f57" name="a2876049efccbe178d468931472784f57"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2876049efccbe178d468931472784f57">&#9670;&#160;</a></span>twoITimesImagPartOf</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1053,7 +1058,7 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a> twoTimesImagPartOf </td>
+          <td class="memname"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a> twoITimesImagPartOf </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; &amp;&#160;</td>
           <td class="paramname"><em>md</em></td><td>)</td>
@@ -1066,6 +1071,9 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>\(A-A^\dagger = 2i\,\mathrm{Im}A\), which is anti-Hermitian. </p>
+<p>This is \(H/i\) for \(H=i(A-A^\dagger)\), e.g. a coherent drive \(H=i(\eta a^\dagger-\eta^*a)\) with \(A=\eta a^\dagger\). </p>
 
 </div>
 </div>
@@ -1094,6 +1102,8 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>\(A+A^\dagger = 2\,\mathrm{Re}A\), which is Hermitian. </p>
 
 </div>
 </div>

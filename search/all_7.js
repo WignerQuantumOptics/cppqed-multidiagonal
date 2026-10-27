@@ -1,8 +1,9 @@
 var searchData=
 [
-  ['identity_0',['identity',['../namespacequantumoperator_1_1multidiagonal.html#ab02258a7ce5b1c99e17263eb0cff15ab',1,'quantumoperator::multidiagonal']]],
-  ['incrementmultiindex_1',['incrementmultiindex',['../namespacecppqedutils.html#a37b9ee023c9c5595ee756959815f8b57',1,'cppqedutils::incrementMultiIndex(Extents&lt; RANK &gt; &amp;idx, Extents&lt; RANK &gt; extents)'],['../namespacecppqedutils.html#a6b1af49dd0fd177720dd2d480571b5ab',1,'cppqedutils::incrementMultiIndex(Extents&lt; 0 &gt; &amp;idx, Extents&lt; 0 &gt;)']]],
-  ['is_20a_20multidiagonal_20operator_2',['What is a multidiagonal operator?',['../index.html#autotoc_md3',1,'']]],
-  ['isequal_3',['isEqual',['../namespacecppqedutils.html#ad51dbed55074c93b20e6e01409a52375',1,'cppqedutils']]],
-  ['isnonzero_4',['isNonZero',['../MultiArrayComplex_8h.html#a4761c797a4986e510d2714cfdacc7769',1,'MultiArrayComplex.h']]]
+  ['halveextents_0',['halveExtents',['../namespacecppqedutils.html#ad90ffa9fea16396093143790aad2f73d',1,'cppqedutils']]],
+  ['hasimagpart_1',['hasImagPart',['../MultiArrayComplex_8h.html#ac91801433b28b92545b9e743d7df2c9c',1,'MultiArrayComplex.h']]],
+  ['hasrealpart_2',['hasRealPart',['../MultiArrayComplex_8h.html#a8a10a86cbf709aa1b372e23e20ace1b6',1,'MultiArrayComplex.h']]],
+  ['hermitianconjugate_3',['hermitianConjugate',['../structquantumoperator_1_1MultiDiagonal.html#abc6f3181c1acb94ede9a0d9c84d70c0d',1,'quantumoperator::MultiDiagonal']]],
+  ['hermitianconjugateof_4',['hermitianConjugateOf',['../structquantumoperator_1_1MultiDiagonal.html#ab32de4ad2aab3d28f0120882d6b1a2aa',1,'quantumoperator::MultiDiagonal']]],
+  ['hermitianconjugateself_5',['hermitianConjugateSelf',['../namespacecppqedutils.html#a2b8f3a2cc99f33abbbf6c5356e07380a',1,'cppqedutils']]]
 ];

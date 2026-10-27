@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['noinit_0',['noInit',['../namespacecppqedutils_1_1multiarray.html#ada33ace45527080579f4830f35c73cc5',1,'cppqedutils::multiarray']]]
+  ['extents_0',['extents',['../classcppqedutils_1_1MultiArrayView.html#a03ae0399cdeb87704dc9d9fee171cb12',1,'cppqedutils::MultiArrayView']]]
 ];

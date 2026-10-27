@@ -34,7 +34,7 @@ window.MathJax = {
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.1.0</span>
+   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.4.0</span>
    </div>
    <div id="projectbrief">Multidiagonal sparse operator algebra for C++QED</div>
   </td>
@@ -102,45 +102,98 @@ $(document).ready(function(){initNavTree('index.html',''); initResizable(); });
   <div class="headertitle"><div class="title">cppqed-multidiagonal </div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>A C++20 library implementing sparse multidiagonal operator algebra for quantum systems of arbitrary arity, extracted from the <a href="https://github.com/WignerQuantumOptics/cppqed">C++QED</a> framework.</p>
-<h2><a class="anchor" id="autotoc_md3"></a>
-What is a multidiagonal operator?</h2>
-<p>A multidiagonal operator over a Hilbert space of dimension \(N\) is a sparse matrix storing an arbitrary set of diagonals at arbitrary offsets. In the context of quantum optics and cavity QED, Hamiltonians and jump operators naturally take this form. For example, the harmonic oscillator ladder operators \(a\), \(a^\dagger\) are single off-diagonals; number operators \(a^\dagger a\) are main diagonals; nonlinear terms like \((a^\dagger)^2 a^2\) are further off-diagonals.</p>
-<p>For composite systems of arity \(M\), <code>MultiDiagonal&lt;RANK&gt;</code> stores tensor-product-structured operators of the form  </p><p class="formulaDsp">
-\[
-  H/i = \bigotimes_{m=0}^{M-1}
-    \sum_{i_m \in \mathbb{K}_m} \sum_{n_m=0}^{N_m-1-i_m}
-    \alpha^{i_m}_{m,n} \left|n_m+i_m\right\rangle\!\left\langle n_m\right|
-\]
+<div class="textblock"><p><a class="anchor" id="md_README"></a> <a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/actions/workflows/ci.yml"><img src="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/actions/workflows/ci.yml/badge.svg" alt="CI" style="pointer-events: none;" class="inline"/></a> <a href="https://wignerquantumoptics.github.io/cppqed-multidiagonal/"><img src="https://img.shields.io/badge/docs-github.io-blue" alt="Documentation" class="inline"/></a> <a href="LICENSE.txt"><img src="https://img.shields.io/badge/license-BSL--1.0-green" alt="License" class="inline"/></a></p>
+<p>A header-only C++ library implementing sparse multidiagonal operator algebra for quantum systems of arbitrary arity, extracted from the <a href="https://github.com/WignerQuantumOptics/cppqed">C++QED</a> framework.</p>
+<h1><a class="anchor" id="autotoc_md4"></a>
+What is a multidiagonal operator?</h1>
+<p>A multidiagonal operator over a Hilbert space of dimension \(N\) is a sparse matrix storing an arbitrary set of diagonals at arbitrary offsets. In the context of quantum optics and cavity QED, Hamiltonians and jump operators naturally take this form. For example, the harmonic oscillator ladder operators \(a\), \(a^\dagger\) are single off-diagonals; number operators \(a^\dagger a\) are main diagonals, and so is the Kerr term \((a^\dagger)^2 a^2 = a^\dagger a\,(a^\dagger a - 1)\); two-photon terms like \(a^2\) sit two diagonals off the main one.</p>
+<p>For a composite system of \(R\) subsystems, <code>MultiDiagonal&lt;RANK&gt;</code> stores an operator of the form</p>
+<p class="formulaDsp">
+\[A = \sum_{\mathbf{o} \in \mathbb{K}} \sum_{\mathbf{n}} \alpha^{\mathbf{o}}_{\mathbf{n}} \left|\mathbf{n}\right\rangle\left\langle \mathbf{n}+\mathbf{o}\right|\]
 </p>
-<p> with \(\mathbb{K}_m\) an <b>arbitrary</b> set of offsets per subsystem axis.</p>
-<h2><a class="anchor" id="autotoc_md4"></a>
-Why not Tridiagonal?</h2>
+<p>with \(\mathbb{K} \subset \mathbb{Z}^R\) an <b>arbitrary</b> set of <em>signed</em> offset vectors, one entry per subsystem axis, and \(\mathbf{n}\) running over the multi-indices for which both \(\mathbf{n}\) and \(\mathbf{n}+\mathbf{o}\) lie in the truncated Hilbert space. A positive entry thus means an upper diagonal on that axis. The coefficients need not factorize over the subsystems; direct products, built with <code>operator*</code>, are the special case where they do.</p>
+<h1><a class="anchor" id="autotoc_md5"></a>
+The signed-offset representation</h1>
+<p>Each diagonal is keyed by a signed offset per axis — positive = upper, negative = lower, zero = main diagonal. The offset counts the quanta a diagonal moves along each axis, and the algebra reduces to arithmetic on these counts:</p>
+<ul>
+<li><b>composition</b>: \(\text{offset}_{A|B} = \text{offset}_A + \text{offset}_B\) per axis, for arbitrary rank</li>
+<li><b>Hermitian conjugation</b>: negation of all offsets (plus conjugation of the stored values)</li>
+<li><b>direct product</b>: concatenation of the offset arrays, reflecting the tensor product structure exactly</li>
+</ul>
+<p>The diagonal at signed offset \(o\) (per axis, dimension \(D\)) has extent \(D-|o|\), and entry \(k\) holds the matrix element \(A_{k+o^-,\,k+o^+}\) with \(o^\pm=\max(\pm o,0)\). This min(row,col)-anchored storage is symmetric under transposition, which is what makes conjugation a pure key negation. Application to a state vector costs \(O(N \cdot d)\) for \(d\) diagonals; composition runs over the \(d_A \cdot d_B\) diagonal pairs, each in one pass over the window where the two diagonals overlap.</p>
+<h1><a class="anchor" id="autotoc_md6"></a>
+Why not &lt;tt&gt;Tridiagonal&lt;/tt&gt;?</h1>
 <p>The predecessor class <code>Tridiagonal&lt;RANK&gt;</code> in C++QED v2 stored exactly three diagonals per axis — at positions \(-K\), \(0\), \(+K\) for a single shared offset \(K\) — and was <b>not closed under composition</b>: the product of two tridiagonal operators is in general pentadiagonal, and with different offsets is not tridiagonal at all. <code>MultiDiagonal</code> lifts all these restrictions — any number of diagonals at independent arbitrary offsets, and the operator algebra is closed under composition (<code>operator|</code>), direct product (<code>operator*</code>), addition, and Hermitian conjugation.</p>
-<h2><a class="anchor" id="autotoc_md5"></a>
-Features</h2>
+<p>The truncated algebra is represented <em>exactly</em>, including its physical deviations from the untruncated one: e.g. \([a,a^\dagger]\) at cutoff \(D\) is \(\mathrm{diag}(1,\ldots,1,1-D)\), not \(\mathbb{1}\) — as it must be for any finite-dimensional representation.</p>
+<h1><a class="anchor" id="autotoc_md7"></a>
+Features</h1>
 <ul>
-<li><b>Arbitrary rank</b>: <code>MultiDiagonal&lt;RANK&gt;</code> for any compile-time arity \(M\)</li>
-<li><b>Closed algebra</b>: composition, direct product, addition, scalar multiplication, Hermitian conjugation</li>
-<li><b>Efficient application</b>: applies as \(H/i\) on a state vector via strided multi-index iteration, with compile-time loop unrolling via Boost.Hana</li>
-<li><b>Move-only semantics</b>: no accidental copies of large diagonal arrays</li>
+<li><b>Arbitrary rank</b>: <code>MultiDiagonal&lt;RANK&gt;</code> for any compile-time arity \(M\), including composition at arbitrary rank</li>
+<li><b>Closed algebra</b>: composition, direct product, addition, scalar multiplication, Hermitian conjugation — with exact signed-offset arithmetic</li>
+<li><b>Application</b>: accumulates \(A\psi\) into a state vector via strided multi-index iteration, with compile-time loop unrolling via Boost.Hana. It applies no factor \(1/i\): C++QED's convention is to store \(A = H/i\).</li>
+<li><b>Move-only semantics</b>: no accidental copies of large diagonal arrays; deep copies are explicit (<code>copy</code>)</li>
+<li><b>Deterministic results</b>: diagonals are stored in an ordered map keyed by signed offsets, so accumulation order in composition is well-defined and reproducible across platforms</li>
 <li><b>JSON serialization</b>: via Boost.JSON <code>tag_invoke</code>, useful for testing and debugging</li>
-<li><b>Time dependence</b>: interaction-picture time dependence ( \(\alpha_{m,n} e^{\delta_{m,n} t}\)) is handled by <code>InteractionPictureDiagonal</code> in C++QED proper, keeping this library unconditionally time-independent</li>
+<li><b>No time dependence</b>: operators carry no frequencies. Interaction-picture time dependence ( \(\alpha_{m,n} e^{\delta_{m,n} t}\)) belongs to the consumer; in C++QED the trajectory owns the interaction picture</li>
+<li><b>Property-tested</b>: the algebraic identities — associativity, \((A|B)^\dagger = B^\dagger|A^\dagger\), distributivity, the mixed-product law \((A{\otimes}B)|(C{\otimes}D) = (A|C){\otimes}(B|D)\) — are verified against dense-matrix oracles in CI</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md6"></a>
-Requirements</h2>
+<h1><a class="anchor" id="autotoc_md8"></a>
+Performance</h1>
+<p>Application is on par with Eigen's sparse matrices for operators acting on one axis, but currently 2–2.7× <b>slower</b> for operators acting on several axes, such as the Jaynes–Cummings coupling (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1">#1</a>). The benchmarks in <code>benchmarks/</code> are being reworked (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/5">#5</a>), so other figures are not quoted here.</p>
+<h1><a class="anchor" id="autotoc_md9"></a>
+Requirements</h1>
 <ul>
-<li>C++20 compiler (GCC ≥ 12, Clang ≥ 15)</li>
-<li><a href="https://www.boost.org/">Boost</a> ≥ 1.80 (Hana, JSON, Serialization)</li>
+<li>C++23 compiler (GCC ≥ 13, Clang ≥ 17)</li>
+<li><a href="https://www.boost.org/">Boost</a> ≥ 1.80 (Hana, JSON, Serialization) — header-only use plus Boost.JSON/Serialization</li>
 <li><a href="https://eigen.tuxfamily.org/">Eigen3</a> ≥ 3.4</li>
-<li>CMake ≥ 3.24</li>
+<li>CMake ≥ 3.24 (for the build/test/install machinery; as a header-only library it can also be consumed by simply adding <code>include/</code> to the include path and writing <code>#include &lt;<a class="el" href="MultiDiagonal_8h.html">multidiagonal/MultiDiagonal.h</a>&gt;</code>)</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md7"></a>
-Repository structure</h2>
-<ul>
-<li><a class="el" href="namespacecppqedutils.html">cppqedutils</a> — foundational types: <code>Extents</code>, <code>MultiArray</code>, <code>MultiArrayView</code>, <code>dcomp</code>, <code>directProduct</code></li>
-<li><a class="el" href="namespacequantumoperator.html">quantumoperator</a> — operator algebra: <code>MultiDiagonal</code>, <code>multidiagonal::identity</code>, <code>operator|</code> </li>
-</ul>
+<h1><a class="anchor" id="autotoc_md10"></a>
+Building and testing</h1>
+<p>The library itself is header-only — nothing to build. Configuring and building compiles the test suite:</p>
+<div class="fragment"><div class="line">cmake -B build -DCMAKE_BUILD_TYPE=Debug</div>
+<div class="line">cmake --build build</div>
+<div class="line">ctest --test-dir build --output-on-failure</div>
+</div><!-- fragment --><p>(Debug enables the library's bounds and dimension checks, which the test suite exercises; CI runs the Debug×Release matrix on GCC and Clang.)</p>
+<h1><a class="anchor" id="autotoc_md11"></a>
+Integration into a CMake project</h1>
+<h2><a class="anchor" id="autotoc_md12"></a>
+Via FetchContent (as C++QED does)</h2>
+<div class="fragment"><div class="line">include(FetchContent)</div>
+<div class="line">FetchContent_Declare(cppqed-multidiagonal</div>
+<div class="line">  GIT_REPOSITORY    https://github.com/WignerQuantumOptics/cppqed-multidiagonal.git</div>
+<div class="line">  GIT_TAG           &lt;full commit SHA of a release&gt;</div>
+<div class="line">  FIND_PACKAGE_ARGS 0.4)   # an installed version is used when found</div>
+<div class="line">FetchContent_MakeAvailable(cppqed-multidiagonal)</div>
+<div class="line">target_link_libraries(MyTarget PUBLIC cppqed::multidiagonal)</div>
+</div><!-- fragment --><p>A copy of the source tree in your project works too, via <code>add_subdirectory</code>.</p>
+<h2><a class="anchor" id="autotoc_md13"></a>
+Via &lt;tt&gt;find_package&lt;/tt&gt; (after installation)</h2>
+<div class="fragment"><div class="line">cmake --install build</div>
+</div><!-- fragment --><div class="fragment"><div class="line">find_package(cppqed-multidiagonal REQUIRED)</div>
+<div class="line">target_link_libraries(MyTarget PUBLIC cppqed::multidiagonal)</div>
+</div><!-- fragment --><p>Either way, the headers are included with their directory prefix, e.g. <code>#include &lt;<a class="el" href="MultiDiagonal_8h.html">multidiagonal/MultiDiagonal.h</a>&gt;</code>.</p>
+<h1><a class="anchor" id="autotoc_md14"></a>
+Repository structure</h1>
+<div class="fragment"><div class="line">include/multidiagonal/</div>
+<div class="line">  Traits.h — FWD, Boost.Hana/JSON setup, passByValue_v, ReferenceMF</div>
+<div class="line">  MultiArray.h — generic rank-N array with strided view</div>
+<div class="line">  MultiArrayComplex.h — dcomp specializations, directProduct, Eigen interop</div>
+<div class="line">  MultiDiagonal.h — multidiagonal operator algebra (incl. identity and composition)</div>
+<div class="line">tests/</div>
+<div class="line">  testMultiArray.cc, testMultiArrayComplex.cc, testMultiDiagonal.cc</div>
+<div class="line">  consumer/ — downstream project used by CI (find_package and FetchContent)</div>
+<div class="line">benchmarks/</div>
+<div class="line">  benchmarkMultiDiagonal.cc, plot.py — comparison with Eigen sparse and dense</div>
+<div class="line">cmake/</div>
+<div class="line">  cppqed-multidiagonalConfig.cmake.in</div>
+<div class="line">Doxyfile, doxygen-math.sed — API docs; this README is their main page</div>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md15"></a>
+License</h1>
+<p>Distributed under the <a href="LICENSE.txt">Boost Software License, Version 1.0</a>.</p>
+<h1><a class="anchor" id="autotoc_md16"></a>
+Authors</h1>
+<p>András Vukics — extracted from C++QED, originally developed 2006–2026. </p>
 </div></div><!-- PageDoc -->
 </div><!-- contents -->
 </div><!-- doc-content -->

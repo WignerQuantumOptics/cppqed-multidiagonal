@@ -34,7 +34,7 @@ window.MathJax = {
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.1.0</span>
+   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.4.0</span>
    </div>
    <div id="projectbrief">Multidiagonal sparse operator algebra for C++QED</div>
   </td>
@@ -216,7 +216,7 @@ Functions</h2></td></tr>
 <tr class="memdesc:a8bc5646c7695231e10f8cac401e1b52e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Relative deviation between two values: <code>|a-b| / (|a|+|b|)</code>. Returns 0 if both are zero.  <br /></td></tr>
 <tr class="separator:a8bc5646c7695231e10f8cac401e1b52e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a10b1515bd9ae3fd66ccc63a9eec386d2" id="r_a10b1515bd9ae3fd66ccc63a9eec386d2"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="MultiArrayComplex_8h.html#a10b1515bd9ae3fd66ccc63a9eec386d2">sqrAbs</a> (<a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a> v)</td></tr>
-<tr class="memdesc:a10b1515bd9ae3fd66ccc63a9eec386d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Squared absolute value of a complex number: <code>|v|^2 = re^2 + im^2</code>.  <br /></td></tr>
+<tr class="memdesc:a10b1515bd9ae3fd66ccc63a9eec386d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Squared absolute value of a complex number: <code>|v|^2 = re^2 + im^2</code>, computed as such (<code>std::norm</code>), not as the square of the rounded <code>std::abs</code>.  <br /></td></tr>
 <tr class="separator:a10b1515bd9ae3fd66ccc63a9eec386d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a819ee9c2ffdba9ca59e60a0ba608b392" id="r_a819ee9c2ffdba9ca59e60a0ba608b392"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
 <tr class="memitem:a819ee9c2ffdba9ca59e60a0ba608b392"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceboost_1_1json.html#a819ee9c2ffdba9ca59e60a0ba608b392">boost::json::tag_invoke</a> (value_from_tag, value &amp;jv, const std::complex&lt; T &gt; &amp;c)</td></tr>
@@ -263,10 +263,10 @@ requires ( !(<a class="el" href="classcppqedutils_1_1MultiArrayView.html">TWO_TI
 <tr class="memitem:af77e0bcc9939ac341fc15ca6a581652b"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">double</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils.html#af77e0bcc9939ac341fc15ca6a581652b">cppqedutils::frobeniusNorm</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="classcppqedutils_1_1MultiArray.html">MultiArray</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">ma</a>)</td></tr>
 <tr class="memdesc:af77e0bcc9939ac341fc15ca6a581652b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frobenius norm: \(\sqrt{\sum_{i}|a_i|^2}\).  <br /></td></tr>
 <tr class="separator:af77e0bcc9939ac341fc15ca6a581652b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4ef43662a4bc8a7a481bdcac14dbe9a9" id="r_a4ef43662a4bc8a7a481bdcac14dbe9a9"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> TWO_TIMES_RANK&gt; </td></tr>
-<tr class="memitem:a4ef43662a4bc8a7a481bdcac14dbe9a9"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils.html#a4ef43662a4bc8a7a481bdcac14dbe9a9">cppqedutils::hermitianConjugateSelf</a> (<a class="el" href="classcppqedutils_1_1MultiArray.html">MultiArray</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">TWO_TIMES_RANK</a> &gt; &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">ma</a>)</td></tr>
-<tr class="memdesc:a4ef43662a4bc8a7a481bdcac14dbe9a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">In-place Hermitian conjugation of a rank-<code>2R</code> array interpreted as a square matrix.  <br /></td></tr>
-<tr class="separator:a4ef43662a4bc8a7a481bdcac14dbe9a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2b8f3a2cc99f33abbbf6c5356e07380a" id="r_a2b8f3a2cc99f33abbbf6c5356e07380a"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> TWO_TIMES_RANK&gt; </td></tr>
+<tr class="memitem:a2b8f3a2cc99f33abbbf6c5356e07380a"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils.html#a2b8f3a2cc99f33abbbf6c5356e07380a">cppqedutils::hermitianConjugateSelf</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">MultiArrayView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">TWO_TIMES_RANK</a> &gt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">mav</a>)</td></tr>
+<tr class="memdesc:a2b8f3a2cc99f33abbbf6c5356e07380a"><td class="mdescLeft">&#160;</td><td class="mdescRight">In-place Hermitian conjugation of a rank-<code>2R</code> matrix view <code>mav</code>.  <br /></td></tr>
+<tr class="separator:a2b8f3a2cc99f33abbbf6c5356e07380a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0a6a48cecc095920cb37af768a52bd30" id="r_a0a6a48cecc095920cb37af768a52bd30"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> TWO_TIMES_RANK&gt; </td></tr>
 <tr class="memitem:a0a6a48cecc095920cb37af768a52bd30"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils.html#a0a6a48cecc095920cb37af768a52bd30">cppqedutils::twoTimesRealPartOfSelf</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">MultiArrayView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">TWO_TIMES_RANK</a> &gt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">mav</a>)</td></tr>
 <tr class="memdesc:a0a6a48cecc095920cb37af768a52bd30"><td class="mdescLeft">&#160;</td><td class="mdescRight">In-place replacement of a rank-<code>2R</code> matrix view <code>mav</code> with <code>M + M†</code> (twice its Hermitian part).  <br /></td></tr>
@@ -566,7 +566,7 @@ requires ( !(<a class="el" href="classcppqedutils_1_1MultiArrayView.html">TWO_TI
 </table>
 </div><div class="memdoc">
 
-<p>Squared absolute value of a complex number: <code>|v|^2 = re^2 + im^2</code>. </p>
+<p>Squared absolute value of a complex number: <code>|v|^2 = re^2 + im^2</code>, computed as such (<code>std::norm</code>), not as the square of the rounded <code>std::abs</code>. </p>
 
 </div>
 </div>

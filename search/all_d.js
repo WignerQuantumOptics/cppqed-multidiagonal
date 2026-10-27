@@ -1,5 +1,9 @@
 var searchData=
 [
-  ['quantumoperator_0',['quantumoperator',['../namespacequantumoperator.html',1,'']]],
-  ['quantumoperator_3a_3amultidiagonal_1',['multidiagonal',['../namespacequantumoperator_1_1multidiagonal.html',1,'quantumoperator']]]
+  ['passbyvalue_5fv_0',['passByValue_v',['../namespacecppqedutils.html#a005a0e5ccde6979e0542edc31ff5c734',1,'cppqedutils']]],
+  ['passbyvalue_5fv_3c_20multiarray_3c_20t_2c_20rank_20_3e_20_3e_1',['passByValue_v&lt; MultiArray&lt; T, RANK &gt; &gt;',['../namespacecppqedutils.html#a71357bd53380a39de24f2573ae2a0827',1,'cppqedutils']]],
+  ['passbyvalue_5fv_3c_20multiarrayview_3c_20t_2c_20rank_20_3e_20_3e_2',['passByValue_v&lt; MultiArrayView&lt; T, RANK &gt; &gt;',['../namespacecppqedutils.html#a76e4cfe518bc6bdc37832d79ca9ea5ac',1,'cppqedutils']]],
+  ['performance_3',['Performance',['../index.html#autotoc_md8',1,'']]],
+  ['placeholder_4',['Placeholder',['../structcppqedutils_1_1multiarray_1_1Placeholder.html',1,'cppqedutils::multiarray']]],
+  ['project_5',['Integration into a CMake project',['../index.html#autotoc_md11',1,'']]]
 ];

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['offset_0',['offset',['../classcppqedutils_1_1MultiArrayView.html#accfc7d6cce10accec63a82bab146dfe3',1,'cppqedutils::MultiArrayView']]]
+  ['noinit_0',['noInit',['../namespacecppqedutils_1_1multiarray.html#adc41c385d48b014255479dd64c471286',1,'cppqedutils::multiarray']]]
 ];

@@ -34,7 +34,7 @@ window.MathJax = {
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.1.0</span>
+   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.4.0</span>
    </div>
    <div id="projectbrief">Multidiagonal sparse operator algebra for C++QED</div>
   </td>
@@ -103,13 +103,15 @@ $(document).ready(function(){initNavTree('todo.html',''); initResizable(); });
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><dl class="reflist">
-<dt>Member <a class="el" href="namespacecppqedutils_1_1multiarray.html#a052eb2fc720fbfd4b5a4f9aded9e0f22">cppqedutils::multiarray::zeroInit</a>  </dt>
+<dt>Member <a class="el" href="namespacecppqedutils_1_1multiarray.html#a141d944bbf338120de1560c8a7e33a76">cppqedutils::multiarray::_</a>  </dt>
+<dd><a class="anchor" id="_todo000002"></a>Generalize <code>operator()</code> slicing beyond <code>RANK==2</code>.  </dd>
+<dt>Member <a class="el" href="namespacecppqedutils_1_1multiarray.html#a8a41fb28cd9f60f887ee35ea98f6d770">cppqedutils::multiarray::zeroInit</a>  </dt>
 <dd><a class="anchor" id="_todo000005"></a>Use <code>T{}</code> instead of <code>T(0.)</code> for generality beyond numeric types.  </dd>
 <dt>Class <a class="el" href="classcppqedutils_1_1MultiArrayView.html">cppqedutils::MultiArrayView&lt; T, RANK &gt;</a>  </dt>
 <dd><a class="anchor" id="_todo000001"></a>Alternative design: <code>MultiArrayBase&lt;StorageType&gt;</code> parameterized on storage, unifying view and owning cases without inheritance.  </dd>
-<dt>Member <a class="el" href="classcppqedutils_1_1MultiArrayView.html#a79e56663ef9c362e615517abe0ef7ba4">cppqedutils::MultiArrayView&lt; T, RANK &gt;::operator()</a>  (std::convertible_to&lt; size_t &gt; auto i, multiarray::Placeholder) const</dt>
+<dt>Member <a class="el" href="classcppqedutils_1_1MultiArrayView.html#a79e56663ef9c362e615517abe0ef7ba4">cppqedutils::MultiArrayView&lt; T, RANK &gt;::operator()</a>  (std::convertible_to&lt; size_t &gt; auto i, <a class="el" href="structcppqedutils_1_1multiarray_1_1Placeholder.html" title="Sentinel type for rank-2 slice notation: mav(i, _) returns the i-th row as a rank-1 view.">multiarray::Placeholder</a>) const</dt>
 <dd><a class="anchor" id="_todo000003"></a>Generalize to arbitrary RANK.  </dd>
-<dt>Member <a class="el" href="classcppqedutils_1_1MultiArrayView.html#afd051e125cc3dbbc867a41e3a2364d45">cppqedutils::MultiArrayView&lt; T, RANK &gt;::operator()</a>  (multiarray::Placeholder, std::convertible_to&lt; size_t &gt; auto j) const</dt>
+<dt>Member <a class="el" href="classcppqedutils_1_1MultiArrayView.html#afd051e125cc3dbbc867a41e3a2364d45">cppqedutils::MultiArrayView&lt; T, RANK &gt;::operator()</a>  (<a class="el" href="structcppqedutils_1_1multiarray_1_1Placeholder.html" title="Sentinel type for rank-2 slice notation: mav(i, _) returns the i-th row as a rank-1 view.">multiarray::Placeholder</a>, std::convertible_to&lt; size_t &gt; auto j) const</dt>
 <dd><a class="anchor" id="_todo000004"></a>Generalize to arbitrary RANK. </dd>
 </dl>
 </div></div><!-- contents -->

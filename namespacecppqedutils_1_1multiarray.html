@@ -34,7 +34,7 @@ window.MathJax = {
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.1.0</span>
+   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.4.0</span>
    </div>
    <div id="projectbrief">Multidiagonal sparse operator algebra for C++QED</div>
   </td>
@@ -110,8 +110,8 @@ $(document).ready(function(){initNavTree('namespacecppqedutils_1_1multiarray.htm
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><b>Placeholder</b></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sentinel type for rank-2 slice notation: <code>mav(i, _)</code> returns the i-th row as a rank-1 view. <br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcppqedutils_1_1multiarray_1_1Placeholder.html">Placeholder</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sentinel type for rank-2 slice notation: <code>mav(i, _)</code> returns the i-th row as a rank-1 view.  <a href="structcppqedutils_1_1multiarray_1_1Placeholder.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
@@ -125,7 +125,7 @@ Typedefs</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:ad7a2d893811f70de1c658fc8fa1ed535" id="r_ad7a2d893811f70de1c658fc8fa1ed535"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> RANK&gt; </td></tr>
 <tr class="memitem:ad7a2d893811f70de1c658fc8fa1ed535"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">auto</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils_1_1multiarray.html#ad7a2d893811f70de1c658fc8fa1ed535">calculateStrides</a> (<a class="el" href="namespacecppqedutils.html#a12ee1aa9bcc9f978ca426b857c3f85ae">Extents</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; extents)</td></tr>
-<tr class="memdesc:ad7a2d893811f70de1c658fc8fa1ed535"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes row-major (last-index-fastest) strides from extents: <code>strides[0]=1</code>, <code>strides[i]=strides[i-1]*extents[i-1]</code>.  <br /></td></tr>
+<tr class="memdesc:ad7a2d893811f70de1c658fc8fa1ed535"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes first-index-fastest strides from extents (<code>std::layout_left</code>; column-major for rank 2): <code>strides[0]=1</code>, <code>strides[i]=strides[i-1]*extents[i-1]</code>.  <br /></td></tr>
 <tr class="separator:ad7a2d893811f70de1c658fc8fa1ed535"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a218d434137539b1d518baf503fb783aa" id="r_a218d434137539b1d518baf503fb783aa"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> RANK&gt; </td></tr>
 <tr class="memitem:a218d434137539b1d518baf503fb783aa"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">auto</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils_1_1multiarray.html#a218d434137539b1d518baf503fb783aa">calculateExtent</a> (<a class="el" href="namespacecppqedutils.html#a12ee1aa9bcc9f978ca426b857c3f85ae">Extents</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; extents)</td></tr>
@@ -138,14 +138,16 @@ Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:ada33ace45527080579f4830f35c73cc5" id="r_ada33ace45527080579f4830f35c73cc5"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">typename</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a> &gt; </td></tr>
-<tr class="memitem:ada33ace45527080579f4830f35c73cc5"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">auto</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils_1_1multiarray.html#ada33ace45527080579f4830f35c73cc5">noInit</a> = [] (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>) -&gt; std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt; {<a class="el" href="classcppqedutils_1_1MultiArrayView.html">return</a> std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt;(<a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>);}</td></tr>
-<tr class="memdesc:ada33ace45527080579f4830f35c73cc5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializer that allocates storage of size <code>e</code> without value-initializing elements.  <br /></td></tr>
-<tr class="separator:ada33ace45527080579f4830f35c73cc5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a052eb2fc720fbfd4b5a4f9aded9e0f22" id="r_a052eb2fc720fbfd4b5a4f9aded9e0f22"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">typename</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a> &gt; </td></tr>
-<tr class="memitem:a052eb2fc720fbfd4b5a4f9aded9e0f22"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">auto</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils_1_1multiarray.html#a052eb2fc720fbfd4b5a4f9aded9e0f22">zeroInit</a> = [] (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>) -&gt; std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt; {<a class="el" href="classcppqedutils_1_1MultiArrayView.html">return</a> std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt;(<a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>,<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>(0.));}</td></tr>
-<tr class="memdesc:a052eb2fc720fbfd4b5a4f9aded9e0f22"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializer that allocates storage of size <code>e</code> and zero-initializes all elements via <code>T(0.)</code>.  <br /></td></tr>
-<tr class="separator:a052eb2fc720fbfd4b5a4f9aded9e0f22"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a141d944bbf338120de1560c8a7e33a76" id="r_a141d944bbf338120de1560c8a7e33a76"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">constexpr</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">struct</a> <a class="el" href="structcppqedutils_1_1multiarray_1_1Placeholder.html">cppqedutils::multiarray::Placeholder</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecppqedutils_1_1multiarray.html#a141d944bbf338120de1560c8a7e33a76">_</a></td></tr>
+<tr class="separator:a141d944bbf338120de1560c8a7e33a76"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc41c385d48b014255479dd64c471286" id="r_adc41c385d48b014255479dd64c471286"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">typename</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a> &gt; </td></tr>
+<tr class="memitem:adc41c385d48b014255479dd64c471286"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">constexpr</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">auto</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils_1_1multiarray.html#adc41c385d48b014255479dd64c471286">noInit</a> = [] (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>) -&gt; std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt; {<a class="el" href="classcppqedutils_1_1MultiArrayView.html">return</a> std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt;(<a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>);}</td></tr>
+<tr class="memdesc:adc41c385d48b014255479dd64c471286"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializer for storage of size <code>e</code> whose contents the caller overwrites before reading them.  <br /></td></tr>
+<tr class="separator:adc41c385d48b014255479dd64c471286"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8a41fb28cd9f60f887ee35ea98f6d770" id="r_a8a41fb28cd9f60f887ee35ea98f6d770"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">typename</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a> &gt; </td></tr>
+<tr class="memitem:a8a41fb28cd9f60f887ee35ea98f6d770"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">constexpr</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">auto</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecppqedutils_1_1multiarray.html#a8a41fb28cd9f60f887ee35ea98f6d770">zeroInit</a> = [] (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>) -&gt; std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt; {<a class="el" href="classcppqedutils_1_1MultiArrayView.html">return</a> std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt;(<a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>,<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>(0.));}</td></tr>
+<tr class="memdesc:a8a41fb28cd9f60f887ee35ea98f6d770"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializer that allocates storage of size <code>e</code> and zero-initializes all elements via <code>T(0.)</code>.  <br /></td></tr>
+<tr class="separator:a8a41fb28cd9f60f887ee35ea98f6d770"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
 <a id="a34604eaec6dcff606e5f8975d1407209" name="a34604eaec6dcff606e5f8975d1407209"></a>
@@ -207,7 +209,8 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
       </table>
 </div><div class="memdoc">
 
-<p>Computes row-major (last-index-fastest) strides from extents: <code>strides[0]=1</code>, <code>strides[i]=strides[i-1]*extents[i-1]</code>. </p>
+<p>Computes first-index-fastest strides from extents (<code>std::layout_left</code>; column-major for rank 2): <code>strides[0]=1</code>, <code>strides[i]=strides[i-1]*extents[i-1]</code>. </p>
+<p>This is the memory layout of every owning <code><a class="el" href="classcppqedutils_1_1MultiArray.html" title="Owning, move-only, rank-RANK array. Non-copyable; follows value semantics regarding constness.">MultiArray</a></code>. Note that <code>incrementMultiIndex</code> iterates in the opposite order (last index fastest). </p>
 
 </div>
 </div>
@@ -234,36 +237,67 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">typenam
 </div>
 </div>
 <h2 class="groupheader">Variable Documentation</h2>
-<a id="ada33ace45527080579f4830f35c73cc5" name="ada33ace45527080579f4830f35c73cc5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ada33ace45527080579f4830f35c73cc5">&#9670;&#160;</a></span>noInit</h2>
+<a id="a141d944bbf338120de1560c8a7e33a76" name="a141d944bbf338120de1560c8a7e33a76"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a141d944bbf338120de1560c8a7e33a76">&#9670;&#160;</a></span>_</h2>
 
 <div class="memitem">
 <div class="memproto">
-<div class="memtemplate">
-template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">typename</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a> &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">auto</a> cppqedutils::multiarray::noInit = [] (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>) -&gt; std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt; {<a class="el" href="classcppqedutils_1_1MultiArrayView.html">return</a> std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt;(<a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>);}</td>
+          <td class="memname"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">constexpr</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">struct</a> <a class="el" href="structcppqedutils_1_1multiarray_1_1Placeholder.html">cppqedutils::multiarray::Placeholder</a> cppqedutils::multiarray::_</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Initializer that allocates storage of size <code>e</code> without value-initializing elements. </p>
-
 </div>
 </div>
-<a id="a052eb2fc720fbfd4b5a4f9aded9e0f22" name="a052eb2fc720fbfd4b5a4f9aded9e0f22"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a052eb2fc720fbfd4b5a4f9aded9e0f22">&#9670;&#160;</a></span>zeroInit</h2>
+<a id="adc41c385d48b014255479dd64c471286" name="adc41c385d48b014255479dd64c471286"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adc41c385d48b014255479dd64c471286">&#9670;&#160;</a></span>noInit</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">typename</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a> &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">auto</a> cppqedutils::multiarray::zeroInit = [] (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>) -&gt; std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt; {<a class="el" href="classcppqedutils_1_1MultiArrayView.html">return</a> std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt;(<a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>,<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>(0.));}</td>
+          <td class="memname"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">constexpr</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">auto</a> cppqedutils::multiarray::noInit = [] (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>) -&gt; std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt; {<a class="el" href="classcppqedutils_1_1MultiArrayView.html">return</a> std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt;(<a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>);}</td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Initializer for storage of size <code>e</code> whose contents the caller overwrites before reading them. </p>
+<dl class="section note"><dt>Note</dt><dd><code>std::vector&lt;T&gt;(e)</code> value-initializes, so the storage is currently zero-filled after all. Don't rely on that: truly uninitialized storage would need a default-initializing allocator. </dd></dl>
+
+</div>
+</div>
+<a id="a8a41fb28cd9f60f887ee35ea98f6d770" name="a8a41fb28cd9f60f887ee35ea98f6d770"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8a41fb28cd9f60f887ee35ea98f6d770">&#9670;&#160;</a></span>zeroInit</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">typename</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a> &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">constexpr</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">auto</a> cppqedutils::multiarray::zeroInit = [] (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> <a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>) -&gt; std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt; {<a class="el" href="classcppqedutils_1_1MultiArrayView.html">return</a> std::vector&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>&gt;(<a class="el" href="classcppqedutils_1_1MultiArrayView.html">e</a>,<a class="el" href="classcppqedutils_1_1MultiArrayView.html">T</a>(0.));}</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">constexpr</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>Initializer that allocates storage of size <code>e</code> and zero-initializes all elements via <code>T(0.)</code>. </p>
