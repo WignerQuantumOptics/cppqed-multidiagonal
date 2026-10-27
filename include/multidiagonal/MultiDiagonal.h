@@ -151,8 +151,13 @@ struct MultiDiagonal
 
   friend MultiDiagonal hermitianConjugateOf(const MultiDiagonal& md) {MultiDiagonal res(copy(md)); res.hermitianConjugate(); return res;}
 
+  /// @brief \f$A+A^\dagger = 2\,\mathrm{Re}A\f$, which is Hermitian.
   friend MultiDiagonal twoTimesRealPartOf(const MultiDiagonal& md) {return md+hermitianConjugateOf(md);}
-  friend MultiDiagonal twoTimesImagPartOf(const MultiDiagonal& md) {return md-hermitianConjugateOf(md);}
+
+  /// @brief \f$A-A^\dagger = 2i\,\mathrm{Im}A\f$, which is anti-Hermitian.
+  ///
+  /// This is \f$H/i\f$ for \f$H=i(A-A^\dagger)\f$, e.g. a coherent drive \f$H=i(\eta a^\dagger-\eta^*a)\f$ with \f$A=\eta a^\dagger\f$.
+  friend MultiDiagonal twoITimesImagPartOf(const MultiDiagonal& md) {return md-hermitianConjugateOf(md);}
   //@}
 
 

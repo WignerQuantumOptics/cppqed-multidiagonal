@@ -222,7 +222,20 @@ TEST_CASE("addition, subtraction, scalar algebra, real/imag parts", "[multidiago
   CHECK(densify(a - a).norm() < tol);
   CHECK(approxEqual(densify(2.*a/2.), da));
   CHECK(approxEqual(densify(twoTimesRealPartOf(a)), da + da.adjoint()));
-  CHECK(approxEqual(densify(twoTimesImagPartOf(a)), da - da.adjoint()));
+  CHECK(approxEqual(densify(twoITimesImagPartOf(a)), da - da.adjoint()));
+}
+
+
+TEST_CASE("twoTimesRealPartOf is Hermitian, twoITimesImagPartOf anti-Hermitian, on a complex operator — #22", "[multidiagonal][contract]")
+{
+  auto c = complexTridiag(4, 0.3);
+  const CMatrix dc = densify(c), re = densify(twoTimesRealPartOf(c)), im = densify(twoITimesImagPartOf(c));
+
+  CHECK(approxEqual(re, dc + dc.adjoint()));
+  CHECK(approxEqual(im, dc - dc.adjoint()));
+  CHECK(approxEqual(re.adjoint(), re));
+  CHECK(approxEqual(im.adjoint(), -im));
+  CHECK(im.norm() > 1.);                    // the witness has a genuine anti-Hermitian part
 }
 
 
