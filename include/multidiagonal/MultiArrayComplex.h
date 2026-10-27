@@ -158,20 +158,21 @@ double frobeniusNormSqr(const MultiArray<dcomp,RANK>& ma) { return std::ranges::
 template <size_t RANK>
 double frobeniusNorm(const MultiArray<dcomp,RANK>& ma) { return sqrt( frobeniusNormSqr(ma) ); }
 
-/// @brief In-place Hermitian conjugation of a rank-`2R` array interpreted as a square matrix.
+/// @brief In-place Hermitian conjugation of a rank-`2R` matrix view @p mav.
 ///
-/// Transposes and conjugates simultaneously: swaps `(i,j)` and `(j,i)` while conjugating both,
-/// then conjugates the diagonal in place. Operates directly on flat storage.
+/// Conjugates the diagonal, and swaps `(i,j)` and `(j,i)` while conjugating both.
+/// Operates directly on flat storage, so @p mav must be full and contiguous (checked by `checkContiguous`
+/// in debug builds); pass an owning array as `ma.mutableView()`.
 template <size_t TWO_TIMES_RANK>
-void hermitianConjugateSelf(MultiArray<dcomp,TWO_TIMES_RANK>& ma)
+void hermitianConjugateSelf(MultiArrayView<dcomp,TWO_TIMES_RANK> mav)
 {
-  const size_t matrixDim = multiarray::calculateExtent(halveExtents(ma.extents));
+  checkContiguous(mav,"hermitianConjugateSelf");
+  const size_t matrixDim = multiarray::calculateExtent(halveExtents(mav.extents));
+  auto _=[&] (size_t i, size_t j) -> dcomp& {return mav.dataView[i+matrixDim*j];};
   for (size_t i=0; i<matrixDim; ++i) {
-    ma.dataStorage()[i+matrixDim*i]=conj(ma.dataStorage()[i+matrixDim*i]);
+    _(i,i)=conj(_(i,i));
     for (size_t j=i+1; j<matrixDim; ++j) {
-      dcomp
-        &u=ma.dataStorage()[i+matrixDim*j],
-        &l=ma.dataStorage()[j+matrixDim*i];
+      dcomp &u=_(i,j), &l=_(j,i);
       u=conj(u); l=conj(l);
       std::swap(u, l);
     }
@@ -184,9 +185,12 @@ void hermitianConjugateSelf(MultiArray<dcomp,TWO_TIMES_RANK>& ma)
 /// `mav(i,j) + conj(mav(j,i))`, and `mav(j,i)` its conjugate.
 /// C++QED's master equation uses it to complete \f$(H_\text{eff}/i)\rho\f$ to
 /// \f$(H_\text{eff}/i)\rho + \rho\,(H_\text{eff}/i)^\dagger\f$, and to make \f$\rho\f$ exactly Hermitian after each step.
+/// Operates directly on flat storage, so @p mav must be full and contiguous (checked by `checkContiguous`
+/// in debug builds).
 template <size_t TWO_TIMES_RANK>
 void twoTimesRealPartOfSelf(MultiArrayView<dcomp,TWO_TIMES_RANK> mav)
 {
+  checkContiguous(mav,"twoTimesRealPartOfSelf");
   const size_t matrixDim = multiarray::calculateExtent(halveExtents(mav.extents));
   auto _=[&] (size_t i, size_t j) -> dcomp& {return mav.dataView[i+matrixDim*j];};
   for (size_t i=0; i<matrixDim; ++i) {

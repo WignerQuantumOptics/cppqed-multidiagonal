@@ -95,6 +95,9 @@ ctest --test-dir build --output-on-failure
     docstrings say so (#13).
 - Views (`MultiArrayView`, `MultiArrayConstView`) are passed by value, like `std::span`.
   `MultiArray` owns its data and is move-only. `passByValue_v<T>` encodes this split.
+- `hermitianConjugateSelf` and `twoTimesRealPartOfSelf` take views, because C++QED's
+  master equation has its ODE derivative only as a view. They address the flat storage,
+  so the view must be full and contiguous; `checkContiguous` enforces this in Debug (#8).
 - Beware dangling `dataView`/iterators whenever storage is reallocated (finding F3 was
   `load()`). `std::vector` move preserves the buffer, but reallocation does not.
 - `Placeholder` slicing exists only for RANK==2.

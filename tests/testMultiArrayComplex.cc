@@ -132,7 +132,7 @@ TEST_CASE("hermitianConjugateSelf: off-diagonal part", "[complex]")
   MultiArray<dcomp,2> m{{3,3}, multiarray::zeroInit<dcomp>};
   for (size_t i=0;i<3;++i) for (size_t j=0;j<3;++j) m(i,j)=dcomp(1.+i, double(j));
   auto h = copy(m);
-  hermitianConjugateSelf(h);
+  hermitianConjugateSelf(h.mutableView());
   for (size_t i=0;i<3;++i) for (size_t j=0;j<3;++j) if (i!=j) CHECK(h(i,j) == conj(m(j,i)));
 }
 
@@ -141,7 +141,7 @@ TEST_CASE("hermitianConjugateSelf conjugates the diagonal — finding F4", "[com
 {
   MultiArray<dcomp,2> m{{2,2}, multiarray::zeroInit<dcomp>};
   m(0,0)=1.+2i; m(1,1)=-3i; m(0,1)=1.; m(1,0)=2i;
-  hermitianConjugateSelf(m);
+  hermitianConjugateSelf(m.mutableView());
   CHECK(m(0,0) == 1.-2i);
   CHECK(m(1,1) == 3i);
 }
@@ -166,9 +166,21 @@ TEST_CASE("twoTimesRealPartOfSelf: diagonal equals 2·Re — finding F5", "[comp
   m(0,0)=3.+1i; m(1,1)=-2.+4i;
   auto expected0 = 2.*real(m(0,0)), expected1 = 2.*real(m(1,1));
   twoTimesRealPartOfSelf(m.mutableView());
-  CHECK(m(0,0) == dcomp(expected0));   // currently 4·Re as written
+  CHECK(m(0,0) == dcomp(expected0));
   CHECK(m(1,1) == dcomp(expected1));
 }
+
+
+#ifndef NDEBUG
+TEST_CASE("hermitianConjugateSelf and twoTimesRealPartOfSelf reject a sub-block view in debug builds — #8", "[complex][contract]")
+{
+  MultiArray<dcomp,2> m{{3,3}, multiarray::zeroInit<dcomp>};
+  MultiArrayView<dcomp,2> block{{2,2}, m.strides, 1+3*1, m.dataStorage()};   // rows and columns 1..2
+  CHECK_THROWS_AS(hermitianConjugateSelf(block), std::invalid_argument);
+  CHECK_THROWS_AS(twoTimesRealPartOfSelf(block), std::invalid_argument);
+  CHECK_NOTHROW(hermitianConjugateSelf(m.mutableView()));
+}
+#endif
 
 
 TEST_CASE("JSON round trip for dcomp and complex arrays — finding F7 if this file fails to COMPILE", "[complex][json]")

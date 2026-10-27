@@ -270,6 +270,21 @@ auto copyInit(const std::ranges::sized_range auto& input) {return [&] (size_t e)
 } // multiarray
 
 
+/// @brief Debug-mode check that a view covers its storage as an owning `MultiArray` of the same extents
+/// would: offset 0 and first-index-fastest strides. Throws `std::invalid_argument` otherwise.
+/// For functions that address the flat storage directly; a sub-block or slice view fails it.
+template <typename T, size_t RANK>
+void checkContiguous(MultiArrayView<T,RANK> mav, std::string message)
+{
+#ifndef   NDEBUG
+  if (mav.offset!=0 || mav.strides!=multiarray::calculateStrides(mav.extents))
+    throw std::invalid_argument(message+" needs a full, contiguous array; got offset "+std::to_string(mav.offset)+" and strides "+toStringJSON(mav.strides));
+#else
+  (void)mav; (void)message; // silence unused warnings
+#endif // NDEBUG
+}
+
+
 /// @brief Owning, move-only, rank-`RANK` array. Non-copyable; follows value semantics regarding constness.
 /**
  * Derives from `MultiArrayConstView<T,RANK>` to expose the full view interface.
