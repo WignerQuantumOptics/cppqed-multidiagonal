@@ -11,6 +11,7 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -22,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build libboost-all-dev libeigen3-dev g++-14 clang-18
+          sudo apt-get install -y ninja-build libboost-dev libboost-json-dev libboost-serialization-dev libeigen3-dev g++-14 clang-18
 
       - name: Configure
         run: >
@@ -43,6 +44,7 @@ jobs:
 
   sanitizers:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     env:
       SANITIZE: -fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer
       ASAN_OPTIONS: detect_leaks=1:abort_on_error=1
@@ -53,7 +55,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build libboost-all-dev libeigen3-dev clang-18
+          sudo apt-get install -y ninja-build libboost-dev libboost-json-dev libboost-serialization-dev libeigen3-dev clang-18
 
       - name: Configure
         run: >
@@ -77,6 +79,7 @@ jobs:
   # (find_package) and as a pinned FetchContent subproject, under the documented target name.
   consumer:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -85,7 +88,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build libboost-all-dev libeigen3-dev g++-14
+          sudo apt-get install -y ninja-build libboost-dev libboost-json-dev libboost-serialization-dev libeigen3-dev g++-14
 
       - name: Install the library
         run: |
