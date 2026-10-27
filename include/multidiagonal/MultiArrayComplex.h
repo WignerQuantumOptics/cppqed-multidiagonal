@@ -42,8 +42,9 @@ double relativeDeviation(const auto& a, const auto& b)
   return den==0. ? 0. : std::abs(a-b)/den;
 }
 
-/// @brief Squared absolute value of a complex number: `|v|^2 = re^2 + im^2`.
-inline double sqrAbs(dcomp v) {return sqr(std::abs(v));}
+/// @brief Squared absolute value of a complex number: `|v|^2 = re^2 + im^2`, computed as such
+/// (`std::norm`), not as the square of the rounded `std::abs`.
+inline double sqrAbs(dcomp v) {return std::norm(v);}
 
 
 namespace boost::json {

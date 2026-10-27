@@ -83,7 +83,7 @@ namespace multiarray {
 
 /// @brief Sentinel type for rank-2 slice notation: `mav(i, _)` returns the i-th row as a rank-1 view.
 /// @todo Generalize `operator()` slicing beyond `RANK==2`.
-static constexpr struct Placeholder {} _;
+inline constexpr struct Placeholder {} _{};
 
 } // multiarray
 
@@ -242,14 +242,16 @@ auto calculateExtent(Extents<RANK> extents)
   return std::ranges::fold_left(extents,1uz,std::multiplies{});
 }
 
-/// @brief Initializer that allocates storage of size `e` without value-initializing elements.
+/// @brief Initializer for storage of size `e` whose contents the caller overwrites before reading them.
+/// @note `std::vector<T>(e)` value-initializes, so the storage is currently zero-filled after all.
+/// Don't rely on that: truly uninitialized storage would need a default-initializing allocator.
 template <typename T>
-const auto noInit = [] (size_t e) -> std::vector<T> {return std::vector<T>(e);};
+inline constexpr auto noInit = [] (size_t e) -> std::vector<T> {return std::vector<T>(e);};
 
 /// @brief Initializer that allocates storage of size `e` and zero-initializes all elements via `T(0.)`.
 /// @todo Use `T{}` instead of `T(0.)` for generality beyond numeric types.
 template <typename T>
-const auto zeroInit = [] (size_t e) -> std::vector<T> {return std::vector<T>(e,T(0.));};
+inline constexpr auto zeroInit = [] (size_t e) -> std::vector<T> {return std::vector<T>(e,T(0.));};
 
 
 /// @brief Underlying storage type: `std::vector<T>`. May eventually be replaced by `kokkos::View` or `std::valarray`.
@@ -294,7 +296,7 @@ public:
     this->dataView=std::span<T>(data_);
   }
 
-  /// @brief Constructs an uninitialized array with given extents.
+  /// @brief Constructs an array with given extents and unspecified contents (see `multiarray::noInit`).
   explicit MultiArray(Extents<RANK> extents) : MultiArray{extents,multiarray::noInit<T>} {}
 
   // @brief Rank-1 constructor from an existing storage vector (copies the data).

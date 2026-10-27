@@ -38,7 +38,8 @@ using namespace cppqedutils;
 /// negates the key and conjugates the values **without reindexing**.
 /// The invariant \f$\text{extent}_i + |o_i| = D_i\f$ holds for every diagonal and is enforced by
 /// `calculateAndCheckDimensions`; entries that are structurally zero (created e.g. by composition)
-/// are stored explicitly as zeros to preserve it.
+/// are stored explicitly as zeros to preserve it. A diagonal with \f$|o_i|=D_i\f$ on some axis has no
+/// entries (e.g. \f$a\f$ for a cutoff of 1); it is a structural zero, and application skips it.
 ///
 /// ### Time dependence
 /// `MultiDiagonal` is time-independent and carries no frequencies. Interaction-picture time dependence —
@@ -67,7 +68,9 @@ struct MultiDiagonal
   MultiDiagonal(const MultiDiagonal&) = delete; MultiDiagonal& operator=(const MultiDiagonal&) = delete;
   MultiDiagonal(MultiDiagonal&&) = default; MultiDiagonal& operator=(MultiDiagonal&&) = default;
 
-  explicit MultiDiagonal(auto&&... args) : diagonals{FWD(args)...} {}
+  /// @brief Forwards @p args to the diagonal map. Constrained, so that a non-const lvalue `MultiDiagonal`
+  /// reaches the deleted copy constructor rather than this one.
+  explicit MultiDiagonal(auto&&... args) requires std::constructible_from<Diagonals,decltype(args)...> : diagonals{FWD(args)...} {}
 
   /// @brief Named deep copy.
   friend MultiDiagonal copy(const MultiDiagonal& md)
@@ -90,6 +93,8 @@ struct MultiDiagonal
 #endif // NDEBUG
 
     for (const auto& [offsets,diag] : diagonals) {
+
+      if (diag.dataView.empty()) continue; // |o|=D on some axis: a structural zero
 
       Dimensions ubound{psi.extents}, lboundLHS{}, lboundRHS{};
       for (auto&& [o,u,lL,lR] : std::views::zip(offsets,ubound,lboundLHS,lboundRHS)) {

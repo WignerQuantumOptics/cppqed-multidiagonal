@@ -26,6 +26,12 @@ TEST_CASE("scalar helpers", "[complex]")
 }
 
 
+TEST_CASE("sqrAbs is exactly re²+im², not the square of the rounded abs — #12", "[complex][contract]")
+{
+  CHECK(sqrAbs(1.+1i) == 2.); // |1+i| = √2 rounds, and its square is 2.0000000000000004
+}
+
+
 TEST_CASE("relativeDeviation(0,0) returns 0 as documented — finding F6", "[complex][contract]")
 {
   CHECK(relativeDeviation(0.,0.) == 0.);

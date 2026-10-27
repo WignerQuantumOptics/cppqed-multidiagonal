@@ -100,6 +100,13 @@ TEST_CASE("MultiDiagonal is move-only", "[multidiagonal]")
 }
 
 
+TEST_CASE("a non-const lvalue doesn't match the variadic constructor — #12", "[multidiagonal][contract]")
+{
+  STATIC_REQUIRE(!std::is_constructible_v<MultiDiagonal<1>, MultiDiagonal<1>&>);
+  STATIC_REQUIRE( std::is_constructible_v<MultiDiagonal<1>, MultiDiagonal<1>::Diagonals>);
+}
+
+
 // ── representation and application ───────────────────────────────────────────
 
 TEST_CASE("identity densifies to the identity matrix", "[multidiagonal]")
@@ -138,6 +145,17 @@ TEST_CASE("the empty operator is a no-op", "[multidiagonal]")
   psi(0)=1.;
   CHECK_NOTHROW(zero(0., psi, d));
   CHECK(d(0) == 0.);
+}
+
+
+TEST_CASE("a zero-extent diagonal on a non-leading axis is skipped in application — #12", "[multidiagonal][contract]")
+{
+  using quantumoperator::multidiagonal::identity;
+  auto a1 = destroy(1);                               // cutoff 1: |o| = D, no entries
+  REQUIRE(a1.diagonals.begin()->second.extents == Extents<1>{0});
+  auto op = identity(3)*identity(1) + identity(3)*a1; // the zero-extent diagonal sits on axis 1
+  REQUIRE(op.diagonals.size() == 2);
+  CHECK(approxEqual(densify(op), CMatrix::Identity(3,3)));
 }
 
 
