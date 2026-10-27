@@ -8,13 +8,13 @@ A header-only C++ library implementing sparse multidiagonal operator algebra for
 
 ## What is a multidiagonal operator?
 
-A multidiagonal operator over a Hilbert space of dimension $N$ is a sparse matrix storing an arbitrary set of diagonals at arbitrary offsets. In the context of quantum optics and cavity QED, Hamiltonians and jump operators naturally take this form. For example, the harmonic oscillator ladder operators $a$, $a^\dagger$ are single off-diagonals; number operators $a^\dagger a$ are main diagonals; nonlinear terms like $(a^\dagger)^2 a^2$ are further off-diagonals.
+A multidiagonal operator over a Hilbert space of dimension $N$ is a sparse matrix storing an arbitrary set of diagonals at arbitrary offsets. In the context of quantum optics and cavity QED, Hamiltonians and jump operators naturally take this form. For example, the harmonic oscillator ladder operators $a$, $a^\dagger$ are single off-diagonals; number operators $a^\dagger a$ are main diagonals, and so is the Kerr term $(a^\dagger)^2 a^2 = a^\dagger a\,(a^\dagger a - 1)$; two-photon terms like $a^2$ sit two diagonals off the main one.
 
-For composite systems of arity $M$, `MultiDiagonal<RANK>` stores tensor-product-structured operators of the form
+For a composite system of $R$ subsystems, `MultiDiagonal<RANK>` stores an operator of the form
 
-$$H/i = \bigotimes_{m=0}^{M-1} \sum_{i_m \in \mathbb{K}_m} \sum_{n_m=0}^{N_m-1-i_m} \alpha^{i_m}_{m,n} \left|n_m+i_m\right\rangle\left\langle n_m\right|$$
+$$A = \sum_{\mathbf{o} \in \mathbb{K}} \sum_{\mathbf{n}} \alpha^{\mathbf{o}}_{\mathbf{n}} \left|\mathbf{n}\right\rangle\left\langle \mathbf{n}+\mathbf{o}\right|$$
 
-with $\mathbb{K}_m$ an **arbitrary** set of *signed* offsets per subsystem axis.
+with $\mathbb{K} \subset \mathbb{Z}^R$ an **arbitrary** set of *signed* offset vectors, one entry per subsystem axis, and $\mathbf{n}$ running over the multi-indices for which both $\mathbf{n}$ and $\mathbf{n}+\mathbf{o}$ lie in the truncated Hilbert space. A positive entry thus means an upper diagonal on that axis. The coefficients need not factorize over the subsystems; direct products, built with `operator*`, are the special case where they do.
 
 ## The signed-offset representation
 
@@ -24,7 +24,7 @@ Each diagonal is keyed by a signed offset per axis — positive = upper, negativ
 - **Hermitian conjugation**: negation of all offsets (plus conjugation of the stored values)
 - **direct product**: concatenation of the offset arrays, reflecting the tensor product structure exactly
 
-The diagonal at signed offset $o$ (per axis, dimension $D$) has extent $D-|o|$, and entry $k$ holds the matrix element $A_{k+o^-,\,k+o^+}$ with $o^\pm=\max(\pm o,0)$. This min(row,col)-anchored storage is symmetric under transposition, which is what makes conjugation a pure key negation. Application as $H/i$ on a state vector costs $O(N \cdot d)$ for $d$ diagonals; composition costs $O(d_A \cdot d_B)$ diagonal pairs — far cheaper than a general sparse–sparse multiply.
+The diagonal at signed offset $o$ (per axis, dimension $D$) has extent $D-|o|$, and entry $k$ holds the matrix element $A_{k+o^-,\,k+o^+}$ with $o^\pm=\max(\pm o,0)$. This min(row,col)-anchored storage is symmetric under transposition, which is what makes conjugation a pure key negation. Application to a state vector costs $O(N \cdot d)$ for $d$ diagonals; composition runs over the $d_A \cdot d_B$ diagonal pairs, each in one pass over the window where the two diagonals overlap.
 
 ## Why not `Tridiagonal`?
 
@@ -36,12 +36,16 @@ The truncated algebra is represented *exactly*, including its physical deviation
 
 - **Arbitrary rank**: `MultiDiagonal<RANK>` for any compile-time arity $M$, including composition at arbitrary rank
 - **Closed algebra**: composition, direct product, addition, scalar multiplication, Hermitian conjugation — with exact signed-offset arithmetic
-- **Efficient application**: applies as $H/i$ on a state vector via strided multi-index iteration, with compile-time loop unrolling via Boost.Hana
+- **Application**: accumulates $A\psi$ into a state vector via strided multi-index iteration, with compile-time loop unrolling via Boost.Hana. It applies no factor $1/i$: C++QED's convention is to store $A = H/i$.
 - **Move-only semantics**: no accidental copies of large diagonal arrays; deep copies are explicit (`copy`)
 - **Deterministic results**: diagonals are stored in an ordered map keyed by signed offsets, so accumulation order in composition is well-defined and reproducible across platforms
 - **JSON serialization**: via Boost.JSON `tag_invoke`, useful for testing and debugging
-- **Time dependence**: interaction-picture time dependence ($\alpha_{m,n} e^{\delta_{m,n} t}$) is handled by a companion frequency object in C++QED proper, keeping this library unconditionally time-independent
+- **No time dependence**: operators carry no frequencies. Interaction-picture time dependence ($\alpha_{m,n} e^{\delta_{m,n} t}$) belongs to the consumer; in C++QED the trajectory owns the interaction picture
 - **Property-tested**: the algebraic identities — associativity, $(A|B)^\dagger = B^\dagger|A^\dagger$, distributivity, the mixed-product law $(A{\otimes}B)|(C{\otimes}D) = (A|C){\otimes}(B|D)$ — are verified against dense-matrix oracles in CI
+
+## Performance
+
+Application is on par with Eigen's sparse matrices for operators acting on one axis, but currently 2–2.7× **slower** for operators acting on several axes, such as the Jaynes–Cummings coupling ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)). The benchmarks in `benchmarks/` are being reworked ([#5](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/5)), so other figures are not quoted here.
 
 ## Requirements
 
@@ -64,18 +68,19 @@ ctest --test-dir build --output-on-failure
 
 ## Integration into a CMake project
 
-### As a submodule (recommended for C++QED development)
-
-```bash
-git submodule add https://github.com/WignerQuantumOptics/cppqed-multidiagonal extern/cppqed-multidiagonal
-```
-
-In your `CMakeLists.txt`:
+### Via FetchContent (as C++QED does)
 
 ```cmake
-add_subdirectory(extern/cppqed-multidiagonal)
+include(FetchContent)
+FetchContent_Declare(cppqed-multidiagonal
+  GIT_REPOSITORY    https://github.com/WignerQuantumOptics/cppqed-multidiagonal.git
+  GIT_TAG           <full commit SHA of a release>
+  FIND_PACKAGE_ARGS 0.4)   # an installed version is used when found
+FetchContent_MakeAvailable(cppqed-multidiagonal)
 target_link_libraries(MyTarget PUBLIC cppqed::multidiagonal)
 ```
+
+A copy of the source tree in your project works too, via `add_subdirectory`.
 
 ### Via `find_package` (after installation)
 
@@ -100,8 +105,11 @@ include/multidiagonal/
 tests/
   testMultiArray.cc, testMultiArrayComplex.cc, testMultiDiagonal.cc
   consumer/ — downstream project used by CI (find_package and FetchContent)
+benchmarks/
+  benchmarkMultiDiagonal.cc, plot.py — comparison with Eigen sparse and dense
 cmake/
   cppqed-multidiagonalConfig.cmake.in
+Doxyfile, doxygen-math.sed — API docs; this README is their main page
 ```
 
 ## License

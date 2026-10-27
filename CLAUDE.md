@@ -22,6 +22,8 @@ tests/                Catch2 v3 suites: testMultiArray, testMultiArrayComplex, t
   consumer/           downstream CMake project for the CI consumer job
 benchmarks/           benchmarkMultiDiagonal.cc, plot.py
 cmake/                package config template
+Doxyfile              API docs; README.md is the main page, read through doxygen-math.sed
+                      (Doxygen 1.9 does not understand GitHub's $…$ math)
 ```
 
 - Consumers include the headers as `<multidiagonal/X.h>`, and they install there (#2).
