@@ -9,8 +9,8 @@ authors:
   - family-names: Vukics
     given-names: András
     affiliation: "HUN-REN Wigner Research Centre for Physics"
-version: 0.3.0
-date-released: 2026-10-26
+version: 0.4.0
+date-released: 2026-10-27
 license: BSL-1.0
 repository-code: "https://github.com/WignerQuantumOptics/cppqed-multidiagonal"
 url: "https://wignerquantumoptics.github.io/cppqed-multidiagonal/"

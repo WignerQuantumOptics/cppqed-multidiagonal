@@ -1,5 +1,5 @@
 PROJECT_NAME           = "cppqed-multidiagonal"
-PROJECT_NUMBER         = 0.1.0
+PROJECT_NUMBER         = 0.4.0
 PROJECT_BRIEF          = "Multidiagonal sparse operator algebra for C++QED"
 
 OUTPUT_DIRECTORY       = docs
