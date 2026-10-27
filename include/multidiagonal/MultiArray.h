@@ -46,7 +46,11 @@ template <size_t RANK>
 using Extents=std::array<size_t,RANK>;
 
 
-/// @brief Increments a multi-index in row-major (last-index-fastest) order, in-place.
+/// @brief Increments a multi-index in last-index-fastest order, in-place.
+///
+/// @note The iteration order is the opposite of the memory order: storage is first-index-fastest
+/// (see `multiarray::calculateStrides`), so successive multi-indices are not adjacent in memory
+/// unless all axes but the last have extent 1.
 ///
 /// The iteration pattern is: increment the last index; on overflow, reset it to zero and carry to the previous index.
 /// The loop termination guard is `idx[0] != extents[0]` — once the leading index overflows the array is exhausted.
@@ -218,7 +222,11 @@ bool isEqual(MultiArrayConstView<T1,RANK> m1, MultiArrayConstView<T2,RANK> m2)
 
 namespace multiarray {
 
-/// @brief Computes row-major (last-index-fastest) strides from extents: `strides[0]=1`, `strides[i]=strides[i-1]*extents[i-1]`.
+/// @brief Computes first-index-fastest strides from extents (`std::layout_left`; column-major for rank 2):
+/// `strides[0]=1`, `strides[i]=strides[i-1]*extents[i-1]`.
+///
+/// This is the memory layout of every owning `MultiArray`. Note that `incrementMultiIndex` iterates in the
+/// opposite order (last index fastest).
 template <size_t RANK>
 auto calculateStrides(Extents<RANK> extents)
 {

@@ -87,10 +87,10 @@ ctest --test-dir build --output-on-failure
 
 - Memory layout:
   - `calculateStrides` gives axis 0 stride 1, i.e. first index fastest (`layout_left`).
-  - The docstring says "row-major (last-index-fastest)", which is a **known
-    inconsistency**. Fix the docstring, not the code, and only as a deliberate change:
-    the layout claim underpins the leading-dimension performance argument and a possible
-    mdspan layout policy.
+    Don't change it: the layout underpins the leading-dimension performance argument and
+    a possible mdspan layout policy.
+  - `incrementMultiIndex` iterates in the opposite order, last index fastest. Both
+    docstrings say so (#13).
 - Views (`MultiArrayView`, `MultiArrayConstView`) are passed by value, like `std::span`.
   `MultiArray` owns its data and is move-only. `passByValue_v<T>` encodes this split.
 - Beware dangling `dataView`/iterators whenever storage is reallocated (finding F3 was
@@ -147,14 +147,13 @@ ctest --test-dir build --output-on-failure
 ## Open items (roughly in priority order)
 
 1. Fix multi-axis application performance (above).
-2. Reconcile the layout docstring.
-3. Decide on migrating to `std::mdspan`/`std::extents` (Kokkos reference implementation,
+2. Decide on migrating to `std::mdspan`/`std::extents` (Kokkos reference implementation,
    Apache-2.0, FetchContent-pinnable) versus writing the paper on the current
    architecture. **The decision is open; do not start the migration unasked.**
-4. README usage snippet. This waits on an API decision: whether test helpers like
+3. README usage snippet. This waits on an API decision: whether test helpers like
    `singleDiag`/`fromStorage` are the blessed construction idiom, or a small factory
    namespace graduates into the library.
-5. Deferred: install/export rules review; Boost.Serialization as an optional dependency.
+4. Deferred: install/export rules review; Boost.Serialization as an optional dependency.
 
 ## Style
 
