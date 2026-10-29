@@ -40,7 +40,10 @@ jobs:
 
       - name: Benchmark smoke run
         if: matrix.build_type == 'Release'
-        run: ./build/benchmarks/cppqed-multidiagonal-benchmarks --smoke > /dev/null
+        run: |
+          ./build/benchmarks/cppqed-multidiagonal-benchmarks --smoke > /dev/null
+          ./build/benchmarks/cppqed-multidiagonal-kernels --smoke > /dev/null
+          ./build/benchmarks/cppqed-multidiagonal-kernels-cxlr --smoke > /dev/null
 
   sanitizers:
     runs-on: ubuntu-24.04
@@ -73,7 +76,10 @@ jobs:
         run: ctest --test-dir build --output-on-failure
 
       - name: Benchmark smoke run
-        run: ./build/benchmarks/cppqed-multidiagonal-benchmarks --smoke > /dev/null
+        run: |
+          ./build/benchmarks/cppqed-multidiagonal-benchmarks --smoke > /dev/null
+          ./build/benchmarks/cppqed-multidiagonal-kernels --smoke > /dev/null
+          ./build/benchmarks/cppqed-multidiagonal-kernels-cxlr --smoke > /dev/null
 
   # tests/consumer is a separate downstream project: the library must work installed
   # (find_package) and as a pinned FetchContent subproject, under the documented target name.
