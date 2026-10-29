@@ -4,6 +4,9 @@ var searchData=
   ['passbyvalue_5fv_3c_20multiarray_3c_20t_2c_20rank_20_3e_20_3e_1',['passByValue_v&lt; MultiArray&lt; T, RANK &gt; &gt;',['../namespacecppqedutils.html#a71357bd53380a39de24f2573ae2a0827',1,'cppqedutils']]],
   ['passbyvalue_5fv_3c_20multiarrayview_3c_20t_2c_20rank_20_3e_20_3e_2',['passByValue_v&lt; MultiArrayView&lt; T, RANK &gt; &gt;',['../namespacecppqedutils.html#a76e4cfe518bc6bdc37832d79ca9ea5ac',1,'cppqedutils']]],
   ['performance_3',['Performance',['../index.html#autotoc_md8',1,'']]],
-  ['placeholder_4',['Placeholder',['../structcppqedutils_1_1multiarray_1_1Placeholder.html',1,'cppqedutils::multiarray']]],
-  ['project_5',['Integration into a CMake project',['../index.html#autotoc_md11',1,'']]]
+  ['performance_20of_20multidiagonal_3a_20measurements_20and_20outlook_4',['Performance of MultiDiagonal: measurements and outlook',['../md_benchmarks_2performance.html',1,'']]],
+  ['performance_2emd_5',['performance.md',['../performance_8md.html',1,'']]],
+  ['picture_6',['The interaction picture',['../md_benchmarks_2performance.html#autotoc_md23',1,'']]],
+  ['placeholder_7',['Placeholder',['../structcppqedutils_1_1multiarray_1_1Placeholder.html',1,'cppqedutils::multiarray']]],
+  ['project_8',['Integration into a CMake project',['../index.html#autotoc_md11',1,'']]]
 ];

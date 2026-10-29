@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['cppqed_20multidiagonal_0',['cppqed-multidiagonal',['../index.html',1,'']]]
+  ['and_20outlook_0',['Performance of MultiDiagonal: measurements and outlook',['../md_benchmarks_2performance.html',1,'']]]
 ];

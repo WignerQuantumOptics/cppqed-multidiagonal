@@ -39,6 +39,16 @@ var NAVTREE =
     [ "Repository structure", "index.html#autotoc_md14", null ],
     [ "License", "index.html#autotoc_md15", null ],
     [ "Authors", "index.html#autotoc_md16", null ],
+    [ "Performance of MultiDiagonal: measurements and outlook", "md_benchmarks_2performance.html", [
+      [ "Setup", "md_benchmarks_2performance.html#autotoc_md18", null ],
+      [ "Complex multiplication", "md_benchmarks_2performance.html#autotoc_md19", null ],
+      [ "The library's multi-axis loop", "md_benchmarks_2performance.html#autotoc_md20", null ],
+      [ "The bandwidth ceiling", "md_benchmarks_2performance.html#autotoc_md21", null ],
+      [ "Operators applied slice by slice: C++QED's setting", "md_benchmarks_2performance.html#autotoc_md22", null ],
+      [ "The interaction picture", "md_benchmarks_2performance.html#autotoc_md23", null ],
+      [ "Composition and construction", "md_benchmarks_2performance.html#autotoc_md24", null ],
+      [ "Assessment and next steps", "md_benchmarks_2performance.html#autotoc_md25", null ]
+    ] ],
     [ "Todo List", "todo.html", null ],
     [ "Namespaces", "namespaces.html", [
       [ "Namespace List", "namespaces.html", "namespaces_dup" ],
@@ -77,7 +87,7 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "MultiArrayComplex_8h.html",
-"structquantumoperator_1_1MultiDiagonal.html#a6944e78b47a4742b1c5f52ac8e376410"
+"structquantumoperator_1_1MultiDiagonal.html#a462f4d5cd073ec58dd4721733ddbc5db"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

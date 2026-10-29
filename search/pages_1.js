@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['list_0',['Todo List',['../todo.html',1,'']]]
+  ['cppqed_20multidiagonal_0',['cppqed-multidiagonal',['../index.html',1,'']]]
 ];

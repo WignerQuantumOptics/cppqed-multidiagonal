@@ -139,7 +139,14 @@ Features</h1>
 </ul>
 <h1><a class="anchor" id="autotoc_md8"></a>
 Performance</h1>
-<p>Application is on par with Eigen's sparse matrices for operators acting on one axis, but currently 2–2.7× <b>slower</b> for operators acting on several axes, such as the Jaynes–Cummings coupling (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1">#1</a>). The benchmarks in <code>benchmarks/</code> are being reworked (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/5">#5</a>), so other figures are not quoted here.</p>
+<p>Applying a <code>MultiDiagonal</code> is currently on par with Eigen's sparse matrices for operators acting on one axis, but 2–2.7× <b>slower</b> for operators acting on several axes, such as the Jaynes–Cummings coupling (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1">#1</a>). The causes are identified, and none of them is in the representation:</p>
+<ul>
+<li>complex multiplication with NaN checks;</li>
+<li>a multi-axis loop that recomputes every address per element;</li>
+<li>a loop shape that suits contiguous but not strided data.</li>
+</ul>
+<p>Hand-written loops over the same data are 1.1–2× faster than a comparable sparse matrix when the operator stays in cache. For operators as large as the state, application is limited by memory bandwidth, and then it is no faster than a sparse matrix.</p>
+<p>Measurements, causes and outlook, including what is not yet measured (the interaction picture): <a class="el" href="md_benchmarks_2performance.html">Performance of MultiDiagonal</a>.</p>
 <h1><a class="anchor" id="autotoc_md9"></a>
 Requirements</h1>
 <ul>
@@ -185,6 +192,8 @@ Repository structure</h1>
 <div class="line">  consumer/ — downstream project used by CI (find_package and FetchContent)</div>
 <div class="line">benchmarks/</div>
 <div class="line">  benchmarkMultiDiagonal.cc, plot.py — comparison with Eigen sparse and dense</div>
+<div class="line">  kernels.cc — application loop experiments (built with and without -fcx-limited-range)</div>
+<div class="line">  performance.md — measurements, causes and outlook</div>
 <div class="line">cmake/</div>
 <div class="line">  cppqed-multidiagonalConfig.cmake.in</div>
 <div class="line">Doxyfile, doxygen-math.sed — API docs; this README is their main page</div>
