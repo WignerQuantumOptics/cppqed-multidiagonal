@@ -84,6 +84,7 @@ struct MultiDiagonal
 
   /// @brief Accumulates the operator's action on @p psi into @p dpsidt: `dpsidt(idxLHS) += diag(idxDiag) * psi(idxRHS)`
   /// for each diagonal, with no factor \f$1/i\f$ (see the operator conventions above). Per axis, rows run in \f$[o^-,D-o^+)\f$ and columns in \f$[o^+,D-o^-)\f$.
+  /// @see @ref md_benchmarks_2performance "Performance of MultiDiagonal" for what this loop costs today and why.
   void operator () (double, MultiArrayConstView<dcomp,RANK> psi, MultiArrayView<dcomp,RANK> dpsidt) const
   {
     if (diagonals.empty()) return;

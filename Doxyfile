@@ -4,11 +4,12 @@ PROJECT_BRIEF          = "Multidiagonal sparse operator algebra for C++QED"
 
 OUTPUT_DIRECTORY       = docs
 
-INPUT                  = include/multidiagonal README.md
+INPUT                  = include/multidiagonal README.md benchmarks/performance.md
 STRIP_FROM_INC_PATH    = include
 RECURSIVE              = NO
 USE_MDFILE_AS_MAINPAGE = README.md
-FILTER_PATTERNS        = "*/README.md=sed -E -f doxygen-math.sed"
+FILTER_PATTERNS        = "*/README.md=sed -E -f doxygen-math.sed" \
+                         "*/performance.md=sed -E -f doxygen-math.sed"
 
 GENERATE_LATEX         = NO
 

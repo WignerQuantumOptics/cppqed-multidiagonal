@@ -45,7 +45,15 @@ The truncated algebra is represented *exactly*, including its physical deviation
 
 ## Performance
 
-Application is on par with Eigen's sparse matrices for operators acting on one axis, but currently 2–2.7× **slower** for operators acting on several axes, such as the Jaynes–Cummings coupling ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)). The benchmarks in `benchmarks/` are being reworked ([#5](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/5)), so other figures are not quoted here.
+Applying a `MultiDiagonal` is currently on par with Eigen's sparse matrices for operators acting on one axis, but 2–2.7× **slower** for operators acting on several axes, such as the Jaynes–Cummings coupling ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)). The causes are identified, and none of them is in the representation:
+
+- complex multiplication with NaN checks;
+- a multi-axis loop that recomputes every address per element;
+- a loop shape that suits contiguous but not strided data.
+
+Hand-written loops over the same data are 1.1–2× faster than a comparable sparse matrix when the operator stays in cache. For operators as large as the state, application is limited by memory bandwidth, and then it is no faster than a sparse matrix.
+
+Measurements, causes and outlook, including what is not yet measured (the interaction picture): [Performance of MultiDiagonal](benchmarks/performance.md).
 
 ## Requirements
 
@@ -107,6 +115,8 @@ tests/
   consumer/ — downstream project used by CI (find_package and FetchContent)
 benchmarks/
   benchmarkMultiDiagonal.cc, plot.py — comparison with Eigen sparse and dense
+  kernels.cc — application loop experiments (built with and without -fcx-limited-range)
+  performance.md — measurements, causes and outlook
 cmake/
   cppqed-multidiagonalConfig.cmake.in
 Doxyfile, doxygen-math.sed — API docs; this README is their main page

@@ -20,7 +20,8 @@ include/multidiagonal/
   MultiDiagonal.h     the operator algebra, including identity() and composition
 tests/                Catch2 v3 suites: testMultiArray, testMultiArrayComplex, testMultiDiagonal
   consumer/           downstream CMake project for the CI consumer job
-benchmarks/           benchmarkMultiDiagonal.cc, plot.py
+benchmarks/           benchmarkMultiDiagonal.cc, plot.py; kernels.cc (loop experiments);
+                      performance.md (measurements and outlook, a Doxygen page)
 cmake/                package config template
 Doxyfile              API docs; README.md is the main page, read through doxygen-math.sed
                       (Doxygen 1.9 does not understand GitHub's $…$ math)
@@ -136,22 +137,38 @@ ctest --test-dir build --output-on-failure
     `composeJC`, `constructJC`, and `picture1` (five interaction-picture variants).
   - Every configuration cross-validates against Eigen **before** timing and exits 1 on a
     mismatch.
-- Output is CSV on stdout (`benchmark,impl,N,d,time_per_op_ns`), read by `plot.py`. Keep
-  the two in sync.
+- `kernels.cc` holds the application-loop experiments (cases A–D: rank 1, Jaynes–Cummings,
+  an operator on one axis of a rank-4 state, the same applied slice by slice). It is built
+  twice: `cppqed-multidiagonal-kernels` and `cppqed-multidiagonal-kernels-cxlr`
+  (`-fcx-limited-range`; Clang 18 also needs `-Wno-overriding-option`). It validates
+  before timing too.
+- Output is CSV on stdout. `plot.py` reads `benchmarkMultiDiagonal`'s CSV
+  (`benchmark,impl,N,d,time_per_op_ns`); keep the two in sync.
 - Use `doNotOptimize` to prevent elision.
-- `--smoke` collapses the N sweep to {16, 256}. It is a CI correctness check only, and
-  its timings are meaningless.
-- Current results:
-  - Wins: `compose1` ≈ 6.8×; `picture1` scalar-frequency vs per-nonzero exp ≈ 3×.
-  - Parity: `apply1`, which is expected (bandwidth-bound).
-  - Losses: multi-axis application (JC) is 2–2.7× **slower** than Eigen sparse.
-- Diagnosis of the JC loss: `MultiArrayView::operator()` re-derives addresses per element
-  instead of hoisting the index arithmetic, which defeats vectorization. The next step is
-  a hand-rolled-loop experiment that discriminates between explanations, then the fix.
+- `--smoke` (both executables) shrinks the sizes. It is a CI correctness check only, and
+  its timings are meaningless. CI runs all three binaries with it.
+- **`benchmarks/performance.md` is the record of results and diagnosis**, and a page of the
+  Doxygen site (linked from the README and from `operator()`). When numbers or the
+  diagnosis change, update it rather than this file. In brief (2026-10-29):
+  - Default `std::complex` multiplication (Annex G NaN checks, `__muldc3`) halves the
+    library's speed; Eigen's sparse product is unaffected (#23).
+  - The multi-axis loop recomputes addresses per element: 3–5× at rank 2, about 30× slower
+    than Eigen at rank 4. Hoisting addresses with the innermost loop over axis 0 fixes it.
+  - Operators as large as the state are bandwidth bound: parity at best.
+  - In C++QED's slice-by-slice setting, the honest competitor is a CSR matrix of the term's
+    own space on the same slices. With the fixes MultiDiagonal is 1.1–1.8× faster. Strided
+    slices with power-of-two strides need a row-oriented loop (L1 set conflicts). C++QED's
+    `SliceIterator` order costs 1.3–4.7× on top (cppqed#90).
+  - Composition wins 2–9×, but it happens at setup time, not in the time-stepping loop.
+  - The interaction picture is not benchmarked systematically. C++QED's hot loop updates
+    `(coefficients, frequencies)` and applies; it never transforms the state around a static
+    product. Don't present that "sandwich" as the reference.
 
 ## Open items (roughly in priority order)
 
-1. Fix multi-axis application performance (above).
+1. Application performance (#1, #23; see `benchmarks/performance.md`, next steps): hoisted
+   loop, complex multiply-add in real arithmetic, blocking for long operands, loop shape
+   chosen from the strides.
 2. Decide on migrating to `std::mdspan`/`std::extents` (Kokkos reference implementation,
    Apache-2.0, FetchContent-pinnable) versus writing the paper on the current
    architecture. **The decision is open; do not start the migration unasked.**
