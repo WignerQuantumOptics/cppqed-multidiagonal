@@ -1,22 +1,27 @@
 # Performance of MultiDiagonal: measurements and outlook
 
-This page records what the benchmarks show about applying a `MultiDiagonal` to a state, why the library is currently slower than it could be, and what it can and cannot gain over a general sparse matrix. It is meant as an honest baseline: most of the figures for "what is possible" come from hand-written loops over the library's data in [`benchmarks/kernels.cc`](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/blob/main/benchmarks/kernels.cc), not from the library itself.
+This page records what the benchmarks show about applying a `MultiDiagonal` to a state, why the library is currently slower than it could be, and what it can and cannot gain over a general sparse matrix. It is meant as an honest baseline: where the library doesn't have the right loop yet, the figures for "what is possible" come from hand-written loops over the library's data in [`benchmarks/kernels.cc`](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/blob/main/benchmarks/kernels.cc), not from the library itself.
 
 **Short version.**
 
 - Where the operator is as large as the state, application is limited by memory bandwidth, and no storage format helps much. MultiDiagonal stores 16 bytes per nonzero against 20 for a compressed sparse row (CSR) matrix.
-- Where the operator data stays in cache, contiguous diagonals without column indices vectorize, and a well-written loop is 1.4–2× faster than Eigen's sparse product. In C++QED's actual setting, a small operator applied slice by slice across a large state, it is 1.1–1.8× faster than a sparse matrix of the same term.
-- The library does not reach this today, for three reasons:
+- Where the operator data stays in cache, contiguous diagonals without column indices vectorize, and a well-written loop is 1.5–2.4× faster than Eigen's sparse product. In C++QED's actual setting, a small operator applied slice by slice across a large state, it is 1.1–1.9× faster than a sparse matrix of the same term.
+- Up to v0.4.0, the library's multi-axis loop recomputed every address per element, which made it 3–5× slower at rank 2 in cache and about 30× slower than Eigen at rank 4. Since 2026-11-01 `operator()` computes the addresses once per diagonal and runs its innermost loop over axis 0. It now matches the hand-written loop, and in the default build multi-axis application is on par with Eigen instead of 2.1–2.6× slower ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)).
+- The library does not yet reach the speed of the best loops everywhere:
   - Complex multiplication with the C99 Annex G NaN checks halves its speed ([#23](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23)).
-  - Its multi-axis loop recomputes every address per element. This costs 3–5× at rank 2 in cache, and makes rank 4 about 30× slower than Eigen ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)).
-  - One diagonal at a time is the wrong loop shape for strided slices whose stride is a power of two.
+  - One diagonal at a time is the wrong loop shape for operators larger than cache, and for strided slices whose stride is a power of two.
+  - When axis 0 is short, e.g. a qubit, the innermost loop has only one or two elements.
 
   All three are fixable without changing the representation.
 - The interaction picture has not been benchmarked systematically yet (see the section on it below).
 
 ## Setup
 
-- Intel Core i7-1260P laptop (hybrid cores, runs not pinned to a core), WSL2 on Ubuntu 24.04, GCC 13.3, Eigen 3.4.0, `-O3 -march=native`, single thread. Library at v0.4.0; measured 2026-10-29.
+- Intel Core i7-1260P laptop (hybrid cores, runs not pinned to a core), WSL2 on Ubuntu 24.04, GCC 13.3, Eigen 3.4.0, `-O3 -march=native`, single thread.
+- Dates and library versions:
+  - `kernels.cc` (cases A–D) and the application benchmarks `apply1` and `applyJC`: measured 2026-11-01, with `operator()` rewritten after v0.4.0 ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)). Kernel figures are medians of three runs.
+  - Figures marked "v0.4.0" are from the kernel measurement of 2026-10-29. The `applyJC` ones are from a rerun of the v0.4.0 binaries on 2026-11-01, which also reproduced the 2026-10-29 kernel figures within the noise.
+  - Composition, construction and `picture1`: measured 2026-10-29 at v0.4.0. The code they time has not changed since.
 - Unit: nanoseconds per stored nonzero, i.e. per `nonZeros()` of the equivalent Eigen matrix. "In cache" means operator and state together fit in L2 (1.25 MB per core); "out of cache" means they exceed L3 (18 MB).
 - Repeated runs differ by about ±20%, more out of cache. Treat ratios below 1.3 as parity.
 - Every variant is checked against Eigen before it is timed.
@@ -46,8 +51,8 @@ By default both GCC and Clang implement `std::complex<double>` multiplication ac
 
 | case A, in cache (N = 256 / 4096) | default | `-fcx-limited-range` |
 |---|---|---|
-| library `operator()` | 1.02 / 1.08 | **0.50 / 0.72** |
-| Eigen sparse | 1.10 / 1.12 | 0.99 / 1.03 |
+| library `operator()` | 1.04 / 1.06 | **0.44 / 0.68** |
+| Eigen sparse | 1.17 / 1.18 | 1.05 / 1.04 |
 
 The flag halves MultiDiagonal's time and leaves Eigen's unchanged. Eigen's sparse product gathers through column indices, so it doesn't vectorize either way. The "parity at rank 1" reported earlier was therefore both libraries being held back by the same scalar complex multiply.
 
@@ -57,19 +62,38 @@ All further figures are with `-fcx-limited-range` unless stated otherwise.
 
 ## The library's multi-axis loop
 
-`operator()` steps a multi-index through each diagonal, last axis fastest, and computes the address of every element from all its indices. At rank 1 this costs nothing measurable: in case A the library equals a hand-written loop. At higher rank it dominates. The "hoisted" loop in `kernels.cc` computes the base addresses of each diagonal once and runs the innermost loop over axis 0, which is contiguous in memory:
+Up to v0.4.0, `operator()` stepped a multi-index through each diagonal, last axis fastest, and computed the address of every element from all its indices. At rank 1 this cost nothing measurable, but at higher rank it dominated.
 
-| | library | hoisted loop | Eigen sparse |
+Since 2026-11-01 ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)), `operator()` works as follows:
+
+- For each diagonal, it computes the addresses of the first row and the first column once.
+- A loop nest generated at compile time then runs over the axes, with axis 0 innermost. Axis 0 is contiguous in memory, both in the diagonal and in an owning state.
+- The outer axes only add strides to pointers.
+
+This is the "hoisted" loop of `kernels.cc`, generalized to strided views:
+
+| | v0.4.0 | library now | hand-written hoisted loop | Eigen sparse |
+|---|---|---|---|---|
+| B: Jaynes–Cummings, in cache (state 512 / 8192) | 2.54 / 2.73 | **0.53 / 0.71** | 0.52 / 0.71 | 1.11 / 1.17 |
+| B: Jaynes–Cummings, out of cache (state 524288) | 2.87 | 2.28 | 2.23 | 1.44 |
+| C: rank-4 operator built as $\mathbb{1}\otimes\mathbb{1}\otimes A\otimes\mathbb{1}$, $A$ on axis 0 / axis 2 (out of cache) | 41 | 2.19 / 2.20 | — | 1.66 / 1.69 |
+
+In cache, the library is now about 4–5× faster than at v0.4.0 and 1.6–2.1× faster than Eigen. Out of cache, it sweeps the state once per diagonal and is about 1.3–1.6× slower than Eigen (see the next section). The rank-4 case improves 19×. It stays bandwidth bound, because the materialized operator is five times as large as the state.
+
+The 2026-10 review had flipped the loop order alone and saw no effect beyond noise. That is consistent: memory order only pays once the per-element address computation is gone.
+
+In the default build, `cppqed-multidiagonal-benchmarks` applies the Jaynes–Cummings Hamiltonian in both axis orders, for mode dimensions N from 16 to 1048576 (state 2N). The table gives the time of Eigen sparse divided by the time of MultiDiagonal; above 1 means MultiDiagonal is faster:
+
+| | v0.4.0, N ≤ 65536 | now, N ≤ 65536 | now, N = 262144 / 1048576 |
 |---|---|---|---|
-| B: Jaynes–Cummings, in cache (state 512 / 8192) | 2.54 / 2.73 | **0.51 / 0.84** | 1.05 / 1.05 |
-| B: Jaynes–Cummings, out of cache (state 524288) | 2.87 | 1.96 | 1.68 |
-| C: rank-4 operator built as $\mathbb{1}\otimes\mathbb{1}\otimes A\otimes\mathbb{1}$ (out of cache) | **41** | — | 1.45 |
+| `applyJC_modefast`: mode on axis 0 | 0.39–0.44 | 1.13–1.32 | 0.90 / 0.80 |
+| `applyJC_qbitfast`: qubit on axis 0 | 0.39–0.47 | 0.72–1.06 | 0.80 / 0.67 |
 
-In cache, the hoisted loop is 3–5× faster than the library and about 1.3–2× faster than Eigen. The 2026-10 review had flipped the loop order alone and saw no effect beyond noise. That is consistent: memory order only pays once the per-element address computation is gone.
+With the qubit on axis 0, as in C++QED's `jc_qjmc`, the innermost loop has one or two elements. The σ± diagonals have extent 1 along the qubit. The loop overhead per element then shows: the library is at parity with Eigen at best, and up to 1.4× slower for small N. Running the innermost loop over the longest axis instead would remove this (not yet measured).
 
 ## The bandwidth ceiling
 
-When the operator is as large as the state, all variants stream their data from main memory. Out of cache (case A at N = 262144), the library, the hoisted loop, a row-blocked loop and Eigen all fall in 1.4–2.6 across runs, in no consistent order. In case B out of cache, the hoisted loop (1.96) is slightly slower than Eigen (1.68), because it sweeps the state once per diagonal.
+When the operator is as large as the state, all variants stream their data from main memory. Out of cache (case A at N = 262144), the library, the hoisted loop, a row-blocked loop and Eigen all fall in 1.1–1.7 across runs. The medians are 1.14 for the row-blocked loop and 1.33–1.40 for the others; on 2026-10-29 the four spread over 1.4–2.6 in no consistent order. In case B out of cache, the library (2.28) is slower than Eigen (1.44), because it sweeps the state once per diagonal.
 
 The memory traffic explains why:
 
@@ -97,21 +121,24 @@ Case D, n⁴ state, operator on axis 0 (contiguous slices) or axis 2 (stride n²
 
 | | n=32, axis 0 | n=30, axis 0 | n=32, axis 2 | n=30, axis 2 |
 |---|---|---|---|---|
-| library `operator()` | 0.90 | 0.69 | 4.06 | 1.34 |
-| one diagonal at a time, addresses hoisted | **0.78** | **0.66** | 3.77 | **1.02** |
-| all diagonals per output row | 1.32 | 1.33 | **1.62** | 1.49 |
-| term CSR | 1.21 | 1.20 | 1.80 | 1.46 |
-| CSR of the whole system | 1.85 | 1.66 | 1.98 | 1.59 |
+| library `operator()` | 0.64 | 0.62 | 3.65 | 0.80 |
+| one diagonal at a time, addresses hoisted | 0.63 | 0.64 | 3.44 | 0.96 |
+| all diagonals per output row | 1.34 | 1.32 | 1.39 | 1.34 |
+| term CSR | 1.20 | 1.21 | 1.53 | 1.35 |
+| CSR of the whole system | 1.54 | 1.47 | 1.38 | 1.49 |
+
+The library's `operator()` now runs the same loop as the hand-written "one diagonal at a time" kernel (at v0.4.0: 0.90, 0.69, 4.06 and 1.34).
 
 Three findings:
 
-1. **Slice order matters more than any kernel.** `SliceIterator` produces the slices last dummy axis fastest, so consecutive slices lie far apart in memory. In that order every method is 1.3–2.2× slower on axis 0 and 2–4.7× slower on axis 2. For example, the library takes 1.30 and 8.25 for n = 32 instead of 0.90 and 4.06, and term CSR 7.45 instead of 1.80. Fixing the order belongs to C++QED, not to the library ([cppqed#90](https://github.com/WignerQuantumOptics/cppqed/issues/90)).
+1. **Slice order matters more than any kernel.** `SliceIterator` produces the slices last dummy axis fastest, so consecutive slices lie far apart in memory. In that order every method is 1.2–2.3× slower on axis 0 and 1.9–4.7× slower on axis 2. For example, the library takes 1.40 and 6.82 for n = 32 instead of 0.64 and 3.65, and term CSR 5.99 instead of 1.53. Fixing the order belongs to C++QED, not to the library ([cppqed#90](https://github.com/WignerQuantumOptics/cppqed/issues/90)).
 2. **The best loop shape depends on the stride.**
-   - Contiguous slices: one diagonal at a time vectorizes, and is about 1.6–1.8× faster than term CSR.
-   - Strided slices with a power-of-two stride (n = 32: 1024 amplitudes, 16 KB): all elements of a slice fall into the same L1 cache set. Sweeping y once per diagonal then thrashes the cache (3.77, against 1.02 for n = 30). Summing all diagonals of an output row in a register avoids this and reaches parity with term CSR.
+   - Contiguous slices: one diagonal at a time vectorizes, and is about 1.9× faster than term CSR.
+   - Strided slices with a power-of-two stride (n = 32: 1024 amplitudes, 16 KB): all elements of a slice fall into the same L1 cache set. Sweeping y once per diagonal then thrashes the cache (3.65, against 0.80 for n = 30). Summing all diagonals of an output row in a register avoids this and reaches parity with term CSR (1.39 against 1.53).
+   - Strided slices without such set conflicts (n = 30): one diagonal at a time stays the fastest, at 0.80, against 1.34 for summing per row and 1.35 for term CSR.
 
-   The kernel can choose between the two from the view's strides. That is the library's business, since it only concerns `operator()` on a strided view ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)).
-3. **What the design boundary costs.** Applying the operator to many adjacent slices at once (case C, "blocked") gives 0.83 for n = 32 on axis 2, about 2× better than any slice-by-slice method at the same n. Getting this inside C++QED's design would mean `Broadcaster` handing a term blocks of adjacent slices. This is noted here, not proposed.
+   The kernel can choose between the shapes from the view's strides. That is the library's business, since it only concerns `operator()` on a strided view ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)).
+3. **What the design boundary costs.** Applying the operator to many adjacent slices at once (case C, "blocked") gives 0.77 for n = 32 on axis 2, about 1.8× better than any slice-by-slice method at the same n. Getting this inside C++QED's design would mean `Broadcaster` handing a term blocks of adjacent slices. This is noted here, not proposed.
 
 Not measured, but relevant: a slice of rank ≥ 2 whose axes are not adjacent in memory, e.g. a coupling on axes 0 and 2 of a rank-3 system, is not uniformly strided. A flattened CSR matrix then has to translate each column index into a memory address, from the multi-index or from a precomputed table, or it has to copy the slice into a contiguous buffer and back. A MultiDiagonal applies per-axis strides directly.
 
@@ -163,29 +190,33 @@ Composition never meets the symbolic pass and sorting of a sparse product: the o
 
 ## Assessment and next steps
 
-| | today | with the fixes (measured with hand-written loops) |
+| | today | with the remaining fixes |
 |---|---|---|
-| rank 1, in cache | ≈ Eigen | 1.4–2× faster |
-| several axes, in cache | 2–2.7× slower | 1.25–2× faster |
-| operator as large as the state, out of cache | ≈ Eigen | ≈ Eigen (bandwidth bound) |
-| slice by slice, contiguous slices | 0.8–1.25× the speed of term CSR | 1.6–1.8× faster |
-| slice by slice, strided slices | from 1.8× slower to 1.1× faster than term CSR | 1.1–1.4× faster |
+| rank 1, in cache | ≈ Eigen | 1.5–2.4× faster |
+| several axes, in cache, long axis 0 (mode first) | ≈ Eigen (1.1–1.3× faster; v0.4.0: 2.1–2.6× slower) | 1.6–2.1× faster |
+| several axes, in cache, short axis 0 (qubit first) | ≈ Eigen to 1.4× slower (v0.4.0: 2.1–2.6× slower) | not yet measured |
+| operator as large as the state, out of cache | ≈ Eigen to 1.5× slower | ≈ Eigen (bandwidth bound) |
+| slice by slice, contiguous slices | 1.3× faster than term CSR | 1.9× faster |
+| slice by slice, strided slices | from 1.9× slower (power-of-two stride) to 1.3× faster than term CSR | 1.1–1.7× faster |
 | interaction picture | — | not yet measured systematically |
 
-"Today" is the library as it is, in the default build, with both sides taking the slices in the same order.
+- "Today" is the library as it is, after the rewrite of `operator()`, in the default build, with both sides taking the slices in the same order.
+- "With the remaining fixes" is measured with `-fcx-limited-range` standing in for [#23](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23). Where the library doesn't have the right loop shape yet, the hand-written loops of `kernels.cc` stand in for it.
 
 The format is not a large speed-up for application, and should not be presented as one. Its advantages are:
 
-- with the fixes, it is never slower than the comparable sparse matrix in the measured cases, and up to about 2× faster where the loops vectorize;
+- with the fixes, it is never slower than the comparable sparse matrix in the measured cases, and about 1.5–2.4× faster where the loops vectorize;
 - the per-axis offsets are the quanta moved per subsystem, and they give per-axis strides, one phase per diagonal for linear spectra, and composition closure without index bookkeeping;
 - it is far more readable than a flattened matrix.
 
 Next steps, in order:
 
-1. Rewrite `operator()` with hoisted addresses and the innermost loop over axis 0 ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)).
+1. Done on 2026-11-01: `operator()` rewritten with hoisted addresses and the innermost loop over axis 0 ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)).
 2. Complex multiply-add in real arithmetic inside the kernel ([#23](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23)).
 3. For long operands, apply all diagonals per block of rows ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)).
-4. Choose the loop shape from the view's strides: one diagonal at a time when axis 0 is contiguous, all diagonals per output row otherwise ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)).
+4. Choose the loop shape from the view's strides and the diagonals' extents ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)):
+   - one diagonal at a time, except where the strides cause L1 set conflicts (power-of-two strides), and there all diagonals per output row;
+   - when axis 0 is short, e.g. a qubit, the innermost loop over a longer axis.
 5. Benchmarks ([#5](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/5)):
    - make `picture1` call the library;
    - add term CSR through slices to the main suite;

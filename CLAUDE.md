@@ -149,16 +149,19 @@ ctest --test-dir build --output-on-failure
   its timings are meaningless. CI runs all three binaries with it.
 - **`benchmarks/performance.md` is the record of results and diagnosis**, and a page of the
   Doxygen site (linked from the README and from `operator()`). When numbers or the
-  diagnosis change, update it rather than this file. In brief (2026-10-29):
+  diagnosis change, update it rather than this file. In brief (2026-11-01):
   - Default `std::complex` multiplication (Annex G NaN checks, `__muldc3`) halves the
     library's speed; Eigen's sparse product is unaffected (#23).
-  - The multi-axis loop recomputes addresses per element: 3–5× at rank 2, about 30× slower
-    than Eigen at rank 4. Hoisting addresses with the innermost loop over axis 0 fixes it.
+  - `operator()` hoists addresses per diagonal and runs a compile-time loop nest with axis 0
+    innermost (since 2026-11-01, #1). This fixed the per-element addressing, which had made
+    it 3–5× slower at rank 2 and about 30× slower than Eigen at rank 4. It now matches the
+    hand-written loop. With a short axis 0 (qubit first, as in `jc_qjmc`) the innermost
+    loop has 1–2 elements: up to 1.4× slower than Eigen.
   - Operators as large as the state are bandwidth bound: parity at best.
   - In C++QED's slice-by-slice setting, the honest competitor is a CSR matrix of the term's
-    own space on the same slices. With the fixes MultiDiagonal is 1.1–1.8× faster. Strided
-    slices with power-of-two strides need a row-oriented loop (L1 set conflicts). C++QED's
-    `SliceIterator` order costs 1.3–4.7× on top (cppqed#90).
+    own space on the same slices. With the fixes MultiDiagonal is 1.1–1.9× faster. Strided
+    slices with power-of-two strides need a row-oriented loop (L1 set conflicts); other
+    strides don't. C++QED's `SliceIterator` order costs 1.2–4.7× on top (cppqed#90).
   - Composition wins 2–9×, but it happens at setup time, not in the time-stepping loop.
   - The interaction picture is not benchmarked systematically. C++QED's hot loop updates
     `(coefficients, frequencies)` and applies; it never transforms the state around a static
@@ -166,9 +169,9 @@ ctest --test-dir build --output-on-failure
 
 ## Open items (roughly in priority order)
 
-1. Application performance (#1, #23; see `benchmarks/performance.md`, next steps): hoisted
-   loop, complex multiply-add in real arithmetic, blocking for long operands, loop shape
-   chosen from the strides.
+1. Application performance (#1, #23; see `benchmarks/performance.md`, next steps): complex
+   multiply-add in real arithmetic, blocking for long operands, loop shape chosen from the
+   strides and extents. (The hoisted loop is done.)
 2. Decide on migrating to `std::mdspan`/`std::extents` (Kokkos reference implementation,
    Apache-2.0, FetchContent-pinnable) versus writing the paper on the current
    architecture. **The decision is open; do not start the migration unasked.**
