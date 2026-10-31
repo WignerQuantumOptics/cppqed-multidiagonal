@@ -165,6 +165,8 @@ TEST_CASE("application checks state dimensions in debug", "[multidiagonal]")
   auto a = destroy(4);
   MultiArray<dcomp,1> psi{{5}, multiarray::zeroInit<dcomp>}, d{{5}, multiarray::zeroInit<dcomp>};
   CHECK_THROWS_AS(a(0., psi, d), std::runtime_error);
+  MultiArray<dcomp,1> psi4{{4}, multiarray::zeroInit<dcomp>};
+  CHECK_THROWS_AS(a(0., psi4, d), std::runtime_error);  // dpsidt of the wrong size
 }
 #endif
 
@@ -427,6 +429,62 @@ TEST_CASE("rank-3 application and composition with colliding offsets — #4", "[
   CHECK(XX.diagonals.size() == 75);
   CHECK(relApproxEqual(densify(XX), ((dA+dB)*(dA+dB)).eval()));
   CHECK(relApproxEqual(densify(X | hermitianConjugateOf(X)), ((dA+dB)*(dA+dB).adjoint()).eval()));
+}
+
+
+namespace {
+
+/// Applies @p md through views into larger buffers, each side with its own strides and offset, as when C++QED
+/// applies an operator to slices of a state. Returns the result in flat order (axis 0 fastest), and checks that
+/// the dpsidt buffer is untouched outside the view.
+template <size_t RANK>
+CVector applyThroughViews(const MultiDiagonal<RANK>& md, const CVector& psiFlat,
+                          Extents<RANK> stridesPsi, size_t offsetPsi, Extents<RANK> stridesDpsidt, size_t offsetDpsidt)
+{
+  const auto ext = calculateAndCheckDimensions(md);
+  const auto flat = multiarray::calculateStrides(ext);
+  const auto flatIndex = [&] (Extents<RANK> idx) {size_t res=0; for (size_t i=0; i<RANK; ++i) res+=flat[i]*idx[i]; return Eigen::Index(res);};
+  const auto bufferSize = [&] (Extents<RANK> str, size_t off) {size_t res=off+1; for (size_t i=0; i<RANK; ++i) res+=str[i]*(ext[i]-1); return res;};
+
+  const dcomp sentinel{-7.,3.};
+  std::vector<dcomp> psiBuffer(bufferSize(stridesPsi,offsetPsi),sentinel), dpsidtBuffer(bufferSize(stridesDpsidt,offsetDpsidt),sentinel);
+  MultiArrayView<dcomp,RANK> psi{ext,stridesPsi,offsetPsi,std::span<dcomp>{psiBuffer}}, dpsidt{ext,stridesDpsidt,offsetDpsidt,std::span<dcomp>{dpsidtBuffer}};
+
+  for (Extents<RANK> idx{}; idx[0]!=ext[0]; incrementMultiIndex(idx,ext)) {psi(idx)=psiFlat(flatIndex(idx)); dpsidt(idx)=0.;}
+  md(0., psi, dpsidt);
+
+  CVector res(psiFlat.size());
+  for (Extents<RANK> idx{}; idx[0]!=ext[0]; incrementMultiIndex(idx,ext)) {res(flatIndex(idx))=dpsidt(idx); dpsidt(idx)=sentinel;}
+  CHECK(std::ranges::all_of(dpsidtBuffer, [=] (dcomp v) {return v==sentinel;}));
+  return res;
+}
+
+} // anonymous
+
+
+TEST_CASE("application through strided, offset views of larger arrays — #1", "[multidiagonal]")
+{
+  // the non-product rank-3 operator of the test above, extents {3,2,4}
+  auto A0 = complexTridiag(3,0.3), A1 = complexTridiag(2,-1.2), A2 = complexTridiag(4,2.1);
+  auto B0 = complexTridiag(3,1.7), B1 = complexTridiag(2,0.4),  B2 = complexTridiag(4,-0.8);
+  const CMatrix dense = kron(densify(A2), kron(densify(A1), densify(A0))) + kron(densify(B2), kron(densify(B1), densify(B0)));
+  auto X = A0 * A1 * A2 + B0 * B1 * B2;
+
+  CVector psi(24);
+  for (Eigen::Index k=0; k<psi.size(); ++k) psi(k)=dcomp(std::cos(0.7*double(k)), std::sin(1.3*double(k)));
+  const CVector ref = dense*psi;
+
+  const auto agrees = [&] (const CVector& v) {return (v-ref).norm() < tol*ref.norm();};
+
+  // sub-block of a {5,3,4} array: unit stride along axis 0, gaps between rows
+  CHECK(agrees(applyThroughViews(X, psi, {1,5,15}, 7, {1,5,15}, 7)));
+  // strided along axis 0, as a slice along an inner axis of a larger state
+  CHECK(agrees(applyThroughViews(X, psi, {2,7,15}, 3, {2,7,15}, 3)));
+  // different layouts on the two sides: strided psi, contiguous dpsidt, and the converse
+  CHECK(agrees(applyThroughViews(X, psi, {3,10,25}, 1, {1,3,6}, 4)));
+  CHECK(agrees(applyThroughViews(X, psi, {1,3,6}, 0, {3,10,25}, 2)));
+  // last axis fastest in memory
+  CHECK(agrees(applyThroughViews(X, psi, {8,4,1}, 0, {8,4,1}, 5)));
 }
 
 

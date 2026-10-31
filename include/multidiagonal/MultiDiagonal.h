@@ -82,38 +82,57 @@ struct MultiDiagonal
 
   Diagonals diagonals;
 
-  /// @brief Accumulates the operator's action on @p psi into @p dpsidt: `dpsidt(idxLHS) += diag(idxDiag) * psi(idxRHS)`
-  /// for each diagonal, with no factor \f$1/i\f$ (see the operator conventions above). Per axis, rows run in \f$[o^-,D-o^+)\f$ and columns in \f$[o^+,D-o^-)\f$.
-  /// @see @ref md_benchmarks_2performance "Performance of MultiDiagonal" for what this loop costs today and why.
+  /// @brief Accumulates the operator's action on @p psi into @p dpsidt: `dpsidt(k+o⁻) += diag(k) * psi(k+o⁺)`
+  /// for each diagonal and each entry `k`, with no factor \f$1/i\f$ (see the operator conventions above).
+  /// Per axis, rows run in \f$[o^-,D-o^+)\f$ and columns in \f$[o^+,D-o^-)\f$.
+  ///
+  /// The views may be strided and offset, e.g. slices of a larger state, each with its own strides.
+  /// **@p psi and @p dpsidt must not overlap.**
+  ///
+  /// Per diagonal, the addresses of the first row and column are computed once. A loop nest generated at compile
+  /// time then runs over the axes with axis 0 innermost, i.e. in memory order for both the diagonal and the state.
+  /// The outer axes only add strides to pointers. The innermost loop has a separate branch for unit stride, so
+  /// that it can vectorize.
+  /// @see @ref md_benchmarks_2performance "Performance of MultiDiagonal" for what this loop costs and why.
   void operator () (double, MultiArrayConstView<dcomp,RANK> psi, MultiArrayView<dcomp,RANK> dpsidt) const
   {
     if (diagonals.empty()) return;
 
 #ifndef NDEBUG
     if (psi.extents != calculateAndCheckDimensions(*this)) throw std::runtime_error("Mismatch between StateVector and MultiDiagonal dimensions");
+    checkExtents(psi,MultiArrayConstView<dcomp,RANK>{dpsidt},"MultiDiagonal application");
 #endif // NDEBUG
+
+    const size_t strideRows0{dpsidt.strides[0]}, strideCols0{psi.strides[0]};
 
     for (const auto& [offsets,diag] : diagonals) {
 
       if (diag.dataView.empty()) continue; // |o|=D on some axis: a structural zero
 
-      Dimensions ubound{psi.extents}, lboundLHS{}, lboundRHS{};
-      for (auto&& [o,u,lL,lR] : std::views::zip(offsets,ubound,lboundLHS,lboundRHS)) {
-        lL = o<0 ? size_t(-o) : 0uz; lR = o>0 ? size_t(o) : 0uz; u -= lR;
+      // first row o⁻ in dpsidt, first column o⁺ in psi
+      dcomp* rows{dpsidt.dataView.data()+dpsidt.offset}; const dcomp* cols{psi.dataView.data()+psi.offset};
+      for (auto&& [o,sR,sC] : std::views::zip(offsets,dpsidt.strides,psi.strides)) {
+        if (o<0) rows+=sR*size_t(-o); else cols+=sC*size_t(o);
       }
 
-      const auto increment=[&] (auto n, const auto& inc, Dimensions& idxLHS, Dimensions& idxRHS, Dimensions& idxDiag)
+      // the diagonal is an owning MultiArray, contiguous with axis 0 fastest: the loop nest consumes it in storage order
+      const dcomp* d{diag.dataView.data()};
+      const size_t len{diag.extents[0]};
+
+      const auto loop=[&] (auto n, const auto& self, dcomp* r, const dcomp* c)
       {
         using namespace hana::literals;
         if constexpr (n!=0_c) {
-          if (idxLHS[n]==ubound[n]-1) {idxLHS[n]=lboundLHS[n]; idxRHS[n]=lboundRHS[n]; idxDiag[n]=0; inc(n-1_c,inc,idxLHS,idxRHS,idxDiag);}
-          else {idxLHS[n]++; idxRHS[n]++; idxDiag[n]++;}
+          for (size_t k=0; k<diag.extents[n]; ++k) self(n-1_c,self,r+k*dpsidt.strides[n],c+k*psi.strides[n]);
         }
-        else {idxLHS[0]++; idxRHS[0]++; idxDiag[0]++;}
+        else {
+          if (strideRows0==1 && strideCols0==1) for (size_t k=0; k<len; ++k) r[k]+=d[k]*c[k];
+          else for (size_t k=0; k<len; ++k) r[k*strideRows0]+=d[k]*c[k*strideCols0];
+          d+=len;
+        }
       };
 
-      for ( Dimensions idxLHS{lboundLHS}, idxRHS{lboundRHS}, idxDiag{}; idxLHS[0]!=ubound[0] ; increment( hana::llong_c<RANK-1>, increment, idxLHS, idxRHS, idxDiag ) )
-        dpsidt(idxLHS) += diag(idxDiag)*psi(idxRHS);
+      loop(hana::llong_c<RANK-1>,loop,rows,cols);
     }
   }
 
