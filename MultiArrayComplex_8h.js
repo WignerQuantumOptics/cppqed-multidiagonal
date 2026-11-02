@@ -22,6 +22,7 @@ var MultiArrayComplex_8h =
     [ "sqrAbs", "MultiArrayComplex_8h.html#a10b1515bd9ae3fd66ccc63a9eec386d2", null ],
     [ "tag_invoke", "MultiArrayComplex_8h.html#a819ee9c2ffdba9ca59e60a0ba608b392", null ],
     [ "tag_invoke", "MultiArrayComplex_8h.html#a1995756ca19af4c9ce7764afc2cdbbbb", null ],
+    [ "textbookProduct", "MultiArrayComplex_8h.html#a6a395df219ef2cefd6613b72719eecfe", null ],
     [ "twoTimesRealPartOfSelf", "MultiArrayComplex_8h.html#a0a6a48cecc095920cb37af768a52bd30", null ],
     [ "vectorize", "MultiArrayComplex_8h.html#a7f57a684dd82976158cc502dc282e720", null ],
     [ "vectorize", "MultiArrayComplex_8h.html#aea9045d42f9d2b05866a7fbdbb7a3a73", null ]

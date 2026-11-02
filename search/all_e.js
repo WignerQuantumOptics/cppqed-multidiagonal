@@ -1,7 +1,12 @@
 var searchData=
 [
-  ['qed_20does_0',['Via FetchContent (as C++QED does)',['../index.html#autotoc_md12',1,'']]],
-  ['qed_20s_20setting_1',['Operators applied slice by slice: C++QED&apos;s setting',['../md_benchmarks_2performance.html#autotoc_md22',1,'']]],
-  ['quantumoperator_2',['quantumoperator',['../namespacequantumoperator.html',1,'']]],
-  ['quantumoperator_3a_3amultidiagonal_3',['multidiagonal',['../namespacequantumoperator_1_1multidiagonal.html',1,'quantumoperator']]]
+  ['passbyvalue_5fv_0',['passByValue_v',['../namespacecppqedutils.html#a005a0e5ccde6979e0542edc31ff5c734',1,'cppqedutils']]],
+  ['passbyvalue_5fv_3c_20multiarray_3c_20t_2c_20rank_20_3e_20_3e_1',['passByValue_v&lt; MultiArray&lt; T, RANK &gt; &gt;',['../namespacecppqedutils.html#a71357bd53380a39de24f2573ae2a0827',1,'cppqedutils']]],
+  ['passbyvalue_5fv_3c_20multiarrayview_3c_20t_2c_20rank_20_3e_20_3e_2',['passByValue_v&lt; MultiArrayView&lt; T, RANK &gt; &gt;',['../namespacecppqedutils.html#a76e4cfe518bc6bdc37832d79ca9ea5ac',1,'cppqedutils']]],
+  ['performance_3',['Performance',['../index.html#autotoc_md8',1,'']]],
+  ['performance_20of_20multidiagonal_3a_20measurements_20and_20outlook_4',['Performance of MultiDiagonal: measurements and outlook',['../md_benchmarks_2performance.html',1,'']]],
+  ['performance_2emd_5',['performance.md',['../performance_8md.html',1,'']]],
+  ['picture_6',['The interaction picture',['../md_benchmarks_2performance.html#autotoc_md24',1,'']]],
+  ['placeholder_7',['Placeholder',['../structcppqedutils_1_1multiarray_1_1Placeholder.html',1,'cppqedutils::multiarray']]],
+  ['project_8',['Integration into a CMake project',['../index.html#autotoc_md11',1,'']]]
 ];

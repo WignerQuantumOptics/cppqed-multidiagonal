@@ -218,6 +218,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a10b1515bd9ae3fd66ccc63a9eec386d2" id="r_a10b1515bd9ae3fd66ccc63a9eec386d2"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="MultiArrayComplex_8h.html#a10b1515bd9ae3fd66ccc63a9eec386d2">sqrAbs</a> (<a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a> v)</td></tr>
 <tr class="memdesc:a10b1515bd9ae3fd66ccc63a9eec386d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Squared absolute value of a complex number: <code>|v|^2 = re^2 + im^2</code>, computed as such (<code>std::norm</code>), not as the square of the rounded <code>std::abs</code>.  <br /></td></tr>
 <tr class="separator:a10b1515bd9ae3fd66ccc63a9eec386d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a395df219ef2cefd6613b72719eecfe" id="r_a6a395df219ef2cefd6613b72719eecfe"><td class="memItemLeft" align="right" valign="top"><a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="MultiArrayComplex_8h.html#a6a395df219ef2cefd6613b72719eecfe">textbookProduct</a> (<a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a> a, <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a> b)</td></tr>
+<tr class="memdesc:a6a395df219ef2cefd6613b72719eecfe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Complex product by the textbook formula \((a+ib)(c+id)=(ac-bd)+i(ad+bc)\), for hot loops.  <br /></td></tr>
+<tr class="separator:a6a395df219ef2cefd6613b72719eecfe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a819ee9c2ffdba9ca59e60a0ba608b392" id="r_a819ee9c2ffdba9ca59e60a0ba608b392"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
 <tr class="memitem:a819ee9c2ffdba9ca59e60a0ba608b392"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceboost_1_1json.html#a819ee9c2ffdba9ca59e60a0ba608b392">boost::json::tag_invoke</a> (value_from_tag, value &amp;jv, const std::complex&lt; T &gt; &amp;c)</td></tr>
 <tr class="memdesc:a819ee9c2ffdba9ca59e60a0ba608b392"><td class="mdescLeft">&#160;</td><td class="mdescRight">Boost.JSON serialization for <code>std::complex&lt;T&gt;</code>: emits a two-element JSON array <code>[re, im]</code>.  <br /></td></tr>
@@ -567,6 +570,45 @@ requires ( !(<a class="el" href="classcppqedutils_1_1MultiArrayView.html">TWO_TI
 </div><div class="memdoc">
 
 <p>Squared absolute value of a complex number: <code>|v|^2 = re^2 + im^2</code>, computed as such (<code>std::norm</code>), not as the square of the rounded <code>std::abs</code>. </p>
+
+</div>
+</div>
+<a id="a6a395df219ef2cefd6613b72719eecfe" name="a6a395df219ef2cefd6613b72719eecfe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6a395df219ef2cefd6613b72719eecfe">&#9670;&#160;</a></span>textbookProduct()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a> textbookProduct </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>&#160;</td>
+          <td class="paramname"><em>a</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>&#160;</td>
+          <td class="paramname"><em>b</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Complex product by the textbook formula \((a+ib)(c+id)=(ac-bd)+i(ad+bc)\), for hot loops. </p>
+<p>By default, GCC and Clang multiply <code>std::complex</code> according to C99 Annex G: when both parts of the textbook result are NaN, a library call (<code>__muldc3</code>) tries to recover an infinite result. That check keeps loops from vectorizing. This function omits the recovery, so its speed does not depend on <code>-fcx-limited-range</code>. Otherwise it evaluates the same expression as the default: the two differ only where an infinite operand makes both parts NaN. </p><dl class="section see"><dt>See also</dt><dd><a class="el" href="md_benchmarks_2performance.html">Performance of MultiDiagonal</a> for what the check costs. </dd></dl>
 
 </div>
 </div>

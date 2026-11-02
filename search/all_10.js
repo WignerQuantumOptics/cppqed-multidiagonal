@@ -1,16 +1,12 @@
 var searchData=
 [
-  ['s_20multi_20axis_20loop_0',['The library&apos;s multi-axis loop',['../md_benchmarks_2performance.html#autotoc_md20',1,'']]],
-  ['s_20setting_1',['Operators applied slice by slice: C++QED&apos;s setting',['../md_benchmarks_2performance.html#autotoc_md22',1,'']]],
-  ['setting_2',['Operators applied slice by slice: C++QED&apos;s setting',['../md_benchmarks_2performance.html#autotoc_md22',1,'']]],
-  ['setup_3',['Setup',['../md_benchmarks_2performance.html#autotoc_md18',1,'']]],
-  ['signed_20offset_20representation_4',['The signed-offset representation',['../index.html#autotoc_md5',1,'']]],
-  ['slice_20by_20slice_3a_20c_20qed_20s_20setting_5',['Operators applied slice by slice: C++QED&apos;s setting',['../md_benchmarks_2performance.html#autotoc_md22',1,'']]],
-  ['slice_3a_20c_20qed_20s_20setting_6',['Operators applied slice by slice: C++QED&apos;s setting',['../md_benchmarks_2performance.html#autotoc_md22',1,'']]],
-  ['sqr_7',['sqr',['../MultiArrayComplex_8h.html#a79756f6e94e1f548cbc2b206fbb013a1',1,'MultiArrayComplex.h']]],
-  ['sqrabs_8',['sqrAbs',['../MultiArrayComplex_8h.html#a10b1515bd9ae3fd66ccc63a9eec386d2',1,'MultiArrayComplex.h']]],
-  ['steps_9',['Assessment and next steps',['../md_benchmarks_2performance.html#autotoc_md25',1,'']]],
-  ['storagetype_10',['storagetype',['../classcppqedutils_1_1MultiArray.html#a409d8f5480fe41bc224b9d974df3f4bc',1,'cppqedutils::MultiArray::StorageType'],['../namespacecppqedutils_1_1multiarray.html#a34604eaec6dcff606e5f8975d1407209',1,'cppqedutils::multiarray::StorageType']]],
-  ['strides_11',['strides',['../classcppqedutils_1_1MultiArrayView.html#ae344ee974379ded6c3c28a105f821ffb',1,'cppqedutils::MultiArrayView']]],
-  ['structure_12',['Repository structure',['../index.html#autotoc_md14',1,'']]]
+  ['readme_2emd_0',['README.md',['../README_8md.html',1,'']]],
+  ['realcompare_1',['realCompare',['../MultiArrayComplex_8h.html#adacf47979bdacc062037fb92ac6d5207',1,'MultiArrayComplex.h']]],
+  ['reference_2',['Reference',['../namespacecppqedutils.html#a8be2a1ed08a8f9a96245a3d48a1e6c23',1,'cppqedutils']]],
+  ['referencemf_3',['ReferenceMF',['../structcppqedutils_1_1ReferenceMF.html',1,'cppqedutils']]],
+  ['referencemf_3c_20multiarrayview_3c_20t_2c_20rank_20_3e_20_3e_4',['ReferenceMF&lt; MultiArrayView&lt; T, RANK &gt; &gt;',['../structcppqedutils_1_1ReferenceMF_3_01MultiArrayView_3_01T_00_01RANK_01_4_01_4.html',1,'cppqedutils']]],
+  ['relativedeviation_5',['relativeDeviation',['../MultiArrayComplex_8h.html#a8bc5646c7695231e10f8cac401e1b52e',1,'MultiArrayComplex.h']]],
+  ['repository_20structure_6',['Repository structure',['../index.html#autotoc_md14',1,'']]],
+  ['representation_7',['representation',['../structquantumoperator_1_1MultiDiagonal.html#autotoc_md0',1,'Representation'],['../index.html#autotoc_md5',1,'The signed-offset representation']]],
+  ['requirements_8',['Requirements',['../index.html#autotoc_md9',1,'']]]
 ];

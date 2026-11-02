@@ -130,7 +130,7 @@ Features</h1>
 <ul>
 <li><b>Arbitrary rank</b>: <code>MultiDiagonal&lt;RANK&gt;</code> for any compile-time arity \(M\), including composition at arbitrary rank</li>
 <li><b>Closed algebra</b>: composition, direct product, addition, scalar multiplication, Hermitian conjugation — with exact signed-offset arithmetic</li>
-<li><b>Application</b>: accumulates \(A\psi\) into a state vector, which may be a strided slice of a larger array. Per diagonal, a loop nest generated at compile time with Boost.Hana runs in memory order, axis 0 innermost, from addresses computed once. It applies no factor \(1/i\): C++QED's convention is to store \(A = H/i\).</li>
+<li><b>Application</b>: accumulates \(A\psi\) into a state vector, which may be a strided slice of a larger array. Per diagonal, a loop nest generated at compile time with Boost.Hana runs in memory order, axis 0 innermost, from addresses computed once; a short axis 0, such as a qubit, is unrolled. It applies no factor \(1/i\): C++QED's convention is to store \(A = H/i\).</li>
 <li><b>Move-only semantics</b>: no accidental copies of large diagonal arrays; deep copies are explicit (<code>copy</code>)</li>
 <li><b>Deterministic results</b>: diagonals are stored in an ordered map keyed by signed offsets, so accumulation order in composition is well-defined and reproducible across platforms</li>
 <li><b>JSON serialization</b>: via Boost.JSON <code>tag_invoke</code>, useful for testing and debugging</li>
@@ -139,12 +139,8 @@ Features</h1>
 </ul>
 <h1><a class="anchor" id="autotoc_md8"></a>
 Performance</h1>
-<p>Applying a <code>MultiDiagonal</code> is currently between 1.5× slower and 1.3× faster than Eigen's sparse matrices, for operators on one axis and on several axes alike. Before the application loop was rewritten (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1">#1</a>), the Jaynes–Cummings coupling was 2.1–2.6× slower. What still holds it back is identified, and none of it is in the representation:</p>
-<ul>
-<li>complex multiplication with NaN checks (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23">#23</a>), which halves the speed;</li>
-<li>a single loop shape, one diagonal at a time, which doesn't suit operators larger than cache, slices with power-of-two strides, or a short axis 0 such as a qubit.</li>
-</ul>
-<p>With the NaN checks removed (<code>-fcx-limited-range</code>), the library is 1.5–2.4× faster than a comparable sparse matrix where its loop shape suits the data and the operator stays in cache. For operators as large as the state, application is limited by memory bandwidth, and then it is no faster than a sparse matrix.</p>
+<p>Where the operator stays in cache, applying a <code>MultiDiagonal</code> is 1.5–2.4× faster than Eigen's sparse matrices, for operators on one axis and on several axes, and 1.0–1.6× faster with a qubit on axis 0. These figures are for the default build of both; <code>-fcx-limited-range</code> makes Eigen up to 20% faster and leaves the library unchanged, since its kernel multiplies in real arithmetic. Before the application loop was rewritten (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1">#1</a>, <a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23">#23</a>), the Jaynes–Cummings coupling was 2.1–2.6× slower than Eigen.</p>
+<p>For operators as large as the state, application is limited by memory bandwidth, and then no format is faster than a sparse matrix; the library is at parity to 1.5× slower. What still holds it back is a single loop shape, one diagonal at a time, which doesn't suit operators larger than cache or slices with power-of-two strides. That is a matter of the loop, not of the representation.</p>
 <p>Measurements, causes and outlook, including what is not yet measured (the interaction picture): <a class="el" href="md_benchmarks_2performance.html">Performance of MultiDiagonal</a>.</p>
 <h1><a class="anchor" id="autotoc_md9"></a>
 Requirements</h1>

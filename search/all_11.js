@@ -1,19 +1,17 @@
 var searchData=
 [
-  ['tag_5finvoke_0',['tag_invoke',['../classcppqedutils_1_1MultiArray.html#a7c28c6a2a3bd0236802864246a1a0415',1,'cppqedutils::MultiArray::tag_invoke'],['../classcppqedutils_1_1MultiArray.html#ae85c103bcfd89f3bc0cb102bc50b3c29',1,'cppqedutils::MultiArray::tag_invoke'],['../structquantumoperator_1_1MultiDiagonal.html#a3a71231d0a020e838124fb5dcb36d257',1,'quantumoperator::MultiDiagonal::tag_invoke'],['../namespaceboost_1_1json.html#a819ee9c2ffdba9ca59e60a0ba608b392',1,'boost::json::tag_invoke(value_from_tag, value &amp;jv, const std::complex&lt; T &gt; &amp;c)'],['../namespaceboost_1_1json.html#a1995756ca19af4c9ce7764afc2cdbbbb',1,'boost::json::tag_invoke(value_to_tag&lt; std::complex&lt; T &gt; &gt;, const value &amp;jv)']]],
-  ['testing_1',['Building and testing',['../index.html#autotoc_md10',1,'']]],
-  ['the_20bandwidth_20ceiling_2',['The bandwidth ceiling',['../md_benchmarks_2performance.html#autotoc_md21',1,'']]],
-  ['the_20interaction_20picture_3',['The interaction picture',['../md_benchmarks_2performance.html#autotoc_md23',1,'']]],
-  ['the_20library_20s_20multi_20axis_20loop_4',['The library&apos;s multi-axis loop',['../md_benchmarks_2performance.html#autotoc_md20',1,'']]],
-  ['the_20signed_20offset_20representation_5',['The signed-offset representation',['../index.html#autotoc_md5',1,'']]],
-  ['time_20dependence_6',['Time dependence',['../structquantumoperator_1_1MultiDiagonal.html#autotoc_md1',1,'']]],
-  ['todo_20list_7',['Todo List',['../todo.html',1,'']]],
-  ['tostringjson_8',['toStringJSON',['../namespacecppqedutils.html#a3433455db307df78663a691db9fa61a8',1,'cppqedutils']]],
-  ['traits_2eh_9',['Traits.h',['../Traits_8h.html',1,'']]],
-  ['tridiagonal_20tt_10',['Why not &lt;tt&gt;Tridiagonal&lt;/tt&gt;?',['../index.html#autotoc_md6',1,'']]],
-  ['tt_20find_5fpackage_20tt_20after_20installation_11',['Via &lt;tt&gt;find_package&lt;/tt&gt; (after installation)',['../index.html#autotoc_md13',1,'']]],
-  ['tt_20tridiagonal_20tt_12',['Why not &lt;tt&gt;Tridiagonal&lt;/tt&gt;?',['../index.html#autotoc_md6',1,'']]],
-  ['twoitimesimagpartof_13',['twoITimesImagPartOf',['../structquantumoperator_1_1MultiDiagonal.html#a2876049efccbe178d468931472784f57',1,'quantumoperator::MultiDiagonal']]],
-  ['twotimesrealpartof_14',['twoTimesRealPartOf',['../structquantumoperator_1_1MultiDiagonal.html#a462f4d5cd073ec58dd4721733ddbc5db',1,'quantumoperator::MultiDiagonal']]],
-  ['twotimesrealpartofself_15',['twoTimesRealPartOfSelf',['../namespacecppqedutils.html#a0a6a48cecc095920cb37af768a52bd30',1,'cppqedutils']]]
+  ['s_20multi_20axis_20loop_0',['The library&apos;s multi-axis loop',['../md_benchmarks_2performance.html#autotoc_md20',1,'']]],
+  ['s_20setting_1',['Operators applied slice by slice: C++QED&apos;s setting',['../md_benchmarks_2performance.html#autotoc_md23',1,'']]],
+  ['setting_2',['Operators applied slice by slice: C++QED&apos;s setting',['../md_benchmarks_2performance.html#autotoc_md23',1,'']]],
+  ['setup_3',['Setup',['../md_benchmarks_2performance.html#autotoc_md18',1,'']]],
+  ['short_20axis_200_4',['A short axis 0',['../md_benchmarks_2performance.html#autotoc_md21',1,'']]],
+  ['signed_20offset_20representation_5',['The signed-offset representation',['../index.html#autotoc_md5',1,'']]],
+  ['slice_20by_20slice_3a_20c_20qed_20s_20setting_6',['Operators applied slice by slice: C++QED&apos;s setting',['../md_benchmarks_2performance.html#autotoc_md23',1,'']]],
+  ['slice_3a_20c_20qed_20s_20setting_7',['Operators applied slice by slice: C++QED&apos;s setting',['../md_benchmarks_2performance.html#autotoc_md23',1,'']]],
+  ['sqr_8',['sqr',['../MultiArrayComplex_8h.html#a79756f6e94e1f548cbc2b206fbb013a1',1,'MultiArrayComplex.h']]],
+  ['sqrabs_9',['sqrAbs',['../MultiArrayComplex_8h.html#a10b1515bd9ae3fd66ccc63a9eec386d2',1,'MultiArrayComplex.h']]],
+  ['steps_10',['Assessment and next steps',['../md_benchmarks_2performance.html#autotoc_md26',1,'']]],
+  ['storagetype_11',['storagetype',['../classcppqedutils_1_1MultiArray.html#a409d8f5480fe41bc224b9d974df3f4bc',1,'cppqedutils::MultiArray::StorageType'],['../namespacecppqedutils_1_1multiarray.html#a34604eaec6dcff606e5f8975d1407209',1,'cppqedutils::multiarray::StorageType']]],
+  ['strides_12',['strides',['../classcppqedutils_1_1MultiArrayView.html#ae344ee974379ded6c3c28a105f821ffb',1,'cppqedutils::MultiArrayView']]],
+  ['structure_13',['Repository structure',['../index.html#autotoc_md14',1,'']]]
 ];
