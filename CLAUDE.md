@@ -16,7 +16,7 @@ Released as v0.4.0. No DOI yet. License: BSL-1.0.
 include/multidiagonal/
   Traits.h            FWD, Hana/JSON setup, passByValue_v, ReferenceMF/ConstReferenceMF
   MultiArray.h        rank-R strided array: MultiArrayView (non-owning), MultiArray (owning, move-only)
-  MultiArrayComplex.h dcomp specializations, directProduct, twoTimesRealPartOf…, Eigen interop
+  MultiArrayComplex.h dcomp specializations, textbookProduct, directProduct, twoTimesRealPartOf…, Eigen interop
   MultiDiagonal.h     the operator algebra, including identity() and composition
 tests/                Catch2 v3 suites: testMultiArray, testMultiArrayComplex, testMultiDiagonal
   consumer/           downstream CMake project for the CI consumer job
@@ -137,8 +137,9 @@ ctest --test-dir build --output-on-failure
     `composeJC`, `constructJC`, and `picture1` (five interaction-picture variants).
   - Every configuration cross-validates against Eigen **before** timing and exits 1 on a
     mismatch.
-- `kernels.cc` holds the application-loop experiments (cases A–D: rank 1, Jaynes–Cummings,
-  an operator on one axis of a rank-4 state, the same applied slice by slice). It is built
+- `kernels.cc` holds the application-loop experiments (cases A–E: rank 1, Jaynes–Cummings,
+  an operator on one axis of a rank-4 state, the same applied slice by slice, a short
+  axis 0). It is built
   twice: `cppqed-multidiagonal-kernels` and `cppqed-multidiagonal-kernels-cxlr`
   (`-fcx-limited-range`; Clang 18 also needs `-Wno-overriding-option`). It validates
   before timing too.
@@ -149,14 +150,21 @@ ctest --test-dir build --output-on-failure
   its timings are meaningless. CI runs all three binaries with it.
 - **`benchmarks/performance.md` is the record of results and diagnosis**, and a page of the
   Doxygen site (linked from the README and from `operator()`). When numbers or the
-  diagnosis change, update it rather than this file. In brief (2026-11-01):
-  - Default `std::complex` multiplication (Annex G NaN checks, `__muldc3`) halves the
-    library's speed; Eigen's sparse product is unaffected (#23).
+  diagnosis change, update it rather than this file. In brief (2026-11-02):
+  - Default `std::complex` multiplication (Annex G NaN checks, `__muldc3`) used to halve the
+    library's speed. Since #23 the kernel multiplies with `textbookProduct`, so the default
+    build is as fast as `-fcx-limited-range`; that flag makes Eigen up to 20% faster (term
+    CSR on strided slices 1.2–1.5×). Composition and construction don't care.
   - `operator()` hoists addresses per diagonal and runs a compile-time loop nest with axis 0
     innermost (since 2026-11-01, #1). This fixed the per-element addressing, which had made
     it 3–5× slower at rank 2 and about 30× slower than Eigen at rank 4. It now matches the
-    hand-written loop. With a short axis 0 (qubit first, as in `jc_qjmc`) the innermost
-    loop has 1–2 elements: up to 1.4× slower than Eigen.
+    hand-written loop: 1.5–2.4× faster than Eigen in cache.
+  - An axis 0 of up to four elements (qubit first, as in `jc_qjmc`) is unrolled at compile
+    time, so the loop over axis 1 is innermost: 1.0–1.6× faster than Eigen in cache, where
+    it was up to 1.4× slower (#23, `kernels.cc` case E for the crossover).
+  - Keep everything the application loops read local or by value (the diagonal pointer is
+    passed and returned, bounds and strides are copied). Clang doesn't vectorize through
+    captured references once it stops inlining the lambda.
   - Operators as large as the state are bandwidth bound: parity at best.
   - In C++QED's slice-by-slice setting, the honest competitor is a CSR matrix of the term's
     own space on the same slices. With the fixes MultiDiagonal is 1.1–1.9× faster. Strided
@@ -169,9 +177,9 @@ ctest --test-dir build --output-on-failure
 
 ## Open items (roughly in priority order)
 
-1. Application performance (#1, #23; see `benchmarks/performance.md`, next steps): complex
-   multiply-add in real arithmetic, blocking for long operands, loop shape chosen from the
-   strides and extents. (The hoisted loop is done.)
+1. Application performance (#1; see `benchmarks/performance.md`, next steps): blocking for
+   long operands, and the row-oriented loop for power-of-two strides. (The hoisted loop,
+   the multiplication in real arithmetic and the short axis 0 are done.)
 2. Decide on migrating to `std::mdspan`/`std::extents` (Kokkos reference implementation,
    Apache-2.0, FetchContent-pinnable) versus writing the paper on the current
    architecture. **The decision is open; do not start the migration unasked.**
