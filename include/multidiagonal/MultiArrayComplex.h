@@ -46,6 +46,15 @@ double relativeDeviation(const auto& a, const auto& b)
 /// (`std::norm`), not as the square of the rounded `std::abs`.
 inline double sqrAbs(dcomp v) {return std::norm(v);}
 
+/// @brief Complex product by the textbook formula \f$(a+ib)(c+id)=(ac-bd)+i(ad+bc)\f$, for hot loops.
+///
+/// By default, GCC and Clang multiply `std::complex` according to C99 Annex G: when both parts of the textbook result
+/// are NaN, a library call (`__muldc3`) tries to recover an infinite result. That check keeps loops from vectorizing.
+/// This function omits the recovery, so its speed does not depend on `-fcx-limited-range`. Otherwise it evaluates the
+/// same expression as the default: the two differ only where an infinite operand makes both parts NaN.
+/// @see @ref md_benchmarks_2performance "Performance of MultiDiagonal" for what the check costs.
+inline dcomp textbookProduct(dcomp a, dcomp b) {return {a.real()*b.real()-a.imag()*b.imag(), a.real()*b.imag()+a.imag()*b.real()};}
+
 
 namespace boost::json {
 /// @brief Boost.JSON serialization for `std::complex<T>`: emits a two-element JSON array `[re, im]`.

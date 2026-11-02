@@ -16,12 +16,15 @@
 //      Eigen sparse of the term's own n×n space on the same strided slices; slices taken either in
 //      SliceIterator's order (last dummy axis fastest) or in memory order (first dummy axis fastest).
 //      Run at n=32 (power-of-two strides) and n=30.
+//   E  a short axis 0: tridiagonal ⊗ tridiagonal on extents {n0, 8192/n0}, n0 = 1…32: library operator()
+//      (which unrolls an axis 0 of up to four elements) vs hoisted loop (always loops over axis 0) vs Eigen sparse
 //
 // Built twice: cppqed-multidiagonal-kernels (default complex multiplication, with the C99 Annex G
-// NaN checks) and cppqed-multidiagonal-kernels-cxlr (-fcx-limited-range).
+// NaN checks) and cppqed-multidiagonal-kernels-cxlr (-fcx-limited-range). The library and the loops
+// here multiply with textbookProduct, which has no NaN check, so the flag changes only Eigen's figures.
 //
 // usage: cppqed-multidiagonal-kernels[-cxlr] [--smoke] [case ...]
-//        case ∈ {A,B,C,D}; none = all. --smoke shrinks the sizes for CI; its timings are meaningless.
+//        case ∈ {A,B,C,D,E}; none = all. --smoke shrinks the sizes for CI; its timings are meaningless.
 #include <multidiagonal/MultiDiagonal.h>
 
 #include <Eigen/SparseCore>
@@ -102,6 +105,18 @@ MultiDiagonal<1> penta(size_t N)
   return md;
 }
 
+/// three diagonals, offsets −1…+1 (for n = 1 only the main one)
+MultiDiagonal<1> tri(size_t n)
+{
+  MultiDiagonal<1> md;
+  for (ptrdiff_t o=-1; o<=1; ++o) if (size_t(std::abs(o))<n) {
+    std::vector<dcomp> v(n-size_t(std::abs(o)));
+    for (size_t k=0; k<v.size(); ++k) v[k]=coeff(o,k);
+    md.diagonals.emplace(MultiDiagonal<1>::Offsets{o}, multiarray::fromStorage(std::move(v)));
+  }
+  return md;
+}
+
 template <size_t R> MultiArray<dcomp,R> randomState(Extents<R> ext)
 {
   std::mt19937 g{1}; std::uniform_real_distribution<double> d{-1.,1.};
@@ -155,7 +170,7 @@ template <size_t R> void hoisted(const MultiDiagonal<R>& md, const MultiArray<dc
     for (Extents<R> k{}; k[0]!=1; incrementMultiIndex(k,outerExt)) {
       ptrdiff_t oy=baseY, ox=baseX; for (size_t i=1; i<R; ++i) { oy+=ptrdiff_t(str[i]*k[i]); ox+=ptrdiff_t(str[i]*k[i]); }
       dcomp* __restrict ys=yp+oy; const dcomp* __restrict xs=x+ox; const dcomp* __restrict ds=d+dOff;
-      for (size_t m=0; m<len; ++m) ys[m]+=ds[m]*xs[m];
+      for (size_t m=0; m<len; ++m) ys[m]+=textbookProduct(ds[m],xs[m]);
       dOff+=len;
     }
   }
@@ -170,7 +185,7 @@ void rowBlocked(const MultiDiagonal<1>& md, const MultiArray<dcomp,1>& psi, Mult
     // diagonal entry k writes row k+om; rows [r0,r0+B) ↔ k ∈ [r0-om, r0+B-om) ∩ [0,len)
     const size_t kb = r0>om ? r0-om : 0, ke = std::min(len, r0+B>om ? r0+B-om : 0);
     const dcomp* __restrict d=diag.dataView.data(); dcomp* __restrict ys=yp+om; const dcomp* __restrict xs=x+op;
-    for (size_t k=kb; k<ke; ++k) ys[k]+=d[k]*xs[k];
+    for (size_t k=kb; k<ke; ++k) ys[k]+=textbookProduct(d[k],xs[k]);
   }
 }
 
@@ -183,11 +198,11 @@ template <size_t R> void broadcast(const MultiDiagonal<1>& A, size_t j, const Mu
     const ptrdiff_t o=off[0]; const size_t om=size_t(std::max(-o,ptrdiff_t{0})), op=size_t(std::max(o,ptrdiff_t{0})), len=n-size_t(std::abs(o));
     const dcomp* d=diag.dataView.data();
     if (sj==1)
-      for (size_t b=0; b<nOuter; ++b) { dcomp* __restrict ys=yp+b*n+om; const dcomp* __restrict xs=x+b*n+op; for (size_t k=0; k<len; ++k) ys[k]+=d[k]*xs[k]; }
+      for (size_t b=0; b<nOuter; ++b) { dcomp* __restrict ys=yp+b*n+om; const dcomp* __restrict xs=x+b*n+op; for (size_t k=0; k<len; ++k) ys[k]+=textbookProduct(d[k],xs[k]); }
     else
       for (size_t b=0; b<nOuter; ++b) for (size_t k=0; k<len; ++k) {
         const dcomp c=d[k]; dcomp* __restrict ys=yp+b*blockOuter+(k+om)*sj; const dcomp* __restrict xs=x+b*blockOuter+(k+op)*sj;
-        for (size_t m=0; m<sj; ++m) ys[m]+=c*xs[m];
+        for (size_t m=0; m<sj; ++m) ys[m]+=textbookProduct(c,xs[m]);
       }
   }
 }
@@ -202,7 +217,7 @@ template <size_t R> void broadcastBlocked(const MultiDiagonal<1>& A, size_t j, c
     const dcomp* d=diag.dataView.data();
     for (size_t k=0; k<len; ++k) {
       const dcomp c=d[k]; dcomp* __restrict ys=yp+b*blockOuter+(k+om)*sj; const dcomp* __restrict xs=x+b*blockOuter+(k+op)*sj;
-      for (size_t m=0; m<sj; ++m) ys[m]+=c*xs[m];
+      for (size_t m=0; m<sj; ++m) ys[m]+=textbookProduct(c,xs[m]);
     }
   }
 }
@@ -223,7 +238,7 @@ void rowsSlice(const std::vector<Tap>& ts, ptrdiff_t n, size_t s, const dcomp* x
     dcomp acc{};
     for (const auto& t : ts) { // row r, column r+o; entry index k = r − o⁻
       const ptrdiff_t c=r+t.o; if (c<0 || c>=n) continue;
-      acc+=t.d[r-std::max(-t.o,ptrdiff_t{0})]*x[size_t(c)*s];
+      acc+=textbookProduct(t.d[r-std::max(-t.o,ptrdiff_t{0})],x[size_t(c)*s]);
     }
     y[size_t(r)*s]+=acc;
   }
@@ -235,7 +250,7 @@ void diagonalsSlice(const MultiDiagonal<1>& A, size_t n, size_t s, const dcomp* 
   for (const auto& [off,diag] : A.diagonals) {
     const ptrdiff_t o=off[0]; const size_t om=size_t(std::max(-o,ptrdiff_t{0})), op=size_t(std::max(o,ptrdiff_t{0})), len=n-size_t(std::abs(o));
     const dcomp* d=diag.dataView.data(); dcomp* ys=y+om*s; const dcomp* xs=x+op*s;
-    for (size_t k=0; k<len; ++k) ys[k*s]+=d[k]*xs[k*s];
+    for (size_t k=0; k<len; ++k) ys[k*s]+=textbookProduct(d[k],xs[k*s]);
   }
 }
 
@@ -354,6 +369,24 @@ void caseD(bool smoke)
   }
 }
 
+// ── E: a short axis 0 ────────────────────────────────────────────────────────
+
+void caseE(bool smoke)
+{
+  for (size_t n0 : smoke ? std::vector<size_t>{1,2,5} : std::vector<size_t>{1,2,3,4,5,6,8,16,32}) {
+    const size_t M=(smoke ? 256 : 8192)/n0; const Extents<2> ext{n0,M};
+    auto op=tri(n0)*tri(M); auto psi=randomState<2>(ext); MultiArray<dcomp,2> y{ext,multiarray::zeroInit<dcomp>};
+    const auto S=toSparse(op,ext); const CVector x=toVec(psi); CVector ye=CVector::Zero(x.size());
+    const double nnz=double(S.nonZeros());
+    op(0.,psi,y); const CVector ref=S*x; check("E library",toVec(y),ref);
+    zero(y); hoisted(op,psi,y); check("E hoisted",toVec(y),ref);
+    char c[32]; std::snprintf(c,sizeof c,"E_axis0_%zu",n0);
+    out(c,"library",n0*M,perOp([&]{op(0.,psi,y); doNotOptimize(y.dataView.data());}),nnz);
+    out(c,"hoisted",n0*M,perOp([&]{hoisted(op,psi,y); doNotOptimize(y.dataView.data());}),nnz);
+    out(c,"eigen_sparse",n0*M,perOp([&]{ye.noalias()+=S*x; doNotOptimize(ye.data());}),nnz);
+  }
+}
+
 } // anonymous
 
 
@@ -366,11 +399,11 @@ int main(int argc, char** argv)
     if (a=="--smoke") smoke=true; else only.insert(a);
   }
 
-  static constexpr std::array<std::pair<std::string_view,void(*)(bool)>,4> cases{{{"A",caseA},{"B",caseB},{"C",caseC},{"D",caseD}}};
+  static constexpr std::array<std::pair<std::string_view,void(*)(bool)>,5> cases{{{"A",caseA},{"B",caseB},{"C",caseC},{"D",caseD},{"E",caseE}}};
 
   for (auto sel : only)
     if (std::none_of(cases.begin(),cases.end(),[=](const auto& c){return c.first==sel;})) {
-      std::fprintf(stderr,"unknown case '%.*s'; known: A B C D\n",int(sel.size()),sel.data());
+      std::fprintf(stderr,"unknown case '%.*s'; known: A B C D E\n",int(sel.size()),sel.data());
       return 2;
     }
 

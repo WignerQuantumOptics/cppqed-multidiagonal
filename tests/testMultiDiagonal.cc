@@ -488,6 +488,27 @@ TEST_CASE("application through strided, offset views of larger arrays — #1", "
 }
 
 
+TEST_CASE("application with axis 0 of every length, unrolled up to four elements — #23", "[multidiagonal]")
+{
+  // a tridiagonal on axis 0 has diagonals of length n0 and n0-1: this covers the unrolled lengths 1–4 and the loop
+  for (size_t n0 : {1uz,2uz,3uz,4uz,5uz,7uz}) {
+    CAPTURE(n0);
+    auto A0 = complexTridiag(n0,0.3), A1 = complexTridiag(3,-1.2);
+    const CMatrix dense = kron(densify(A1), densify(A0));
+    auto X = A0 * A1;
+    CHECK(approxEqual(densify(X), dense));          // contiguous
+
+    CVector psi(Eigen::Index(3*n0));
+    for (Eigen::Index k=0; k<psi.size(); ++k) psi(k)=dcomp(std::cos(0.7*double(k)), std::sin(1.3*double(k)));
+    const CVector ref = dense*psi;
+    const auto agrees = [&] (const CVector& v) {return (v-ref).norm() < tol*ref.norm();};
+
+    CHECK(agrees(applyThroughViews(X, psi, {1,n0+2}, 3, {1,n0+1}, 1)));       // unit stride along axis 0, gaps between rows
+    CHECK(agrees(applyThroughViews(X, psi, {2,2*n0+1}, 1, {3,3*n0}, 2)));     // strided along axis 0
+  }
+}
+
+
 // ── serialization ────────────────────────────────────────────────────────────
 
 TEST_CASE("JSON serialization of MultiDiagonal — finding F2", "[multidiagonal][json]")

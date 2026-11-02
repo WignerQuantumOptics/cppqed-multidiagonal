@@ -91,8 +91,9 @@ struct MultiDiagonal
   ///
   /// Per diagonal, the addresses of the first row and column are computed once. A loop nest generated at compile
   /// time then runs over the axes with axis 0 innermost, i.e. in memory order for both the diagonal and the state.
-  /// The outer axes only add strides to pointers. The innermost loop has a separate branch for unit stride, so
-  /// that it can vectorize.
+  /// The outer axes only add strides to pointers. The innermost loop multiplies with `textbookProduct`, so that it
+  /// vectorizes also without `-fcx-limited-range`, and has a separate branch for unit stride. An axis 0 of up to four
+  /// elements (e.g. a qubit) is unrolled at compile time instead, and the loop over axis 1 becomes the innermost one.
   /// @see @ref md_benchmarks_2performance "Performance of MultiDiagonal" for what this loop costs and why.
   void operator () (double, MultiArrayConstView<dcomp,RANK> psi, MultiArrayView<dcomp,RANK> dpsidt) const
   {
@@ -115,24 +116,45 @@ struct MultiDiagonal
         if (o<0) rows+=sR*size_t(-o); else cols+=sC*size_t(o);
       }
 
-      // the diagonal is an owning MultiArray, contiguous with axis 0 fastest: the loop nest consumes it in storage order
-      const dcomp* d{diag.dataView.data()};
-      const size_t len{diag.extents[0]};
-
-      const auto loop=[&] (auto n, const auto& self, dcomp* r, const dcomp* c)
+      // The loop nest walks the diagonal d in storage order (an owning MultiArray, contiguous, axis 0 fastest), and returns
+      // d advanced past the entries it used. len0 is the length of axis 0 if fixed at compile time, otherwise 0.
+      // Bounds and strides are copied, and d is passed by value, so that the compiler sees that the stores into dpsidt
+      // don't change them, also where it doesn't inline the lambda; otherwise it cannot vectorize.
+      const auto loop=[&] (auto n, const auto& self, auto len0, dcomp* r, const dcomp* c, const dcomp* d) -> const dcomp*
       {
         using namespace hana::literals;
         if constexpr (n!=0_c) {
-          for (size_t k=0; k<diag.extents[n]; ++k) self(n-1_c,self,r+k*dpsidt.strides[n],c+k*psi.strides[n]);
+          const size_t extent{diag.extents[n]}, sR{dpsidt.strides[n]}, sC{psi.strides[n]};
+          for (size_t k=0; k<extent; ++k) d=self(n-1_c,self,len0,r+k*sR,c+k*sC,d);
+          return d;
         }
         else {
-          if (strideRows0==1 && strideCols0==1) for (size_t k=0; k<len; ++k) r[k]+=d[k]*c[k];
-          else for (size_t k=0; k<len; ++k) r[k*strideRows0]+=d[k]*c[k*strideCols0];
-          d+=len;
+          const size_t sR{strideRows0}, sC{strideCols0};
+          const auto multiplyAdd=[=] (size_t k) {r[k*sR]+=textbookProduct(d[k],c[k*sC]);};
+          if constexpr (decltype(len0)::value) {
+            hana::for_each(hana::make_range(hana::size_c<0>,len0),multiplyAdd);
+            return d+decltype(len0)::value;
+          }
+          else {
+            const size_t len{diag.extents[0]};
+            if (sR==1 && sC==1) for (size_t k=0; k<len; ++k) r[k]+=textbookProduct(d[k],c[k]);
+            else for (size_t k=0; k<len; ++k) multiplyAdd(k);
+            return d+len;
+          }
         }
       };
 
-      loop(hana::llong_c<RANK-1>,loop,rows,cols);
+      const auto run=[&] (auto len0) {loop(hana::llong_c<RANK-1>,loop,len0,rows,cols,diag.dataView.data());};
+
+      // A short axis 0 is unrolled at compile time: a vectorized loop over a few elements costs more than it saves.
+      // Up to four is where the two cross over (benchmarks/kernels.cc, case E).
+      switch (diag.extents[0]) {
+        case 1:  run(hana::size_c<1>); break;
+        case 2:  run(hana::size_c<2>); break;
+        case 3:  run(hana::size_c<3>); break;
+        case 4:  run(hana::size_c<4>); break;
+        default: run(hana::size_c<0>);
+      }
     }
   }
 

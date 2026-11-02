@@ -26,6 +26,16 @@ TEST_CASE("scalar helpers", "[complex]")
 }
 
 
+TEST_CASE("textbookProduct agrees with std::complex multiplication for finite operands — #23", "[complex]")
+{
+  // operands with exact binary products, so that the comparison is exact with or without fused multiply-adds
+  CHECK(textbookProduct(1.5+2i,-3.+0.25i) == -5.-5.625i);
+  for (dcomp a : {1.5+2i, -0.75-4i, 3.+0i, 0.+1i}) for (dcomp b : {-3.+0.25i, 2.-0.5i, 0.+0i, -1.+0i})
+    CHECK(textbookProduct(a,b) == a*b);
+  CHECK(relativeDeviation(textbookProduct(0.3+0.7i,1.1-0.9i),(0.3+0.7i)*(1.1-0.9i)) < 1e-15);
+}
+
+
 TEST_CASE("sqrAbs is exactly re²+im², not the square of the rounded abs — #12", "[complex][contract]")
 {
   CHECK(sqrAbs(1.+1i) == 2.); // |1+i| = √2 rounds, and its square is 2.0000000000000004
