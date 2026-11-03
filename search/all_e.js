@@ -6,7 +6,8 @@ var searchData=
   ['performance_3',['Performance',['../index.html#autotoc_md8',1,'']]],
   ['performance_20of_20multidiagonal_3a_20measurements_20and_20outlook_4',['Performance of MultiDiagonal: measurements and outlook',['../md_benchmarks_2performance.html',1,'']]],
   ['performance_2emd_5',['performance.md',['../performance_8md.html',1,'']]],
-  ['picture_6',['The interaction picture',['../md_benchmarks_2performance.html#autotoc_md24',1,'']]],
+  ['picture_6',['The interaction picture',['../md_benchmarks_2performance.html#autotoc_md25',1,'']]],
   ['placeholder_7',['Placeholder',['../structcppqedutils_1_1multiarray_1_1Placeholder.html',1,'cppqedutils::multiarray']]],
-  ['project_8',['Integration into a CMake project',['../index.html#autotoc_md11',1,'']]]
+  ['placement_20of_20the_20arrays_8',['Placement of the arrays',['../md_benchmarks_2performance.html#autotoc_md22',1,'']]],
+  ['project_9',['Integration into a CMake project',['../index.html#autotoc_md11',1,'']]]
 ];

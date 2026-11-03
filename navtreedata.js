@@ -45,11 +45,12 @@ var NAVTREE =
       [ "The library's multi-axis loop", "md_benchmarks_2performance.html#autotoc_md20", [
         [ "A short axis 0", "md_benchmarks_2performance.html#autotoc_md21", null ]
       ] ],
-      [ "The bandwidth ceiling", "md_benchmarks_2performance.html#autotoc_md22", null ],
-      [ "Operators applied slice by slice: C++QED's setting", "md_benchmarks_2performance.html#autotoc_md23", null ],
-      [ "The interaction picture", "md_benchmarks_2performance.html#autotoc_md24", null ],
-      [ "Composition and construction", "md_benchmarks_2performance.html#autotoc_md25", null ],
-      [ "Assessment and next steps", "md_benchmarks_2performance.html#autotoc_md26", null ]
+      [ "Placement of the arrays", "md_benchmarks_2performance.html#autotoc_md22", null ],
+      [ "The bandwidth ceiling", "md_benchmarks_2performance.html#autotoc_md23", null ],
+      [ "Operators applied slice by slice: C++QED's setting", "md_benchmarks_2performance.html#autotoc_md24", null ],
+      [ "The interaction picture", "md_benchmarks_2performance.html#autotoc_md25", null ],
+      [ "Composition and construction", "md_benchmarks_2performance.html#autotoc_md26", null ],
+      [ "Assessment and next steps", "md_benchmarks_2performance.html#autotoc_md27", null ]
     ] ],
     [ "Todo List", "todo.html", null ],
     [ "Namespaces", "namespaces.html", [
@@ -89,7 +90,7 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "MultiArrayComplex_8h.html",
-"structquantumoperator_1_1MultiDiagonal.html#a3e21a3b4442b4732569f367e442c3982"
+"structquantumoperator_1_1MultiDiagonal.html#a3d3837def415a069c3ae8ea786666015"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
