@@ -150,36 +150,50 @@ ctest --test-dir build --output-on-failure
   its timings are meaningless. CI runs all three binaries with it.
 - **`benchmarks/performance.md` is the record of results and diagnosis**, and a page of the
   Doxygen site (linked from the README and from `operator()`). When numbers or the
-  diagnosis change, update it rather than this file. In brief (2026-11-02):
+  diagnosis change, update it rather than this file. In brief (2026-11-03):
+  - The reference machine is a quiet i7-7700 desktop (Kaby Lake; GCC 16, Eigen 5.0.1;
+    turbo and SMT off, pinned to a core without device interrupts). Every figure is a median
+    over five separate processes. Speed-ups over Eigen depend on the processor, so give them
+    per machine; the earlier laptop figures are in the page's history.
   - Default `std::complex` multiplication (Annex G NaN checks, `__muldc3`) used to halve the
     library's speed. Since #23 the kernel multiplies with `textbookProduct`, so the default
-    build is as fast as `-fcx-limited-range`; that flag makes Eigen up to 20% faster (term
-    CSR on strided slices 1.2–1.5×). Composition and construction don't care.
+    build is as fast as `-fcx-limited-range`. That flag makes Eigen 10–17% faster (term CSR
+    on slices 1.1–1.4×). Composition and construction don't care.
   - `operator()` hoists addresses per diagonal and runs a compile-time loop nest with axis 0
     innermost (since 2026-11-01, #1). This fixed the per-element addressing, which had made
-    it 3–5× slower at rank 2 and about 30× slower than Eigen at rank 4. It now matches the
-    hand-written loop: 1.5–2.4× faster than Eigen in cache.
+    it 3.4–4.5× slower than Eigen at rank 2 and 18× slower at rank 4. It now matches the
+    hand-written loop: 1.9–3.4× faster than Eigen in cache.
   - An axis 0 of up to four elements (qubit first, as in `jc_qjmc`) is unrolled at compile
-    time, so the loop over axis 1 is innermost: 1.0–1.6× faster than Eigen in cache, where
-    it was up to 1.4× slower (#23, `kernels.cc` case E for the crossover).
+    time, so the loop over axis 1 is innermost: 1.5–2.2× faster than Eigen in cache (#23,
+    `kernels.cc` case E for the crossover).
   - Keep everything the application loops read local or by value (the diagonal pointer is
     passed and returned, bounds and strides are copied). Clang doesn't vectorize through
     captured references once it stops inlining the lambda.
-  - Operators as large as the state are bandwidth bound: parity at best.
+  - The loop stores once per diagonal and element. That makes its speed depend on where
+    `psi` lies relative to `dpsidt` within a page (4K aliasing, #25): typically 6%, up to
+    1.2×, and occasionally 2× for a whole process. Out of cache, physical placement matters
+    too. Compare as medians over processes. A loop that accumulates several diagonals per
+    store is immune.
+  - Out of cache: from 1.5× faster to 1.45× slower than Eigen. Once both are bandwidth bound,
+    a format gains at most about 20%; single-threaded on the reference machine Eigen isn't,
+    and the row-blocked loop is 2× faster.
   - In C++QED's slice-by-slice setting, the honest competitor is a CSR matrix of the term's
-    own space on the same slices. With the fixes MultiDiagonal is 1.1–1.9× faster. Strided
-    slices with power-of-two strides need a row-oriented loop (L1 set conflicts); other
-    strides don't. C++QED's `SliceIterator` order costs 1.2–4.7× on top (cppqed#90).
-  - Composition wins 2–9×, but it happens at setup time, not in the time-stepping loop.
+    own space on the same slices. MultiDiagonal is 1.4–3× faster at n = 30. Power-of-two
+    slice lengths are slow: strided ones need a row-oriented loop (L1 set conflicts), and
+    contiguous ones fall to parity for a reason not yet known. C++QED's `SliceIterator` order
+    costs 1.1–2.3× on top (cppqed#90).
+  - Composition wins up to 7× at rank 1 (0.9–1.8× for Jaynes–Cummings), but it happens at
+    setup time, not in the time-stepping loop.
   - The interaction picture is not benchmarked systematically. C++QED's hot loop updates
     `(coefficients, frequencies)` and applies; it never transforms the state around a static
     product. Don't present that "sandwich" as the reference.
 
 ## Open items (roughly in priority order)
 
-1. Application performance (#1; see `benchmarks/performance.md`, next steps): blocking for
-   long operands, and the row-oriented loop for power-of-two strides. (The hoisted loop,
-   the multiplication in real arithmetic and the short axis 0 are done.)
+1. Application performance (#1, #25; see `benchmarks/performance.md`, next steps): blocking
+   for long operands with several diagonals per store, and the row-oriented loop for
+   power-of-two strides. (The hoisted loop, the multiplication in real arithmetic and the
+   short axis 0 are done.)
 2. Decide on migrating to `std::mdspan`/`std::extents` (Kokkos reference implementation,
    Apache-2.0, FetchContent-pinnable) versus writing the paper on the current
    architecture. **The decision is open; do not start the migration unasked.**

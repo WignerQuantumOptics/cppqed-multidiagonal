@@ -45,9 +45,17 @@ The truncated algebra is represented *exactly*, including its physical deviation
 
 ## Performance
 
-Where the operator stays in cache, applying a `MultiDiagonal` is 1.5–2.4× faster than Eigen's sparse matrices, for operators on one axis and on several axes, and 1.0–1.6× faster with a qubit on axis 0. These figures are for the default build of both; `-fcx-limited-range` makes Eigen up to 20% faster and leaves the library unchanged, since its kernel multiplies in real arithmetic. Before the application loop was rewritten ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1), [#23](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23)), the Jaynes–Cummings coupling was 2.1–2.6× slower than Eigen.
+On the reference machine (Intel Core i7-7700, GCC 16, Eigen 5.0.1), with the operator in cache, applying a `MultiDiagonal` is:
+- 1.9–3.4× faster than Eigen's sparse matrices for operators on one axis and on several axes;
+- 1.5–2.2× faster with a qubit on axis 0.
 
-For operators as large as the state, application is limited by memory bandwidth, and then no format is faster than a sparse matrix; the library is at parity to 1.5× slower. What still holds it back is a single loop shape, one diagonal at a time, which doesn't suit operators larger than cache or slices with power-of-two strides. That is a matter of the loop, not of the representation.
+These figures are for the default build of both. The speed-up depends on the processor: on a 2022 laptop core it was 1.5–2.4× and 1.0–1.6×. `-fcx-limited-range` makes Eigen 10–17% faster and leaves the library unchanged, since its kernel multiplies in real arithmetic. Before the application loop was rewritten ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1), [#23](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23)), the Jaynes–Cummings coupling was 3.4–4.5× slower than Eigen.
+
+For operators as large as the state, the library is between 1.5× faster and 1.45× slower than Eigen. Once both sides are limited by memory bandwidth, no format gains much over a sparse matrix. What still holds the library back is its loop shape, one diagonal at a time with a store to the output for each:
+- it doesn't suit operators larger than cache, or slices with power-of-two strides;
+- it makes the speed depend on where input and output lie relative to each other in memory ([#25](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25)).
+
+That is a matter of the loop, not of the representation.
 
 Measurements, causes and outlook, including what is not yet measured (the interaction picture): [Performance of MultiDiagonal](benchmarks/performance.md).
 
