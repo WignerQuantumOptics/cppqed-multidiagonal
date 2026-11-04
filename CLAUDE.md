@@ -199,8 +199,9 @@ ctest --test-dir build --output-on-failure
     own space on the same slices. MultiDiagonal is 1.7–2.6× faster at n = 30, and on strided
     slices of power-of-two length too (the row shape avoids the L1 set conflicts). Contiguous
     slices of power-of-two length, out of cache, are slow in both shapes, for a reason not yet
-    known (parity with term CSR). C++QED's `SliceIterator` order costs 1.1–2.3× on top
-    (cppqed#90).
+    known (parity with term CSR). C++QED's `SliceIterator` used to produce the slices last
+    dummy axis fastest, which cost every method 1.1–2.3× more; it takes them in memory order
+    since 2026-11-04 (cppqed#90).
   - Composition wins up to 7× at rank 1 (0.9–1.8× for Jaynes–Cummings), but it happens at
     setup time, not in the time-stepping loop.
   - The interaction picture is not benchmarked systematically. C++QED's hot loop updates
@@ -209,11 +210,13 @@ ctest --test-dir build --output-on-failure
 
 ## Open items (roughly in priority order)
 
-Recommended next (2026-11-04): cppqed#90 (slices in memory order), since it helps C++QED's real
-workload most. In this library, the power-of-two investigation comes next; the placement
-regression check that came before it is done (`kernels.cc` case G). Outside performance, the
-items below are unchanged: the `std::mdspan` decision, the README usage snippet (which waits on
-an API decision), and the deferred review of the install rules.
+Recommended next (2026-11-04): the power-of-two investigation; cppqed#90 (slices in memory
+order) and the placement regression check (`kernels.cc` case G) are done. In case F the
+power-of-two slice lengths are also the only points whose state holds exactly 2²⁰ amplitudes
+(the others fall a few short; case D's n = 32 is 2²⁰ too), so the first run separates slice
+length from array size. Outside performance, the items below are unchanged: the `std::mdspan`
+decision, the README usage snippet (which waits on an API decision), and the deferred review of
+the install rules.
 
 1. Application performance (#1; see `benchmarks/performance.md`, next steps): contiguous
    slices of power-of-two length are slow out of cache, for a reason not yet known; and a

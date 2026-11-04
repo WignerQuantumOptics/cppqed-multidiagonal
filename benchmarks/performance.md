@@ -251,7 +251,7 @@ Case D, n⁴ state, operator on axis 0 (contiguous slices) or axis 2 (stride n²
 
 Three findings:
 
-1. **Slice order matters as much as the kernel.** `SliceIterator` produces the slices last dummy axis fastest, so consecutive slices lie far apart in memory. In that order every method is 1.1–1.35× slower on axis 0 and 1.3–2.3× slower on axis 2. For example, the library takes 4.84 instead of 2.36 for n = 32 on axis 2, and term CSR 6.17 instead of 2.67 for n = 30. Fixing the order belongs to C++QED, not to the library ([cppqed#90](https://github.com/WignerQuantumOptics/cppqed/issues/90)).
+1. **Slice order matters as much as the kernel.** C++QED's `SliceIterator` used to produce the slices last dummy axis fastest, so consecutive slices lay far apart in memory. In that order every method is 1.1–1.35× slower on axis 0 and 1.3–2.3× slower on axis 2. For example, the library takes 4.84 instead of 2.36 for n = 32 on axis 2, and term CSR 6.17 instead of 2.67 for n = 30. The order is C++QED's, not the library's, and since 2026-11-04 it is memory order there ([cppqed#90](https://github.com/WignerQuantumOptics/cppqed/issues/90)).
 2. **The best loop shape depends on the slice length and the stride**, and `operator()` now takes it from the view.
    - On strided slices the row shape wins: 1.7× faster than term CSR for n = 30 (1.4× against its flagged build) and 1.7× (1.6×) for n = 32. A sweep per diagonal put all elements of a strided slice of power-of-two length (stride 1024 amplitudes, 16 KB) into the same L1 cache set and thrashed it: 6.00, against 2.36 now, and 1.5× slower than term CSR before.
    - On contiguous slices of length 30, one diagonal at a time is the fastest: 2.6× faster than term CSR (1.9× against its flagged build). The row shape would take 1.24, because of its fixed cost per row of axis 0.
@@ -343,6 +343,6 @@ Next steps:
    - add term CSR through slices to the main suite;
    - add update plus apply for the interaction picture in the slice setting.
 
-In C++QED: produce slices in memory order ([cppqed#90](https://github.com/WignerQuantumOptics/cppqed/issues/90)), and benchmark the interaction picture end to end ([cppqed#91](https://github.com/WignerQuantumOptics/cppqed/issues/91)).
+In C++QED: done on 2026-11-04, the slices in memory order ([cppqed#90](https://github.com/WignerQuantumOptics/cppqed/issues/90)); still to do, benchmark the interaction picture end to end ([cppqed#91](https://github.com/WignerQuantumOptics/cppqed/issues/91)).
 
-**What to do next:** cppqed#90, since it helps C++QED's real workload most. In C++QED's setting, the order of the slices costs every method 1.1–2.3×, more than any remaining change of the loop would gain there. On the library side, the power-of-two investigation comes next. The placement regression check, which would have come before it, is done.
+**What to do next:** the power-of-two investigation. In case F the power-of-two slice lengths are also the only points whose state holds exactly 2²⁰ amplitudes (16 MiB); every other length falls a few amplitudes short (n = 24: 1048560), and case D's n = 32 is 2²⁰ too. The measurements so far therefore cannot tell slice length from array size, and the first run separates the two: power-of-two lengths with one slice fewer. cppqed#90, which helped C++QED's real workload most, and the placement regression check are done.
