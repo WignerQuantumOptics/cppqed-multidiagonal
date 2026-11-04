@@ -496,7 +496,7 @@ TEST_CASE("application through strided, offset views of larger arrays — #1", "
 
   const auto agrees = [&] (const CVector& v) {return (v-ref).norm() < tol*ref.norm();};
 
-  // X|X has 75 diagonals, more than applyByRows lists per sweep, and up to 27 contributing to one row
+  // X|X has 75 diagonals, more than applyByRows lists per sweep, and up to 24 (3·2·4) contributing to one row
   auto XX = X | X;
   const CVector refXX = dense*ref;
   const auto agreesXX = [&] (const CVector& v) {return (v-refXX).norm() < tol*refXX.norm();};

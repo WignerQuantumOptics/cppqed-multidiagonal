@@ -183,8 +183,8 @@ struct MultiDiagonal
   /// Along axis 0, the rows in which all of them have entries are summed in one loop, with the number of diagonals
   /// fixed at compile time, so that it vectorizes. The few rows at either end, where some diagonals have no entry, are
   /// summed one by one. @p dpsidt is thus stored once per element. An operand larger than cache is therefore swept
-  /// once, rather than once per diagonal, and where @p psi lies relative to @p dpsidt within a page matters by a few
-  /// percent, rather than by up to 1.5×.
+  /// once, rather than once per diagonal, and where @p psi lies relative to @p dpsidt within a page matters by at most
+  /// about 10%, rather than by up to 20% (and occasionally 2× for a whole process).
   ///
   /// Up to six diagonals are summed per store, since each needs two pointers in registers, and up to sixteen are listed
   /// per sweep. An operator with more diagonals per row is stored into several times, and one with more diagonals in all

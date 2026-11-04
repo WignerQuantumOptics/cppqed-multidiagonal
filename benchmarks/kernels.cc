@@ -2,7 +2,7 @@
 // Kernel experiments behind benchmarks/performance.md: what MultiDiagonal application costs, and what
 // alternative loop structures over the same data would cost. Emits CSV to stdout:
 //   case,impl,N,ns_per_op,ns_per_nnz
-// N is the length of the state vector. Every variant is cross-validated against Eigen before timing
+// N is the length of the state vector (for case F, of axis 0). Every variant is cross-validated against Eigen before timing
 // (exit 1 on mismatch).
 //
 // The library is timed as operator() chooses its loop shape ("library"), and with each of its two shapes forced
@@ -22,13 +22,16 @@
 //   E  a short axis 0: tridiagonal ⊗ tridiagonal on extents {n0, 8192/n0}, n0 = 1…32: library
 //      (which unrolls an axis 0 of up to four elements one diagonal at a time) vs hoisted loop (always loops over
 //      axis 0) vs Eigen sparse
+//   F  where the library's two loop shapes cross over, which sets operator()'s choice: the five-diagonal operator
+//      on contiguous slices of length n, of a state in cache (2048 amplitudes) and of one of 2^20; and
+//      tridiagonal ⊗ tridiagonal on extents {n0, T/n0}, contiguous, for T = 8192 (in L2), 65536 (in L3), 2^20
 //
 // Built twice: cppqed-multidiagonal-kernels (default complex multiplication, with the C99 Annex G
 // NaN checks) and cppqed-multidiagonal-kernels-cxlr (-fcx-limited-range). The library and the loops
 // here multiply with textbookProduct, which has no NaN check, so the flag changes only Eigen's figures.
 //
 // usage: cppqed-multidiagonal-kernels[-cxlr] [--smoke] [case ...]
-//        case ∈ {A,B,C,D,E}; none = all. --smoke shrinks the sizes for CI; its timings are meaningless.
+//        case ∈ {A,B,C,D,E,F}; none = all. --smoke shrinks the sizes for CI; its timings are meaningless.
 #include <multidiagonal/MultiDiagonal.h>
 
 #include <Eigen/SparseCore>
@@ -415,6 +418,42 @@ void caseE(bool smoke)
   }
 }
 
+// ── F: where the two loop shapes cross over ──────────────────────────────────
+
+void caseF(bool smoke)
+{
+  // the five-diagonal operator on S contiguous slices of length n of a state {n,S}, one slice per call, as C++QED applies it
+  for (size_t total : smoke ? std::vector<size_t>{256} : std::vector<size_t>{2048,1uz<<20})
+    for (size_t n : smoke ? std::vector<size_t>{8,30} : std::vector<size_t>{8,16,24,32,48,64,96,128,256}) {
+      const size_t S=std::max(total/n,1uz); const Extents<2> ext{n,S};
+      auto A=penta(n); auto psi=randomState<2>(ext); MultiArray<dcomp,2> y{ext,multiarray::zeroInit<dcomp>};
+      const auto full=copy(A)*quantumoperator::multidiagonal::identity(S);
+      const auto Sp=toSparse(full,ext); const CVector ref=Sp*toVec(psi); const double nnz=double(Sp.nonZeros());
+      const std::span<const dcomp> xs=psi.dataView; const std::span<dcomp> ys{y.dataStorage()};
+      const auto slices=[&](auto apply){ for (size_t b=0; b<S; ++b)
+        apply(MultiArrayView<const dcomp,1>{{n},{1},b*n,xs},MultiArrayView<dcomp,1>{{n},{1},b*n,ys}); };
+      const auto byDiagonals=[&]{slices([&](auto p, auto q){A.applyByDiagonals(p,q);});};
+      const auto byRows=[&]{slices([&](auto p, auto q){A.applyByRows(p,q);});};
+      zero(y); byDiagonals(); check("F slices byDiagonals",toVec(y),ref);
+      zero(y); byRows(); check("F slices byRows",toVec(y),ref);
+      char c[32]; std::snprintf(c,sizeof c,"F_slices_%zu",total);
+      out(c,"library_byDiagonals",n,perOp([&]{byDiagonals(); doNotOptimize(ys.data());}),nnz);
+      out(c,"library_byRows",n,perOp([&]{byRows(); doNotOptimize(ys.data());}),nnz);
+    }
+  // nine diagonals with a short contiguous axis 0, the whole operand at once
+  for (size_t total : smoke ? std::vector<size_t>{1024} : std::vector<size_t>{8192,65536,1uz<<20})
+    for (size_t n0 : smoke ? std::vector<size_t>{5,32} : std::vector<size_t>{5,8,12,16,24,32,48,64,128,256}) {
+      const size_t M=total/n0; const Extents<2> ext{n0,M};
+      auto op=tri(n0)*tri(M); auto psi=randomState<2>(ext); MultiArray<dcomp,2> y{ext,multiarray::zeroInit<dcomp>};
+      const auto Sp=toSparse(op,ext); const CVector ref=Sp*toVec(psi); const double nnz=double(Sp.nonZeros());
+      zero(y); op.applyByDiagonals(psi,y); check("F grid byDiagonals",toVec(y),ref);
+      zero(y); op.applyByRows(psi,y); check("F grid byRows",toVec(y),ref);
+      char c[32]; std::snprintf(c,sizeof c,"F_grid_%zu",total);
+      out(c,"library_byDiagonals",n0,perOp([&]{op.applyByDiagonals(psi,y); doNotOptimize(y.dataView.data());}),nnz);
+      out(c,"library_byRows",n0,perOp([&]{op.applyByRows(psi,y); doNotOptimize(y.dataView.data());}),nnz);
+    }
+}
+
 } // anonymous
 
 
@@ -427,11 +466,11 @@ int main(int argc, char** argv)
     if (a=="--smoke") smoke=true; else only.insert(a);
   }
 
-  static constexpr std::array<std::pair<std::string_view,void(*)(bool)>,5> cases{{{"A",caseA},{"B",caseB},{"C",caseC},{"D",caseD},{"E",caseE}}};
+  static constexpr std::array<std::pair<std::string_view,void(*)(bool)>,6> cases{{{"A",caseA},{"B",caseB},{"C",caseC},{"D",caseD},{"E",caseE},{"F",caseF}}};
 
   for (auto sel : only)
     if (std::none_of(cases.begin(),cases.end(),[=](const auto& c){return c.first==sel;})) {
-      std::fprintf(stderr,"unknown case '%.*s'; known: A B C D E\n",int(sel.size()),sel.data());
+      std::fprintf(stderr,"unknown case '%.*s'; known: A B C D E F\n",int(sel.size()),sel.data());
       return 2;
     }
 

@@ -137,9 +137,10 @@ ctest --test-dir build --output-on-failure
     `composeJC`, `constructJC`, and `picture1` (five interaction-picture variants).
   - Every configuration cross-validates against Eigen **before** timing and exits 1 on a
     mismatch.
-- `kernels.cc` holds the application-loop experiments (cases A–E: rank 1, Jaynes–Cummings,
+- `kernels.cc` holds the application-loop experiments (cases A–F: rank 1, Jaynes–Cummings,
   an operator on one axis of a rank-4 state, the same applied slice by slice, a short
-  axis 0). It is built
+  axis 0, and the crossover of the two loop shapes, which sets `operator()`'s choice). It
+  times the library as `operator()` chooses and with each shape forced. It is built
   twice: `cppqed-multidiagonal-kernels` and `cppqed-multidiagonal-kernels-cxlr`
   (`-fcx-limited-range`; Clang 18 also needs `-Wno-overriding-option`). It validates
   before timing too.
@@ -150,7 +151,7 @@ ctest --test-dir build --output-on-failure
   its timings are meaningless. CI runs all three binaries with it.
 - **`benchmarks/performance.md` is the record of results and diagnosis**, and a page of the
   Doxygen site (linked from the README and from `operator()`). When numbers or the
-  diagnosis change, update it rather than this file. In brief (2026-11-03):
+  diagnosis change, update it rather than this file. In brief (2026-11-04):
   - The reference machine is a quiet i7-7700 desktop (Kaby Lake; GCC 16, Eigen 5.0.1;
     turbo and SMT off, pinned to a core without device interrupts). Every figure is a median
     over five separate processes. Speed-ups over Eigen depend on the processor, so give them
@@ -159,29 +160,43 @@ ctest --test-dir build --output-on-failure
     library's speed. Since #23 the kernel multiplies with `textbookProduct`, so the default
     build is as fast as `-fcx-limited-range`. That flag makes Eigen 10–17% faster (term CSR
     on slices 1.1–1.4×). Composition and construction don't care.
-  - `operator()` hoists addresses per diagonal and runs a compile-time loop nest with axis 0
-    innermost (since 2026-11-01, #1). This fixed the per-element addressing, which had made
-    it 3.4–4.5× slower than Eigen at rank 2 and 18× slower at rank 4. It now matches the
-    hand-written loop: 1.9–3.4× faster than Eigen in cache.
-  - An axis 0 of up to four elements (qubit first, as in `jc_qjmc`) is unrolled at compile
-    time, so the loop over axis 1 is innermost: 1.5–2.2× faster than Eigen in cache (#23,
-    `kernels.cc` case E for the crossover).
+  - Application has two loop shapes, both compile-time loop nests with axis 0 innermost from
+    addresses computed once, and both public so that tests and `kernels.cc` can force each:
+    - `applyByDiagonals` (since 2026-11-01, #1): one diagonal at a time. This fixed the
+      per-element addressing, which had made the loop 3.4–4.5× slower than Eigen at rank 2
+      and 18× slower at rank 4. An axis 0 of up to four elements (qubit first, as in
+      `jc_qjmc`) is unrolled at compile time, so the loop over axis 1 is innermost (#23,
+      `kernels.cc` case E).
+    - `applyByRows` (since 2026-11-04, #1, #25): the diagonals with entries in a row are
+      listed along the outer axes and summed along axis 0 before one store, up to six per
+      store (eight spill registers). The rows at either end of axis 0 are summed one by
+      one, a fixed cost per row of axis 0.
+    - `operator()` takes `applyByDiagonals` for an axis 0 of up to four, and for views
+      contiguous along axis 0 that are small (≤ 128 amplitudes) or fit in the last-level
+      cache (≤ 2¹⁸) with an axis 0 shorter than 32; `applyByRows` otherwise. The bounds are
+      the measured crossovers (case F); re-measure before changing them.
+  - In cache the library is 2.7–3.6× faster than Eigen at rank 1 and with the mode first
+    (1.8–2.2× at dimension 16), 1.4–2.2× with the qubit first. In cache, ratios to Eigen move
+    by up to 20% between builds, because Eigen's own speed depends on the code layout; the
+    library's speed-up over its earlier versions doesn't.
   - Keep everything the application loops read local or by value (the diagonal pointer is
     passed and returned, bounds and strides are copied). Clang doesn't vectorize through
     captured references once it stops inlining the lambda.
-  - The loop stores once per diagonal and element. That makes its speed depend on where
-    `psi` lies relative to `dpsidt` within a page (4K aliasing, #25): typically 6%, up to
-    1.2×, and occasionally 2× for a whole process. Out of cache, physical placement matters
-    too. Compare as medians over processes. A loop that accumulates several diagonals per
-    store is immune.
-  - Out of cache: from 1.5× faster to 1.45× slower than Eigen. Once both are bandwidth bound,
-    a format gains at most about 20%; single-threaded on the reference machine Eigen isn't,
-    and the row-blocked loop is 2× faster.
+  - `applyByDiagonals` stores once per diagonal and element. That makes its speed depend on
+    where `psi` lies relative to `dpsidt` within a page (4K aliasing, #25): typically 6%, up
+    to 1.2×, and occasionally 2× for a whole process. `applyByRows` stores once per element
+    and varies by at most 1.10×. Out of cache, physical placement matters for both (up to
+    30% between processes). Compare as medians over processes. Code layout matters too: the
+    same per-diagonal loop measured 0.78 and 0.89 ns per nonzero in two binaries.
+  - Out of cache: 1.4–2.5× faster than Eigen, except with the qubit first (0.6–0.9×, still
+    one diagonal at a time). Once both are bandwidth bound, a format gains at most about 20%;
+    single-threaded on the reference machine Eigen isn't.
   - In C++QED's slice-by-slice setting, the honest competitor is a CSR matrix of the term's
-    own space on the same slices. MultiDiagonal is 1.4–3× faster at n = 30. Power-of-two
-    slice lengths are slow: strided ones need a row-oriented loop (L1 set conflicts), and
-    contiguous ones fall to parity for a reason not yet known. C++QED's `SliceIterator` order
-    costs 1.1–2.3× on top (cppqed#90).
+    own space on the same slices. MultiDiagonal is 1.7–2.6× faster at n = 30, and on strided
+    slices of power-of-two length too (the row shape avoids the L1 set conflicts). Contiguous
+    slices of power-of-two length, out of cache, are slow in both shapes, for a reason not yet
+    known (parity with term CSR). C++QED's `SliceIterator` order costs 1.1–2.3× on top
+    (cppqed#90).
   - Composition wins up to 7× at rank 1 (0.9–1.8× for Jaynes–Cummings), but it happens at
     setup time, not in the time-stepping loop.
   - The interaction picture is not benchmarked systematically. C++QED's hot loop updates
@@ -190,10 +205,11 @@ ctest --test-dir build --output-on-failure
 
 ## Open items (roughly in priority order)
 
-1. Application performance (#1, #25; see `benchmarks/performance.md`, next steps): blocking
-   for long operands with several diagonals per store, and the row-oriented loop for
-   power-of-two strides. (The hoisted loop, the multiplication in real arithmetic and the
-   short axis 0 are done.)
+1. Application performance (#1; see `benchmarks/performance.md`, next steps): a short axis 0
+   of a state larger than cache (qubit first) is still applied one diagonal at a time, and
+   contiguous slices of power-of-two length are slow out of cache. (The hoisted loop, the
+   multiplication in real arithmetic, the short axis 0, and the row shape for long operands
+   and strided views are done.)
 2. Decide on migrating to `std::mdspan`/`std::extents` (Kokkos reference implementation,
    Apache-2.0, FetchContent-pinnable) versus writing the paper on the current
    architecture. **The decision is open; do not start the migration unasked.**
