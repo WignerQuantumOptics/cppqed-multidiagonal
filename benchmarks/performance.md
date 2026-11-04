@@ -9,7 +9,7 @@ This page records what the benchmarks show about applying a `MultiDiagonal` to a
 - **In C++QED's actual setting**, a small operator applied slice by slice across a large state, the library is 1.7–2.6× faster than a CSR matrix of the same term (1.4–1.9× against its build with `-fcx-limited-range`), also on strided slices of power-of-two length. The exception is contiguous slices of power-of-two length, where it is at parity.
 - **The loop has two shapes** since 2026-11-04: one diagonal at a time, and the diagonals contributing to a row summed before one store ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1), [#25](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25)). `operator()` chooses from the view's strides and extents. The row shape sweeps a large state once instead of once per diagonal, and makes the speed nearly independent of where input and output lie in memory. The other is faster where axis 0 is short, and for small views.
 - **History.** Up to v0.4.0, the multi-axis loop recomputed every address per element, which made it 3.4–4.5× slower than Eigen at rank 2 and 18× slower at rank 4; fixed on 2026-11-01 ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)). Complex multiplication with the C99 Annex G NaN checks halved the speed of the default build; fixed on 2026-11-02, together with a compile-time unrolled short axis 0 ([#23](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23)). Up to 2026-11-03 the loop stored the output once per diagonal, which made it up to 1.45× slower than Eigen out of cache and its speed depend on placement by up to 1.2–2×.
-- **What remains.** A qubit on axis 0 of a state larger than cache is still applied one diagonal at a time. Out of cache, contiguous slices of power-of-two length are up to 3× slower than slices of other lengths, for a reason not yet known. Small views are applied one diagonal at a time, and there placement still costs up to 17%.
+- **What remains.** A qubit on axis 0 of a state larger than cache is still applied one diagonal at a time. Out of cache, contiguous slices of power-of-two length are up to 3× slower than slices of other lengths, for a reason not yet known. Small views are applied one diagonal at a time, and there placement still costs up to 23%, though that shape stays faster than the other at any placement.
 - **The interaction picture** has not been benchmarked systematically yet (see the section on it below).
 
 ## Setup
@@ -22,7 +22,7 @@ This page records what the benchmarks show about applying a `MultiDiagonal` to a
   - "v0.4.0": the library of v0.4.0, with the benchmarks of e49319b;
   - "before #23": 84cf7d4;
   - "after #23": 7725d79;
-  - "now": c346b8a, the two loop shapes; case F of `kernels.cc` was added with this page, over the same library.
+  - "now": c346b8a, the two loop shapes; cases F and G of `kernels.cc` were added after it, over the same library.
 
   The first three were measured on 2026-11-03. "Now" was measured on 2026-11-04, interleaved with "after #23" again, which reproduced the library's earlier figures within 1–3%.
 - **Unit:** nanoseconds per stored nonzero, i.e. per `nonZeros()` of the equivalent Eigen matrix. "In L2" means that operator and state together fit in 256 KB, "in L3" in 8 MB; "out of cache" means beyond that.
@@ -39,6 +39,7 @@ To reproduce (pin the runs to one core, e.g. with `taskset -c 1`):
 cmake -B build-release -DCMAKE_BUILD_TYPE=Release
 cmake --build build-release --target cppqed-multidiagonal-benchmarks cppqed-multidiagonal-kernels cppqed-multidiagonal-kernels-cxlr
 ./build-release/benchmarks/cppqed-multidiagonal-kernels        # cases A–F, default complex multiplication
+./build-release/benchmarks/cppqed-multidiagonal-kernels G      # the placement scan; a summary per shape goes to stderr
 ./build-release/benchmarks/cppqed-multidiagonal-kernels-cxlr   # the same with -fcx-limited-range
 ./build-release/benchmarks/cppqed-multidiagonal-benchmarks     # apply1, compose1, …, picture1
 ```
@@ -53,6 +54,7 @@ cmake --build build-release --target cppqed-multidiagonal-benchmarks cppqed-mult
 | D | the same operator applied slice by slice, as C++QED's `Broadcaster` does; n = 32 and n = 30 |
 | E | tridiagonal ⊗ tridiagonal on extents {n₀, 8192/n₀}, for an axis 0 of n₀ = 1 … 32 elements |
 | F | where the two loop shapes cross over: case D's operator on contiguous slices of length n; tridiagonal ⊗ tridiagonal on extents {n₀, T/n₀} for T = 8192, 65536, 2²⁰ |
+| G | placement: `psi` at every 16-byte offset of a page relative to `dpsidt`, both shapes; rank 1 at N = 64, 1024, 4096, and Jaynes–Cummings in both axis orders (state 4096). It takes a few minutes and runs only when named |
 
 ## Complex multiplication
 
@@ -171,27 +173,28 @@ Case F maps the crossover between the two shapes for contiguous views, which set
 
 The shape that applies one diagonal at a time writes `dpsidt` once per diagonal and element. So its speed depends on where `psi` lies relative to `dpsidt` within a 4 KB page ([#25](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25)). The processor compares only the low 12 address bits of a load with the stores still in flight. For some placements it then holds loads from `psi` back behind stores to `dpsidt` that they don't depend on ("4K aliasing"). The row shape writes `dpsidt` once per element.
 
-A standalone probe placed `psi` at every 16-byte offset of a page relative to `dpsidt` (rank 1, five diagonals; ns per application):
+Case G of `kernels.cc` places `psi` at every 16-byte offset of a page relative to `dpsidt`, for both shapes (ns per application; the first of two runs):
 
 | loop | N | best | median | worst | offsets more than 5% above the best |
 |---|---|---|---|---|---|
-| one diagonal at a time | 1024 | 2940 | 3129 | 3510 | 140 / 256 |
-| by rows | 1024 | 2595 | 2631 | 2773 | 4 / 256 |
-| one diagonal at a time | 4096 | 13896 | 14380 | 15655 | 40 / 256 |
-| by rows | 4096 | 11626 | 11784 | 12226 | 1 / 256 |
-| one diagonal at a time, Jaynes–Cummings, mode first, state 4096 | | 11595 | 11857 | 12782 | 34 / 256 |
-| by rows, the same | | 8849 | 9295 | 9768 | 129 / 256 |
-| one diagonal at a time (chosen by `operator()` here) | 64 | 167 | 167 | 195 | 19 / 256 |
-| by rows | 64 | 222 | 223 | 239 | 4 / 256 |
+| one diagonal at a time (chosen by `operator()` here) | 64 | 161 | 163 | 198 | 21 / 256 |
+| by rows | 64 | 215 | 218 | 240 | 6 / 256 |
+| one diagonal at a time | 1024 | 2968 | 3136 | 3577 | 142 / 256 |
+| by rows | 1024 | 2764 | 2792 | 2899 | 1 / 256 |
+| one diagonal at a time | 4096 | 13657 | 14164 | 15500 | 83 / 256 |
+| by rows | 4096 | 12197 | 12467 | 12835 | 2 / 256 |
+| one diagonal at a time, Jaynes–Cummings, mode first, state 4096 | | 11142 | 11307 | 12330 | 27 / 256 |
+| by rows, the same | | 8918 | 9365 | 9813 | 128 / 256 |
+| one diagonal at a time, Jaynes–Cummings, qubit first, state 4096 (chosen by `operator()`) | | 17199 | 17545 | 19000 | 14 / 256 |
 
-"Worst" leaves out single offsets far above both their neighbours: six in 2816 measurements, 1.27–1.57× the best, in both shapes. Two repeated scans of the row shape at N = 1024 put the one there within 1% of the best, and one of them had another such offset elsewhere. They are disturbances during that measurement, not placement.
+"Worst" leaves out single offsets far above both their neighbours: nine of the 2560 measurements in this run, 1.2–1.9× the best, in both shapes. The second run had them at other offsets. They are disturbances during that measurement, not placement. Otherwise the second run agrees within a few percent, except that the first two offsets of one of its scans came out 1.4× slow.
 
-- **One diagonal at a time: a typical placement costs 2–6%, a bad one 10–19%.** The slow placements are those where `psi` lies a little below `dpsidt`, and the default allocation puts the two arrays exactly there.
+- **One diagonal at a time: a typical placement costs 1–6%, a bad one 10–23%.** The slow placements are those where `psi` lies a little below `dpsidt`, and the default allocation puts the two arrays exactly there.
 - **Occasionally a whole process runs about 2× slower** with an identical layout, presumably because of the state of the processor's memory-disambiguation predictor.
-- **By rows, at rank 1, every offset is within 2–3% of the best**, except a rise of 4–8% for `psi` within about 100 bytes below `dpsidt`. It is also 1.2× faster at the median. With Jaynes–Cummings it alternates between 1–3% and 6–8% above the best with a period of 32 bytes, which is the alignment of 32-byte vector loads against cache lines, not aliasing; the worst offset is 1.10× the best.
+- **By rows, at rank 1, every offset is within 5% of the best from N = 1024 on**, and the rise for `psi` just below `dpsidt` is 4–6%. At N = 64 a few offsets cost up to 12%. The row shape is also 1.1–1.2× faster at the median there. With Jaynes–Cummings it alternates between 1–3% and 6–8% above the best with a period of 32 bytes, which is the alignment of 32-byte vector loads against cache lines, not aliasing; the worst offset is 1.10× the best.
 - **Eigen stores once per row and is not affected.**
-- **With the qubit on axis 0, placement barely matters**: one diagonal at a time, 13 offsets in 256 are more than 5% slower, and the worst is 1.10×.
-- **Small views are still applied one diagonal at a time** (N = 64 above), and there the placements just below cost up to 17%.
+- **With the qubit on axis 0, placement barely matters**: one diagonal at a time, 14 offsets in 256 are more than 5% slower, and the worst is 1.10×.
+- **Small views are still applied one diagonal at a time** (N = 64 above), and there the placements just below cost up to 23%. Even at its worst placement, though, this shape is faster than the row shape at its best (198 against 215 ns), so `operator()` has nothing to gain by switching.
 - **Out of cache, physical placement matters too.** At N = 1048576 an isolated process took 2.2 ns per nonzero for `apply1` one diagonal at a time, but 3.4 ns inside the main suite, with the same in-page offsets. The physical pages there come from a long allocation history. Huge pages make at most a 5% difference. Case B out of cache varies by up to 30% between processes, for both shapes.
 
 This is why every figure on this page is a median over separate processes.
@@ -326,18 +329,20 @@ The format is not a large speed-up for every application, and should not be pres
 - the per-axis offsets are the quanta moved per subsystem, and they give per-axis strides, one phase per diagonal for linear spectra, and composition closure without index bookkeeping;
 - it is far more readable than a flattened matrix.
 
-Next steps, in order:
+Next steps:
 
 1. Done on 2026-11-01: `operator()` rewritten with hoisted addresses and the innermost loop over axis 0 ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)).
 2. Done on 2026-11-02: complex multiply-add in real arithmetic inside the kernel, and an axis 0 of up to four elements unrolled at compile time ([#23](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23)).
 3. Done on 2026-11-04: the diagonals of a row summed before one store, for long operands and strided views, with `operator()` choosing the shape from the view's strides and extents ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1), [#25](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25)). This also settled the strided half of the next step.
-4. The loop shapes that remain ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)):
-   - a short axis 0 of a state larger than cache (qubit first), still applied one diagonal at a time: block the outer axes, or sum the diagonals over the few rows of axis 0;
-   - find out why contiguous slices of power-of-two length are slow out of cache, in both shapes.
+4. The loop shapes that remain ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)), in this order:
+   - find out why contiguous slices of power-of-two length are slow out of cache, in both shapes (case F reproduces it);
+   - a short axis 0 of a state larger than cache (qubit first), still applied one diagonal at a time: block the outer axes, or sum the diagonals over the few rows of axis 0.
 5. Benchmarks ([#5](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/5)):
+   - done on 2026-11-04: the placement scan as a regression check for #25, for both shapes (case G);
    - make `picture1` call the library;
    - add term CSR through slices to the main suite;
-   - add update plus apply for the interaction picture in the slice setting;
-   - add the placement scan as a regression check for #25, for both shapes.
+   - add update plus apply for the interaction picture in the slice setting.
 
 In C++QED: produce slices in memory order ([cppqed#90](https://github.com/WignerQuantumOptics/cppqed/issues/90)), and benchmark the interaction picture end to end ([cppqed#91](https://github.com/WignerQuantumOptics/cppqed/issues/91)).
+
+**What to do next:** cppqed#90, since it helps C++QED's real workload most. In C++QED's setting, the order of the slices costs every method 1.1–2.3×, more than any remaining change of the loop would gain there. On the library side, the power-of-two investigation comes next. The placement regression check, which would have come before it, is done.

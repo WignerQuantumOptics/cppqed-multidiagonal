@@ -2,7 +2,7 @@
 // Kernel experiments behind benchmarks/performance.md: what MultiDiagonal application costs, and what
 // alternative loop structures over the same data would cost. Emits CSV to stdout:
 //   case,impl,N,ns_per_op,ns_per_nnz
-// N is the length of the state vector (for case F, of axis 0). Every variant is cross-validated against Eigen before timing
+// N is the length of the state vector (for case F, of axis 0; for case G, the offset of psi in bytes). Every variant is cross-validated against Eigen before timing
 // (exit 1 on mismatch).
 //
 // The library is timed as operator() chooses its loop shape ("library"), and with each of its two shapes forced
@@ -25,13 +25,17 @@
 //   F  where the library's two loop shapes cross over, which sets operator()'s choice: the five-diagonal operator
 //      on contiguous slices of length n, of a state in cache (2048 amplitudes) and of one of 2^20; and
 //      tridiagonal ⊗ tridiagonal on extents {n0, T/n0}, contiguous, for T = 8192 (in L2), 65536 (in L3), 2^20
+//   G  placement (#25): psi at every 16-byte offset of a page relative to dpsidt, for both loop shapes: rank 1 at
+//      N = 64, 1024, 4096, and Jaynes–Cummings with the mode first and with the qubit first (state 4096). One row per
+//      offset, with N the offset in bytes; best, median, worst and the offsets more than 5% above the best go to
+//      stderr. It takes a few minutes, so it runs only when named (and in --smoke).
 //
 // Built twice: cppqed-multidiagonal-kernels (default complex multiplication, with the C99 Annex G
 // NaN checks) and cppqed-multidiagonal-kernels-cxlr (-fcx-limited-range). The library and the loops
 // here multiply with textbookProduct, which has no NaN check, so the flag changes only Eigen's figures.
 //
 // usage: cppqed-multidiagonal-kernels[-cxlr] [--smoke] [case ...]
-//        case ∈ {A,B,C,D,E,F}; none = all. --smoke shrinks the sizes for CI; its timings are meaningless.
+//        case ∈ {A,B,C,D,E,F,G}; none = A–F. --smoke shrinks the sizes for CI; its timings are meaningless.
 #include <multidiagonal/MultiDiagonal.h>
 
 #include <Eigen/SparseCore>
@@ -42,6 +46,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
 #include <random>
 #include <set>
 #include <span>
@@ -287,13 +292,21 @@ void caseA(bool smoke)
 
 // ── B: rank-2 Jaynes–Cummings, mode = axis 0 ─────────────────────────────────
 
+/// Jaynes–Cummings with a driven mode of dimension N: mode on axis 0 and qubit on axis 1, or the converse
+MultiDiagonal<2> jaynesCummings(size_t N, bool qubitFirst)
+{
+  auto ladder=[&]{ std::vector<dcomp> v(N-1); for (size_t k=0; k<N-1; ++k) v[k]=std::sqrt(double(k+1)); return single(+1,std::move(v)); };
+  std::vector<dcomp> nv(N); for (size_t k=0; k<N; ++k) nv[k]=double(k);
+  auto mode=0.7*single(0,nv) + dcomp(0.3,0.2)*hermitianConjugateOf(ladder()) + dcomp(0.3,-0.2)*ladder();
+  using quantumoperator::multidiagonal::identity;
+  if (qubitFirst) return 1.1*(single(-1,{1.})*ladder()) + 1.1*(single(+1,{1.})*hermitianConjugateOf(ladder())) + identity(2)*mode;
+  return 1.1*(ladder()*single(-1,{1.})) + 1.1*(hermitianConjugateOf(ladder())*single(+1,{1.})) + mode*identity(2);
+}
+
 void caseB(bool smoke)
 {
   for (size_t N : sizes(smoke)) {
-    auto ladder=[&]{ std::vector<dcomp> v(N-1); for (size_t k=0; k<N-1; ++k) v[k]=std::sqrt(double(k+1)); return single(+1,std::move(v)); };
-    std::vector<dcomp> nv(N); for (size_t k=0; k<N; ++k) nv[k]=double(k);
-    auto mode=0.7*single(0,nv) + dcomp(0.3,0.2)*hermitianConjugateOf(ladder()) + dcomp(0.3,-0.2)*ladder();
-    auto jc = 1.1*(ladder()*single(-1,{1.})) + 1.1*(hermitianConjugateOf(ladder())*single(+1,{1.})) + mode*quantumoperator::multidiagonal::identity(2);
+    const auto jc=jaynesCummings(N,false);
     const Extents<2> ext{N,2}; auto psi=randomState<2>(ext); MultiArray<dcomp,2> y{ext,multiarray::zeroInit<dcomp>};
     const auto S=toSparse(jc,ext); const CVector x=toVec(psi); CVector ye=CVector::Zero(x.size());
     const double nnz=double(S.nonZeros());
@@ -454,6 +467,50 @@ void caseF(bool smoke)
     }
 }
 
+// ── G: placement of psi relative to dpsidt within a page (#25) ────────────────
+
+/// times both loop shapes with dpsidt at the start of a page and psi at every 16-byte offset of its own page
+template <size_t R> void scanPlacement(const char* c, const MultiDiagonal<R>& md, Extents<R> ext, bool smoke)
+{
+  const size_t n=multiarray::calculateExtent(ext), bytes=(n*sizeof(dcomp)+4096+4095)/4096*4096;
+  const auto str=multiarray::calculateStrides(ext);
+  const auto page=[&]{ return std::unique_ptr<dcomp,decltype(&std::free)>{static_cast<dcomp*>(std::aligned_alloc(4096,bytes)),&std::free}; };
+  const auto psiBuffer=page(), yBuffer=page();
+  const auto psi0=randomState<R>(ext); const auto S=toSparse(md,ext); const CVector ref=S*toVec(psi0); const double nnz=double(S.nonZeros());
+  const MultiArrayView<dcomp,R> y{ext,str,0,std::span<dcomp>{yBuffer.get(),n}};
+
+  for (bool byRows : {false,true}) {
+    const char* impl = byRows ? "library_byRows" : "library_byDiagonals";
+    std::vector<double> t;
+    for (size_t shift=0; shift<4096; shift+=smoke ? 1024 : 16) {
+      dcomp* p=psiBuffer.get()+shift/sizeof(dcomp); std::copy_n(psi0.dataView.data(),n,p);
+      const MultiArrayView<const dcomp,R> psi{ext,str,0,std::span<const dcomp>{p,n}};
+      const auto apply=[&]{ if (byRows) md.applyByRows(psi,y); else md.applyByDiagonals(psi,y); };
+      std::fill_n(yBuffer.get(),n,dcomp{}); apply();
+      check(c,Eigen::Map<const CVector>(yBuffer.get(),Eigen::Index(n)),ref);
+      t.push_back(perOp([&]{apply(); doNotOptimize(yBuffer.get());}));
+      out(c,impl,shift,t.back(),nnz);
+    }
+    std::vector<double> sorted=t; std::sort(sorted.begin(),sorted.end());
+    const double best=sorted.front();
+    std::fprintf(stderr,"%s %s: best %.5g, median %.5g, worst %.5g ns; %td of %zu offsets more than 5%% above the best\n",c,impl,
+                 best,sorted[sorted.size()/2],sorted.back(),std::count_if(t.begin(),t.end(),[=](double v){return v>1.05*best;}),t.size());
+  }
+}
+
+void caseG(bool smoke)
+{
+  const double batch=targetBatchNs; targetBatchNs=std::min(targetBatchNs,1e7); // 256 offsets per shape and configuration
+  for (size_t N : smoke ? std::vector<size_t>{64} : std::vector<size_t>{64,1024,4096}) {
+    char c[32]; std::snprintf(c,sizeof c,"G_rank1_%zu",N);
+    scanPlacement(c,penta(N),Extents<1>{N},smoke);
+  }
+  const size_t N = smoke ? 16 : 2048;
+  scanPlacement("G_JC_modefast",jaynesCummings(N,false),Extents<2>{N,2},smoke);
+  scanPlacement("G_JC_qbitfast",jaynesCummings(N,true),Extents<2>{2,N},smoke);
+  targetBatchNs=batch;
+}
+
 } // anonymous
 
 
@@ -466,11 +523,11 @@ int main(int argc, char** argv)
     if (a=="--smoke") smoke=true; else only.insert(a);
   }
 
-  static constexpr std::array<std::pair<std::string_view,void(*)(bool)>,6> cases{{{"A",caseA},{"B",caseB},{"C",caseC},{"D",caseD},{"E",caseE},{"F",caseF}}};
+  static constexpr std::array<std::pair<std::string_view,void(*)(bool)>,7> cases{{{"A",caseA},{"B",caseB},{"C",caseC},{"D",caseD},{"E",caseE},{"F",caseF},{"G",caseG}}};
 
   for (auto sel : only)
     if (std::none_of(cases.begin(),cases.end(),[=](const auto& c){return c.first==sel;})) {
-      std::fprintf(stderr,"unknown case '%.*s'; known: A B C D E F\n",int(sel.size()),sel.data());
+      std::fprintf(stderr,"unknown case '%.*s'; known: A B C D E F G\n",int(sel.size()),sel.data());
       return 2;
     }
 
@@ -481,5 +538,5 @@ int main(int argc, char** argv)
   if (smoke) targetBatchNs=2e6;
 
   std::printf("case,impl,N,ns_per_op,ns_per_nnz\n");
-  for (const auto& [name,fn] : cases) if (only.empty() || only.contains(name)) fn(smoke);
+  for (const auto& [name,fn] : cases) if (only.empty() ? name!="G" || smoke : only.contains(name)) fn(smoke);
 }

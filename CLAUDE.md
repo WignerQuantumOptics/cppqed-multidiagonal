@@ -142,7 +142,9 @@ ctest --test-dir build --output-on-failure
 - `kernels.cc` holds the application-loop experiments (cases A–F: rank 1, Jaynes–Cummings,
   an operator on one axis of a rank-4 state, the same applied slice by slice, a short
   axis 0, and the crossover of the two loop shapes, which sets `operator()`'s choice). It
-  times the library as `operator()` chooses and with each shape forced. It is built
+  times the library as `operator()` chooses and with each shape forced. Case G, the
+  placement scan of #25 (psi at every 16-byte offset of a page relative to dpsidt, both
+  shapes), takes minutes and runs only when named, or in `--smoke`. It is built
   twice: `cppqed-multidiagonal-kernels` and `cppqed-multidiagonal-kernels-cxlr`
   (`-fcx-limited-range`; Clang 18 also needs `-Wno-overriding-option`). It validates
   before timing too.
@@ -207,11 +209,17 @@ ctest --test-dir build --output-on-failure
 
 ## Open items (roughly in priority order)
 
-1. Application performance (#1; see `benchmarks/performance.md`, next steps): a short axis 0
-   of a state larger than cache (qubit first) is still applied one diagonal at a time, and
-   contiguous slices of power-of-two length are slow out of cache. (The hoisted loop, the
-   multiplication in real arithmetic, the short axis 0, and the row shape for long operands
-   and strided views are done.)
+Recommended next (2026-11-04): cppqed#90 (slices in memory order), since it helps C++QED's real
+workload most. In this library, the power-of-two investigation comes next; the placement
+regression check that came before it is done (`kernels.cc` case G). Outside performance, the
+items below are unchanged: the `std::mdspan` decision, the README usage snippet (which waits on
+an API decision), and the deferred review of the install rules.
+
+1. Application performance (#1; see `benchmarks/performance.md`, next steps): contiguous
+   slices of power-of-two length are slow out of cache, for a reason not yet known; and a
+   short axis 0 of a state larger than cache (qubit first) is still applied one diagonal at
+   a time. (The hoisted loop, the multiplication in real arithmetic, the short axis 0, the
+   row shape for long operands and strided views, and the placement scan are done.)
 2. Decide on migrating to `std::mdspan`/`std::extents` (Kokkos reference implementation,
    Apache-2.0, FetchContent-pinnable) versus writing the paper on the current
    architecture. **The decision is open; do not start the migration unasked.**
