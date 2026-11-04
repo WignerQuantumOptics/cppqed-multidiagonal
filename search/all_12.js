@@ -6,7 +6,7 @@ var searchData=
   ['the_20arrays_3',['Placement of the arrays',['../md_benchmarks_2performance.html#autotoc_md22',1,'']]],
   ['the_20bandwidth_20ceiling_4',['The bandwidth ceiling',['../md_benchmarks_2performance.html#autotoc_md23',1,'']]],
   ['the_20interaction_20picture_5',['The interaction picture',['../md_benchmarks_2performance.html#autotoc_md25',1,'']]],
-  ['the_20library_20s_20multi_20axis_20loop_6',['The library&apos;s multi-axis loop',['../md_benchmarks_2performance.html#autotoc_md20',1,'']]],
+  ['the_20library_20s_20two_20loop_20shapes_6',['The library&apos;s two loop shapes',['../md_benchmarks_2performance.html#autotoc_md20',1,'']]],
   ['the_20signed_20offset_20representation_7',['The signed-offset representation',['../index.html#autotoc_md5',1,'']]],
   ['time_20dependence_8',['Time dependence',['../structquantumoperator_1_1MultiDiagonal.html#autotoc_md1',1,'']]],
   ['todo_20list_9',['Todo List',['../todo.html',1,'']]],
@@ -15,7 +15,8 @@ var searchData=
   ['tridiagonal_20tt_12',['Why not &lt;tt&gt;Tridiagonal&lt;/tt&gt;?',['../index.html#autotoc_md6',1,'']]],
   ['tt_20find_5fpackage_20tt_20after_20installation_13',['Via &lt;tt&gt;find_package&lt;/tt&gt; (after installation)',['../index.html#autotoc_md13',1,'']]],
   ['tt_20tridiagonal_20tt_14',['Why not &lt;tt&gt;Tridiagonal&lt;/tt&gt;?',['../index.html#autotoc_md6',1,'']]],
-  ['twoitimesimagpartof_15',['twoITimesImagPartOf',['../structquantumoperator_1_1MultiDiagonal.html#a2876049efccbe178d468931472784f57',1,'quantumoperator::MultiDiagonal']]],
-  ['twotimesrealpartof_16',['twoTimesRealPartOf',['../structquantumoperator_1_1MultiDiagonal.html#a462f4d5cd073ec58dd4721733ddbc5db',1,'quantumoperator::MultiDiagonal']]],
-  ['twotimesrealpartofself_17',['twoTimesRealPartOfSelf',['../namespacecppqedutils.html#a0a6a48cecc095920cb37af768a52bd30',1,'cppqedutils']]]
+  ['two_20loop_20shapes_15',['The library&apos;s two loop shapes',['../md_benchmarks_2performance.html#autotoc_md20',1,'']]],
+  ['twoitimesimagpartof_16',['twoITimesImagPartOf',['../structquantumoperator_1_1MultiDiagonal.html#a2876049efccbe178d468931472784f57',1,'quantumoperator::MultiDiagonal']]],
+  ['twotimesrealpartof_17',['twoTimesRealPartOf',['../structquantumoperator_1_1MultiDiagonal.html#a462f4d5cd073ec58dd4721733ddbc5db',1,'quantumoperator::MultiDiagonal']]],
+  ['twotimesrealpartofself_18',['twoTimesRealPartOfSelf',['../namespacecppqedutils.html#a0a6a48cecc095920cb37af768a52bd30',1,'cppqedutils']]]
 ];

@@ -7,6 +7,8 @@ var structquantumoperator_1_1MultiDiagonal =
     [ "MultiDiagonal", "structquantumoperator_1_1MultiDiagonal.html#af2b41f50101343757c8b82e2f6151027", null ],
     [ "MultiDiagonal", "structquantumoperator_1_1MultiDiagonal.html#ad455d05a45152cca1b39efefc378e379", null ],
     [ "MultiDiagonal", "structquantumoperator_1_1MultiDiagonal.html#a9761edb0ccfdfdc27953ce926af15f93", null ],
+    [ "applyByDiagonals", "structquantumoperator_1_1MultiDiagonal.html#a14baa9af9c0e04d7f3fa8e5f34072296", null ],
+    [ "applyByRows", "structquantumoperator_1_1MultiDiagonal.html#a8f0d685df9def842de8faed1f8261e6c", null ],
     [ "dagger", "structquantumoperator_1_1MultiDiagonal.html#a1f4700b58845b984f93d13a1273935a0", null ],
     [ "hermitianConjugate", "structquantumoperator_1_1MultiDiagonal.html#abc6f3181c1acb94ede9a0d9c84d70c0d", null ],
     [ "operator()", "structquantumoperator_1_1MultiDiagonal.html#a581a47a31a0293f8e17f89738e2034dd", null ],

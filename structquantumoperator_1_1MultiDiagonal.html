@@ -143,6 +143,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a581a47a31a0293f8e17f89738e2034dd" id="r_a581a47a31a0293f8e17f89738e2034dd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html#a581a47a31a0293f8e17f89738e2034dd">operator()</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">double</a>, <a class="el" href="namespacecppqedutils.html#a77bff64643f60f47027234f355af174c">MultiArrayConstView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">psi</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">MultiArrayView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">dpsidt</a>) <a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a></td></tr>
 <tr class="memdesc:a581a47a31a0293f8e17f89738e2034dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Accumulates the operator's action on <code>psi</code> into <code>dpsidt:</code> <code>dpsidt(k+o⁻) += diag(k) * psi(k+o⁺)</code> for each diagonal and each entry <code>k</code>, with no factor \(1/i\) (see the operator conventions above). Per axis, rows run in \([o^-,D-o^+)\) and columns in \([o^+,D-o^-)\).  <br /></td></tr>
 <tr class="separator:a581a47a31a0293f8e17f89738e2034dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14baa9af9c0e04d7f3fa8e5f34072296" id="r_a14baa9af9c0e04d7f3fa8e5f34072296"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html#a14baa9af9c0e04d7f3fa8e5f34072296">applyByDiagonals</a> (<a class="el" href="namespacecppqedutils.html#a77bff64643f60f47027234f355af174c">MultiArrayConstView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">psi</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">MultiArrayView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">dpsidt</a>) <a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a></td></tr>
+<tr class="memdesc:a14baa9af9c0e04d7f3fa8e5f34072296"><td class="mdescLeft">&#160;</td><td class="mdescRight">The loop shape of application one diagonal at a time. Same contract as <code>operator()</code>.  <br /></td></tr>
+<tr class="separator:a14baa9af9c0e04d7f3fa8e5f34072296"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8f0d685df9def842de8faed1f8261e6c" id="r_a8f0d685df9def842de8faed1f8261e6c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html#a8f0d685df9def842de8faed1f8261e6c">applyByRows</a> (<a class="el" href="namespacecppqedutils.html#a77bff64643f60f47027234f355af174c">MultiArrayConstView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">psi</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">MultiArrayView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">dpsidt</a>) <a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a></td></tr>
+<tr class="memdesc:a8f0d685df9def842de8faed1f8261e6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">The loop shape of application by rows: the diagonals contributing to a row are summed before one store. Same contract as <code>operator()</code>.  <br /></td></tr>
+<tr class="separator:a8f0d685df9def842de8faed1f8261e6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -391,6 +397,90 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a14baa9af9c0e04d7f3fa8e5f34072296" name="a14baa9af9c0e04d7f3fa8e5f34072296"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a14baa9af9c0e04d7f3fa8e5f34072296">&#9670;&#160;</a></span>applyByDiagonals()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> RANK&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a> <a class="el" href="structquantumoperator_1_1MultiDiagonal.html">quantumoperator::MultiDiagonal</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt;::applyByDiagonals </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="namespacecppqedutils.html#a77bff64643f60f47027234f355af174c">MultiArrayConstView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt;&#160;</td>
+          <td class="paramname"><em>psi</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">MultiArrayView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt;&#160;</td>
+          <td class="paramname"><em>dpsidt</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>The loop shape of application one diagonal at a time. Same contract as <code>operator()</code>. </p>
+<p>Per diagonal, the addresses of the first row and column are computed once. A loop nest generated at compile time then runs over the axes with axis 0 innermost, i.e. in memory order for both the diagonal and the state. The outer axes only add strides to pointers. The innermost loop multiplies with <code>textbookProduct</code>, so that it vectorizes also without <code>-fcx-limited-range</code>, and has a separate branch for unit stride. An axis 0 of up to four elements (e.g. a qubit) is unrolled at compile time instead, and the loop over axis 1 becomes the innermost one.</p>
+<p>This shape stores into <code>dpsidt</code> once per diagonal and element. For a view larger than cache it therefore sweeps <code>dpsidt</code> once per diagonal, and its speed depends on where <code>psi</code> lies relative to <code>dpsidt</code> within a page. </p>
+
+</div>
+</div>
+<a id="a8f0d685df9def842de8faed1f8261e6c" name="a8f0d685df9def842de8faed1f8261e6c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8f0d685df9def842de8faed1f8261e6c">&#9670;&#160;</a></span>applyByRows()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> RANK&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a> <a class="el" href="structquantumoperator_1_1MultiDiagonal.html">quantumoperator::MultiDiagonal</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt;::applyByRows </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="namespacecppqedutils.html#a77bff64643f60f47027234f355af174c">MultiArrayConstView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt;&#160;</td>
+          <td class="paramname"><em>psi</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">MultiArrayView</a>&lt; <a class="el" href="MultiArrayComplex_8h.html#a55a6c421e9255bcf9663b930ac02811c">dcomp</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt;&#160;</td>
+          <td class="paramname"><em>dpsidt</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>The loop shape of application by rows: the diagonals contributing to a row are summed before one store. Same contract as <code>operator()</code>. </p>
+<p>A loop nest generated at compile time runs over the rows with axis 0 innermost. Along the outer axes it keeps the list of diagonals that have entries in the current row, with the addresses where their entries and columns start. Along axis 0, the rows in which all of them have entries are summed in one loop, with the number of diagonals fixed at compile time, so that it vectorizes. The few rows at either end, where some diagonals have no entry, are summed one by one. <code>dpsidt</code> is thus stored once per element. An operand larger than cache is therefore swept once, rather than once per diagonal, and where <code>psi</code> lies relative to <code>dpsidt</code> within a page matters by at most about 10%, rather than by up to 20% (and occasionally 2× for a whole process).</p>
+<p>Up to six diagonals are summed per store, since each needs two pointers in registers, and up to sixteen are listed per sweep. An operator with more diagonals per row is stored into several times, and one with more diagonals in all is swept several times. </p>
+
+</div>
+</div>
 <a id="a1f4700b58845b984f93d13a1273935a0" name="a1f4700b58845b984f93d13a1273935a0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a1f4700b58845b984f93d13a1273935a0">&#9670;&#160;</a></span>dagger()</h2>
 
@@ -491,7 +581,11 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
 
 <p>Accumulates the operator's action on <code>psi</code> into <code>dpsidt:</code> <code>dpsidt(k+o⁻) += diag(k) * psi(k+o⁺)</code> for each diagonal and each entry <code>k</code>, with no factor \(1/i\) (see the operator conventions above). Per axis, rows run in \([o^-,D-o^+)\) and columns in \([o^+,D-o^-)\). </p>
 <p>The views may be strided and offset, e.g. slices of a larger state, each with its own strides. **<code>psi</code> and <code>dpsidt</code> must not overlap.**</p>
-<p>Per diagonal, the addresses of the first row and column are computed once. A loop nest generated at compile time then runs over the axes with axis 0 innermost, i.e. in memory order for both the diagonal and the state. The outer axes only add strides to pointers. The innermost loop multiplies with <code>textbookProduct</code>, so that it vectorizes also without <code>-fcx-limited-range</code>, and has a separate branch for unit stride. An axis 0 of up to four elements (e.g. a qubit) is unrolled at compile time instead, and the loop over axis 1 becomes the innermost one. </p><dl class="section see"><dt>See also</dt><dd><a class="el" href="md_benchmarks_2performance.html">Performance of MultiDiagonal</a> for what this loop costs and why. </dd></dl>
+<p>Chooses between two loop shapes, which give the same result up to rounding:</p><ul>
+<li><code>applyByDiagonals</code>, one diagonal at a time, for an axis 0 of up to four elements (e.g. a qubit), and for views contiguous along axis 0 that are either small (up to 128 amplitudes, e.g. C++QED's slices of a single mode), or fit in a last-level cache (up to 2¹⁸ amplitudes) with an axis 0 shorter than 32;</li>
+<li><code>applyByRows</code>, the diagonals of a row summed before one store, otherwise: for long axes, for operands larger than cache, and for views strided along axis 0.</li>
+</ul>
+<p>The row-oriented shape pays a fixed cost per row of axis 0 (the rows at either end); the other sweeps the view once per diagonal. The bounds are where the two cross over on the reference machine. </p><dl class="section see"><dt>See also</dt><dd><a class="el" href="md_benchmarks_2performance.html">Performance of MultiDiagonal</a> for what the two shapes cost and why. </dd></dl>
 
 </div>
 </div>

@@ -42,7 +42,7 @@ var NAVTREE =
     [ "Performance of MultiDiagonal: measurements and outlook", "md_benchmarks_2performance.html", [
       [ "Setup", "md_benchmarks_2performance.html#autotoc_md18", null ],
       [ "Complex multiplication", "md_benchmarks_2performance.html#autotoc_md19", null ],
-      [ "The library's multi-axis loop", "md_benchmarks_2performance.html#autotoc_md20", [
+      [ "The library's two loop shapes", "md_benchmarks_2performance.html#autotoc_md20", [
         [ "A short axis 0", "md_benchmarks_2performance.html#autotoc_md21", null ]
       ] ],
       [ "Placement of the arrays", "md_benchmarks_2performance.html#autotoc_md22", null ],
@@ -90,7 +90,7 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "MultiArrayComplex_8h.html",
-"structquantumoperator_1_1MultiDiagonal.html#a3d3837def415a069c3ae8ea786666015"
+"structquantumoperator_1_1MultiDiagonal.html#a3a71231d0a020e838124fb5dcb36d257"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
