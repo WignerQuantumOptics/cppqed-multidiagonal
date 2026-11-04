@@ -6,16 +6,16 @@ This page records what the benchmarks show about applying a `MultiDiagonal` to a
 
 - **In cache**, the library is 2.7–3.6× faster than Eigen's sparse product at rank 1 and with the mode on axis 0 (1.8–2.2× for the smallest operators, of dimension 16), and 1.4–2.2× faster with a qubit on axis 0. Contiguous diagonals without column indices vectorize, while a CSR product gathers through column indices. In cache these ratios move by up to 20% between builds, because Eigen's own speed depends on the layout of the code around it (see "Setup"). They also depend on the processor: on a 2022 laptop core they were 1.5–2.4× and 1.0–1.6×, before the last change of the loop.
 - **Out of cache**, where the operator is as large as the state, the library is 1.4–2.5× faster than Eigen at rank 1 and with the mode on axis 0, but 0.6–0.9× as fast with a qubit on axis 0. Once both sides are limited by memory bandwidth, no storage format gains much: MultiDiagonal stores 16 bytes per nonzero against 20 for a compressed sparse row (CSR) matrix. A single thread on the reference machine doesn't reach that limit with Eigen's product.
-- **In C++QED's actual setting**, a small operator applied slice by slice across a large state, the library is 1.7–2.6× faster than a CSR matrix of the same term (1.4–1.9× against its build with `-fcx-limited-range`), also on strided slices of power-of-two length. The exception is contiguous slices of power-of-two length, where it is at parity.
-- **The loop has two shapes** since 2026-11-04: one diagonal at a time, and the diagonals contributing to a row summed before one store ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1), [#25](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25)). `operator()` chooses from the view's strides and extents. The row shape sweeps a large state once instead of once per diagonal, and makes the speed nearly independent of where input and output lie in memory. The other is faster where axis 0 is short, and for small views.
+- **In C++QED's actual setting**, a small operator applied slice by slice across a large state, the library is 1.7–2.6× faster than a CSR matrix of the same term (1.4–1.9× against its build with `-fcx-limited-range`), also on strided slices of power-of-two length. Contiguous slices of power-of-two length looked like an exception, at parity, but that came from where their arrays lay in memory, not from their length.
+- **The loop has two shapes** since 2026-11-04: one diagonal at a time, and the diagonals contributing to a row summed before one store ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1), [#25](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25)). `operator()` chooses from the view's strides and extents. The row shape sweeps a large state once instead of once per diagonal, and makes the speed nearly independent of where input and output lie relative to each other within a page. The other is faster where axis 0 is short, and for small views.
 - **History.** Up to v0.4.0, the multi-axis loop recomputed every address per element, which made it 3.4–4.5× slower than Eigen at rank 2 and 18× slower at rank 4; fixed on 2026-11-01 ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)). Complex multiplication with the C99 Annex G NaN checks halved the speed of the default build; fixed on 2026-11-02, together with a compile-time unrolled short axis 0 ([#23](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23)). Up to 2026-11-03 the loop stored the output once per diagonal, which made it up to 1.45× slower than Eigen out of cache and its speed depend on placement by up to 1.2–2×.
-- **What remains.** A qubit on axis 0 of a state larger than cache is still applied one diagonal at a time. Out of cache, contiguous slices of power-of-two length are up to 3× slower than slices of other lengths, for a reason not yet known. Small views are applied one diagonal at a time, and there placement still costs up to 23%, though that shape stays faster than the other at any placement.
+- **What remains.** A qubit on axis 0 of a state larger than cache is still applied one diagonal at a time. Out of cache, on transparent huge pages, input and output that lie nearly a multiple of 1 MiB apart, as arrays of a power-of-two size allocated back to back do, make application up to 3× slower one diagonal at a time and up to 1.7× by rows. Several out-of-cache figures on this page, the qubit case among them, were measured without controlling that distance and are to be re-measured (see "Distance on huge pages"). Small views are applied one diagonal at a time, and there placement still costs up to 23%, though that shape stays faster than the other at any placement.
 - **The interaction picture** has not been benchmarked systematically yet (see the section on it below).
 
 ## Setup
 
 - **Reference machine** since 2026-11-03: Intel Core i7-7700 desktop (Kaby Lake, 4 cores; L1d 32 KB and L2 256 KB per core, L3 8 MB), Arch Linux, GCC 16.2.1, Eigen 5.0.1, `-O3 -march=native`, single thread.
-- **Prepared for measuring:** no graphical session, timers stopped, SMT off, turbo off (fixed 3.6 GHz, `performance` governor). Each run is pinned to a core that handles no device interrupts.
+- **Prepared for measuring:** no graphical session, timers stopped, SMT off, turbo off (fixed 3.6 GHz, `performance` governor). Each run is pinned to a core that handles no device interrupts. Transparent huge pages are on for all anonymous memory (`always`, Linux 6.18), which matters out of cache (see "Distance on huge pages").
 - **Every figure** is the median over five separate processes, with the binaries of different versions interleaved. Processes of the same binary typically agree within 1–2% (90% within 5–8%) in cache. Larger differences come from where the arrays land in memory (see "Placement of the arrays" below), not from the machine. Out of cache, separate runs of the same binary differ by up to 25%.
 - **Code layout** moves small kernels in cache by 10–20% between builds whose code differs elsewhere. Eigen's sparse product for Jaynes–Cummings, unchanged, ran 3–20% faster in the build of c346b8a than in those of 7725d79 and of a build that differed from c346b8a only in `operator()`'s bounds, consistently over five processes. The library's own times agreed within 5% wherever both applied the same shape. For contiguous slices, the build of 7725d79 ran the loop that applies one diagonal at a time 12% faster than every other build of the same loop. Neither aligning loops nor the assembler's mitigation of the jump erratum changed this. Ratios to Eigen in cache are therefore uncertain by up to 20%, while the library's speed-ups over its earlier versions are not.
 - **Versions**, all built and measured with the same toolchain:
@@ -55,6 +55,7 @@ cmake --build build-release --target cppqed-multidiagonal-benchmarks cppqed-mult
 | E | tridiagonal ⊗ tridiagonal on extents {n₀, 8192/n₀}, for an axis 0 of n₀ = 1 … 32 elements |
 | F | where the two loop shapes cross over: case D's operator on contiguous slices of length n; tridiagonal ⊗ tridiagonal on extents {n₀, T/n₀} for T = 8192, 65536, 2²⁰ |
 | G | placement: `psi` at every 16-byte offset of a page relative to `dpsidt`, both shapes; rank 1 at N = 64, 1024, 4096, and Jaynes–Cummings in both axis orders (state 4096). It takes a few minutes and runs only when named |
+| H | the distance between `psi` and `dpsidt` out of cache: case F's operator on contiguous slices of length 16, 24, 32, with `dpsidt` 2²⁴ + δ bytes after `psi` in one buffer, on huge pages and on 4 KB pages. Runs only when named |
 
 ## Complex multiplication
 
@@ -165,8 +166,8 @@ Case F maps the crossover between the two shapes for contiguous views, which set
 | out of cache (2²⁰): one diagonal at a time | **2.92** | 2.84 | 2.37 | 2.63 | 2.16 | 2.55 | 2.14 | 2.53 | 2.46 | 2.53 |
 | out of cache: by rows | 3.61 | **2.61** | **1.98** | **1.97** | **1.77** | **1.72** | **1.87** | **2.16** | **2.03** | **1.84** |
 
-- **One slice per call:** one diagonal at a time is faster up to n = 128 in cache, hence the bound of 128 amplitudes. Out of cache it is slow at every power of two (see the section on slices).
-- **Short axis 0, whole operand:** one diagonal at a time is faster below 32 in L2 and L3 (at 24 in L3 they are equal), the row shape from 8 on out of cache, hence the bounds of 32 and 2¹⁸. At the margins `operator()` gives away a little: 3% at 32 in L2, and up to 8% between 48 and 128 in L3.
+- **One slice per call:** one diagonal at a time is faster up to n = 128 in cache, hence the bound of 128 amplitudes. Out of cache the powers of two from 16 on are slow because of where their arrays lie, not because of their length: case F allocates `psi` and `dpsidt` back to back, and for these lengths they lie 2²⁴ + 16 bytes apart (see "Distance on huge pages").
+- **Short axis 0, whole operand:** one diagonal at a time is faster below 32 in L2 and L3 (at 24 in L3 they are equal), the row shape from 8 on out of cache, hence the bounds of 32 and 2¹⁸. At the margins `operator()` gives away a little: 3% at 32 in L2, and up to 8% between 48 and 128 in L3. The out-of-cache rows have arrays of 16 MiB allocated back to back, i.e. possibly the slow distance of "Distance on huge pages"; the bound of 2¹⁸ is to be re-measured with the distance controlled.
 - For an axis 0 of 5 and 8 in L3, one diagonal at a time took 2.1–2.2 here and 1.4–1.5 in an earlier run of the same code; the order of the two shapes was the same.
 
 ## Placement of the arrays
@@ -195,9 +196,35 @@ Case G of `kernels.cc` places `psi` at every 16-byte offset of a page relative t
 - **Eigen stores once per row and is not affected.**
 - **With the qubit on axis 0, placement barely matters**: one diagonal at a time, 14 offsets in 256 are more than 5% slower, and the worst is 1.10×.
 - **Small views are still applied one diagonal at a time** (N = 64 above), and there the placements just below cost up to 23%. Even at its worst placement, though, this shape is faster than the row shape at its best (198 against 215 ns), so `operator()` has nothing to gain by switching.
-- **Out of cache, physical placement matters too.** At N = 1048576 an isolated process took 2.2 ns per nonzero for `apply1` one diagonal at a time, but 3.4 ns inside the main suite, with the same in-page offsets. The physical pages there come from a long allocation history. Huge pages make at most a 5% difference. Case B out of cache varies by up to 30% between processes, for both shapes.
+- **Out of cache, the distance between the arrays matters as well** (next section). At N = 1048576 an isolated process took 2.2 ns per nonzero for `apply1` one diagonal at a time, but 3.4 ns inside the main suite, with the same in-page offsets, and case B out of cache varies by up to 30% between processes, for both shapes. Whether these differences come from that distance has not been checked.
 
 This is why every figure on this page is a median over separate processes.
+
+### Distance on huge pages
+
+Case F's contiguous slices of power-of-two length were 2.4–2.8× slower out of cache, one diagonal at a time, than those of other lengths. The cause is where the arrays lie. Case F allocates `psi` and `dpsidt` back to back; for a power of two both hold exactly 2²⁰ amplitudes (16 MiB), so `dpsidt` starts 2²⁴ + 16 bytes after `psi`. Every slow point has this distance. The fast ones don't: n = 8 got separate mappings, and n = 24, 48 and 96 have the arrays 240 or 1008 bytes short of 2²⁴ apart. A first version of case H (not kept, it set only the offset within a page) placed the arrays explicitly and showed that neither the slice length nor the array size matters: at a given placement the powers of two fall between their neighbours, and one slice fewer changes nothing.
+
+Case H puts both arrays in one buffer, with `dpsidt` D bytes after `psi`, and takes the buffer once on transparent huge pages and once on 4 KB pages (`madvise`; the kernel reported all of it, and none of it, on huge pages). One diagonal at a time, ns per nonzero for n = 16 / 24 / 32, medians of five processes:
+
+| D − 2²⁴ | huge pages | 4 KB pages |
+|---|---|---|
+| −4096 | 1.08 / 0.92 / 0.83 | 1.11 / 0.93 / 0.84 |
+| −240 | 1.17 / 0.95 / 0.84 | 1.10 / 0.93 / 0.85 |
+| −16 | 1.69 / 1.53 / 1.48 | 1.11 / 0.93 / 0.85 |
+| 0 | 2.33 / 2.19 / 2.14 | 1.10 / 0.93 / 0.84 |
+| +16 (back to back) | **3.03 / 2.91 / 2.85** | 1.14 / 0.93 / 0.89 |
+| +64 | 2.93 / 2.87 / 2.87 | 1.14 / 0.96 / 0.90 |
+| +256, +1024, +2048 | 1.12–1.13 / 0.95–1.00 / 0.84–0.95 | 1.13–1.15 / 0.93–0.96 / 0.86–0.89 |
+| +4 KiB + 16 | 1.12 / 0.93 / 0.87 | 1.14 / 0.94 / 0.89 |
+| +64 KiB + 16 | 1.13 / 0.92 / 0.87 | 1.14 / 0.94 / 0.88 |
+| +1 MiB + 16, +2 MiB + 16, +16 MiB + 16 | 3.03 / 2.90–2.91 / 2.85–2.86 | 1.14 / 0.94 / 0.89 |
+
+- **On 4 KB pages the distance doesn't matter**: every distance is within 5%.
+- **On huge pages, `psi` and `dpsidt` must not nearly coincide modulo 1 MiB.** With `dpsidt` 16 or 64 bytes beyond the coincidence, one diagonal at a time is 2.7–3.4× slower than at a neutral distance; at the coincidence itself 2.1–2.5×, and 16 bytes short of it 1.5–1.75×. 240 bytes short or 256 beyond, it isn't slower. Moving by 4 KiB or 64 KiB removes the effect; moving by 1 MiB, 2 MiB or 16 MiB doesn't. So the address bits from the cache line up to about bit 19 have to agree, and in physical memory they do so only when huge pages make the physical address follow the virtual one. Which part of the memory system conflicts is not established: conflicts in the sets of L2 alone would also make +64 KiB + 16 slow.
+- **By rows** the same distances cost 1.25–1.7×: 2.12–2.31 against 1.68–1.72 for n = 16, 1.66–1.90 against 1.11–1.27 for n = 32.
+- **At a neutral distance huge pages gain nothing here** (1.08–1.13 against 1.10–1.15 for n = 16).
+- **It reaches users** whenever two arrays whose size is a multiple of 1 MiB (2¹⁶ amplitudes) are allocated back to back on a system with transparent huge pages set to `always`, as the arrays of an ODE stepper may be. The laptop has them on `madvise`, so ordinary allocations there stay on 4 KB pages, which is why it never showed the effect.
+- **Several out-of-cache figures on this page are of that kind:** cases A and B out of cache (262144 and 524288 amplitudes), C, D at n = 32, the grid of case F, and the main suite from N = 65536 on, Eigen's figures included. Whether their arrays lay at such a distance has not been checked. Until it has, they may be up to 3× (one diagonal at a time) or 1.7× (by rows) too slow. The figure for a qubit on axis 0 out of cache (0.6–0.9× as fast as Eigen, one diagonal at a time) is among them.
 
 ## The bandwidth ceiling
 
@@ -255,7 +282,7 @@ Three findings:
 2. **The best loop shape depends on the slice length and the stride**, and `operator()` now takes it from the view.
    - On strided slices the row shape wins: 1.7× faster than term CSR for n = 30 (1.4× against its flagged build) and 1.7× (1.6×) for n = 32. A sweep per diagonal put all elements of a strided slice of power-of-two length (stride 1024 amplitudes, 16 KB) into the same L1 cache set and thrashed it: 6.00, against 2.36 now, and 1.5× slower than term CSR before.
    - On contiguous slices of length 30, one diagonal at a time is the fastest: 2.6× faster than term CSR (1.9× against its flagged build). The row shape would take 1.24, because of its fixed cost per row of axis 0.
-   - On contiguous slices of power-of-two length the library is at parity with term CSR. Case F shows that, out of cache, one diagonal at a time is slow at every power of two from 16 to 256 (2.4–2.8 ns against 0.75–0.95 in between), and the row shape is less so (1.45–2.25 against 1.4–1.65); in cache there is no such effect. In C++QED's typical states, which fit in cache, it doesn't arise. Its cause is not established; the laptop, with its larger and more associative L1, did not show it.
+   - On contiguous slices of length 32 the library came out at parity with term CSR, and case F showed both shapes slow out of cache at every power of two from 16 to 256 (one diagonal at a time 2.4–2.8 ns against 0.75–0.95 in between). That came from where the arrays lay, not from the length: cases D and F allocate `psi` and `dpsidt` back to back, 2²⁴ + 16 bytes apart for these states (see "Distance on huge pages"). At a neutral distance one diagonal at a time takes 0.84–0.89 ns for n = 32 (case H). Term CSR has not been measured at a neutral distance yet.
    - For contiguous slices of length 30, the build of 7725d79 measured 0.78 here, against 0.89–0.90 now for the same loop. A separate probe gives 0.88 for both, and neither loop alignment nor the assembler's mitigation of the jump erratum changes it. That figure was a property of that binary, not of the loop (see "Setup").
 3. **What the design boundary costs.** Applying the operator to many adjacent slices at once (case C, "blocked") gives 1.28 for n = 32 on axis 2, 1.8× better than the best slice-by-slice method at the same n. Getting this inside C++QED's design would mean `Broadcaster` handing a term blocks of adjacent slices. This is noted here, not proposed.
 
@@ -318,14 +345,15 @@ Composition never meets the symbolic pass and sorting of a sparse product: the o
 | operator as large as the state, out of cache, qubit first | 0.6–0.9× | not yet known |
 | slice by slice, n = 30, contiguous / strided | 2.6× / 1.7× faster than term CSR | same |
 | slice by slice, n = 32, strided | 1.7× faster (before: 1.5× slower) | same |
-| slice by slice, n = 32, contiguous | parity | open |
+| slice by slice, n = 32, contiguous | parity, at a slow distance between the arrays | to be re-measured |
 | interaction picture | — | not yet measured systematically |
 
 - **"Today"** is the library as it is, in the default build, with both sides taking the slices in the same order. Ranges in cache span two builds of today's library (c346b8a, and one that differed only in `operator()`'s bounds), between which Eigen's speed moved by up to 20%.
+- **Out of cache**, the distance between input and output was not controlled, and on huge pages it can cost up to 3× (see "Distance on huge pages"). The out-of-cache rows are to be re-measured with it controlled.
 
 The format is not a large speed-up for every application, and should not be presented as one. Its advantages are:
 
-- in cache it is 1.4–3.6× faster than the comparable sparse matrix on the reference machine, and out of cache 1.4–2.5× faster, except with a qubit on axis 0 of a large state and for contiguous slices of power-of-two length;
+- in cache it is 1.4–3.6× faster than the comparable sparse matrix on the reference machine, and out of cache 1.4–2.5× faster, except with a qubit on axis 0 of a large state (out-of-cache figures to be re-measured with the distance between the arrays controlled);
 - the per-axis offsets are the quanta moved per subsystem, and they give per-axis strides, one phase per diagonal for linear spectra, and composition closure without index bookkeeping;
 - it is far more readable than a flattened matrix.
 
@@ -334,10 +362,11 @@ Next steps:
 1. Done on 2026-11-01: `operator()` rewritten with hoisted addresses and the innermost loop over axis 0 ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)).
 2. Done on 2026-11-02: complex multiply-add in real arithmetic inside the kernel, and an axis 0 of up to four elements unrolled at compile time ([#23](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23)).
 3. Done on 2026-11-04: the diagonals of a row summed before one store, for long operands and strided views, with `operator()` choosing the shape from the view's strides and extents ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1), [#25](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25)). This also settled the strided half of the next step.
-4. The loop shapes that remain ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)), in this order:
-   - find out why contiguous slices of power-of-two length are slow out of cache, in both shapes (case F reproduces it);
-   - a short axis 0 of a state larger than cache (qubit first), still applied one diagonal at a time: block the outer axes, or sum the diagonals over the few rows of axis 0.
+4. The loop shapes that remain ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)):
+   - done on 2026-11-04: contiguous slices of power-of-two length were slow out of cache because of the distance between the arrays on huge pages, not because of their length (case H);
+   - a short axis 0 of a state larger than cache (qubit first), still applied one diagonal at a time: block the outer axes, or sum the diagonals over the few rows of axis 0. Re-measure first: its figure may carry the slow distance.
 5. Benchmarks ([#5](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/5)):
+   - control the distance between input and output in the out-of-cache measurements (or at least report it, as case F now does on stderr), and re-measure them, Eigen included;
    - done on 2026-11-04: the placement scan as a regression check for #25, for both shapes (case G);
    - make `picture1` call the library;
    - add term CSR through slices to the main suite;
@@ -345,4 +374,4 @@ Next steps:
 
 In C++QED: done on 2026-11-04, the slices in memory order ([cppqed#90](https://github.com/WignerQuantumOptics/cppqed/issues/90)); still to do, benchmark the interaction picture end to end ([cppqed#91](https://github.com/WignerQuantumOptics/cppqed/issues/91)).
 
-**What to do next:** the power-of-two investigation. In case F the power-of-two slice lengths are also the only points whose state holds exactly 2²⁰ amplitudes (16 MiB); every other length falls a few amplitudes short (n = 24: 1048560), and case D's n = 32 is 2²⁰ too. The measurements so far therefore cannot tell slice length from array size, and the first run separates the two: power-of-two lengths with one slice fewer. cppqed#90, which helped C++QED's real workload most, and the placement regression check are done.
+**What to do next:** re-measure the out-of-cache figures with the distance between input and output controlled, since some of them, the qubit case included, may carry the slow distance. Only then is it clear whether the qubit case still needs another loop shape. Separately, keeping arrays out of the slow distance is a design question. C++QED's ODE stepper integrates the raw storage, `multiarray::StorageType<dcomp>` (a `std::vector`), and allocates its own scratch arrays of that type, so `MultiArray` alone can't prevent it; an allocator in `StorageType` that pads every allocation by a few hundred bytes could. The power-of-two investigation, cppqed#90 and the placement regression check are done.

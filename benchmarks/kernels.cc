@@ -2,7 +2,7 @@
 // Kernel experiments behind benchmarks/performance.md: what MultiDiagonal application costs, and what
 // alternative loop structures over the same data would cost. Emits CSV to stdout:
 //   case,impl,N,ns_per_op,ns_per_nnz
-// N is the length of the state vector (for case F, of axis 0; for case G, the offset of psi in bytes). Every variant is cross-validated against Eigen before timing
+// N is the length of the state vector (for cases F and H, of axis 0; for case G, the offset of psi in bytes). Every variant is cross-validated against Eigen before timing
 // (exit 1 on mismatch).
 //
 // The library is timed as operator() chooses its loop shape ("library"), and with each of its two shapes forced
@@ -29,30 +29,44 @@
 //      N = 64, 1024, 4096, and Jaynes–Cummings with the mode first and with the qubit first (state 4096). One row per
 //      offset, with N the offset in bytes; best, median, worst and the offsets more than 5% above the best go to
 //      stderr. It takes a few minutes, so it runs only when named (and in --smoke).
+//   H  why case F's slices of power-of-two length were slow out of cache: its five-diagonal operator on contiguous slices
+//      of length n = 16, 24, 32 of a state a little under 2^20 amplitudes, with dpsidt D = 2^24 + delta bytes after psi in
+//      one buffer, on huge pages and on 4 KiB pages; both shapes. Two arrays of exactly 16 MiB allocated back to back lie
+//      2^24 + 16 bytes apart. The case names the pages and D; stderr gives how much of the buffer the kernel put on huge
+//      pages, and case F reports its own psi-dpsidt (mod 4096). H runs only when named (and in --smoke).
 //
 // Built twice: cppqed-multidiagonal-kernels (default complex multiplication, with the C99 Annex G
 // NaN checks) and cppqed-multidiagonal-kernels-cxlr (-fcx-limited-range). The library and the loops
 // here multiply with textbookProduct, which has no NaN check, so the flag changes only Eigen's figures.
 //
 // usage: cppqed-multidiagonal-kernels[-cxlr] [--smoke] [case ...]
-//        case ∈ {A,B,C,D,E,F,G}; none = A–F. --smoke shrinks the sizes for CI; its timings are meaningless.
+//        case ∈ {A,B,C,D,E,F,G,H}; none = A–F. --smoke shrinks the sizes for CI; its timings are meaningless.
 #include <multidiagonal/MultiDiagonal.h>
 
 #include <Eigen/SparseCore>
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <cstdint>
 #include <cstdlib>
+#include <fstream>
+#include <limits>
 #include <memory>
 #include <random>
 #include <set>
 #include <span>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
+
+#ifdef __linux__
+#include <sys/mman.h>
+#endif
 
 using namespace cppqedutils;
 using quantumoperator::MultiDiagonal;
@@ -450,6 +464,7 @@ void caseF(bool smoke)
       zero(y); byDiagonals(); check("F slices byDiagonals",toVec(y),ref);
       zero(y); byRows(); check("F slices byRows",toVec(y),ref);
       char c[32]; std::snprintf(c,sizeof c,"F_slices_%zu",total);
+      std::fprintf(stderr,"%s n=%zu: psi-dpsidt = %zu (mod 4096)\n",c,n,size_t(reinterpret_cast<uintptr_t>(xs.data())-reinterpret_cast<uintptr_t>(ys.data()))%4096);
       out(c,"library_byDiagonals",n,perOp([&]{byDiagonals(); doNotOptimize(ys.data());}),nnz);
       out(c,"library_byRows",n,perOp([&]{byRows(); doNotOptimize(ys.data());}),nnz);
     }
@@ -511,6 +526,56 @@ void caseG(bool smoke)
   targetBatchNs=batch;
 }
 
+// ── H: the distance between psi and dpsidt, out of cache (why case F's slices of power-of-two length were slow) ────
+
+/// anonymous memory of this process on transparent huge pages, in kB (from Linux's /proc; 0 elsewhere)
+long anonHugePagesKB()
+{
+  std::ifstream f{"/proc/self/smaps_rollup"}; std::string key; long v=0;
+  while (f >> key) { if (key=="AnonHugePages:") { f >> v; break; } f.ignore(std::numeric_limits<std::streamsize>::max(),'\n'); }
+  return v;
+}
+
+void caseH(bool smoke)
+{
+  // case F's five-diagonal operator on contiguous slices of length n, one slice per call, of a state a little under P/16
+  // amplitudes. psi starts a 2 MiB-aligned buffer and dpsidt lies D = P + delta bytes after it. Two arrays of exactly 16 MiB
+  // allocated back to back give D = 2^24 + 16, as in case F. The buffer is taken once with huge pages requested and once
+  // with them refused (madvise, Linux only).
+  constexpr size_t huge=1uz<<21;
+  const size_t P = smoke ? 1uz<<16 : 1uz<<24, T=(P-8192)/sizeof(dcomp), bytes=(3*P+huge)/huge*huge;
+  const std::vector<ptrdiff_t> deltas = smoke ? std::vector<ptrdiff_t>{-16,16,4096+16} :
+    std::vector<ptrdiff_t>{-4096,-240,-16,0,16,64,256,1024,2048,4096+16,(1<<16)+16,(1<<20)+16,(1<<21)+16,ptrdiff_t(P)+16};
+  for (bool hugePages : {true,false}) {
+    const std::unique_ptr<dcomp,decltype(&std::free)> buffer{static_cast<dcomp*>(std::aligned_alloc(huge,bytes)),&std::free};
+#ifdef __linux__
+    madvise(buffer.get(),bytes,hugePages ? MADV_HUGEPAGE : MADV_NOHUGEPAGE);
+#endif
+    const long before=anonHugePagesKB(); std::fill_n(buffer.get(),bytes/sizeof(dcomp),dcomp{});
+    std::fprintf(stderr,"H %s huge pages: %ld of %zu kB of the buffer on huge pages\n",hugePages ? "with" : "without",anonHugePagesKB()-before,bytes/1024);
+    for (size_t n : smoke ? std::vector<size_t>{16} : std::vector<size_t>{16,24,32}) {
+      const size_t S=T/n, N=n*S; const Extents<2> ext{n,S};
+      auto A=penta(n); const auto psi0=randomState<2>(ext);
+      const auto full=copy(A)*quantumoperator::multidiagonal::identity(S);
+      const auto Sp=toSparse(full,ext); const CVector ref=Sp*toVec(psi0); const double nnz=double(Sp.nonZeros());
+      std::copy_n(psi0.dataView.data(),N,buffer.get()); const std::span<const dcomp> xs{buffer.get(),N};
+      for (ptrdiff_t delta : deltas) {
+        const std::span<dcomp> ys{buffer.get()+(ptrdiff_t(P)+delta)/ptrdiff_t(sizeof(dcomp)),N};
+        const auto slices=[&](auto apply){ for (size_t b=0; b<S; ++b)
+          apply(MultiArrayView<const dcomp,1>{{n},{1},b*n,xs},MultiArrayView<dcomp,1>{{n},{1},b*n,ys}); };
+        const auto byDiagonals=[&]{slices([&](auto x, auto y){A.applyByDiagonals(x,y);});};
+        const auto byRows=[&]{slices([&](auto x, auto y){A.applyByRows(x,y);});};
+        const auto validate=[&](const char* what, auto apply){
+          std::fill_n(ys.data(),N,dcomp{}); apply(); check(what,Eigen::Map<const CVector>(ys.data(),Eigen::Index(N)),ref); };
+        validate("H byDiagonals",byDiagonals); validate("H byRows",byRows);
+        char c[48]; std::snprintf(c,sizeof c,"H_%s_2^%d%+td",hugePages ? "huge" : "4k",std::countr_zero(P),delta);
+        out(c,"library_byDiagonals",n,perOp([&]{byDiagonals(); doNotOptimize(ys.data());}),nnz);
+        out(c,"library_byRows",n,perOp([&]{byRows(); doNotOptimize(ys.data());}),nnz);
+      }
+    }
+  }
+}
+
 } // anonymous
 
 
@@ -523,11 +588,11 @@ int main(int argc, char** argv)
     if (a=="--smoke") smoke=true; else only.insert(a);
   }
 
-  static constexpr std::array<std::pair<std::string_view,void(*)(bool)>,7> cases{{{"A",caseA},{"B",caseB},{"C",caseC},{"D",caseD},{"E",caseE},{"F",caseF},{"G",caseG}}};
+  static constexpr std::array<std::pair<std::string_view,void(*)(bool)>,8> cases{{{"A",caseA},{"B",caseB},{"C",caseC},{"D",caseD},{"E",caseE},{"F",caseF},{"G",caseG},{"H",caseH}}};
 
   for (auto sel : only)
     if (std::none_of(cases.begin(),cases.end(),[=](const auto& c){return c.first==sel;})) {
-      std::fprintf(stderr,"unknown case '%.*s'; known: A B C D E F G\n",int(sel.size()),sel.data());
+      std::fprintf(stderr,"unknown case '%.*s'; known: A B C D E F G H\n",int(sel.size()),sel.data());
       return 2;
     }
 
@@ -538,5 +603,5 @@ int main(int argc, char** argv)
   if (smoke) targetBatchNs=2e6;
 
   std::printf("case,impl,N,ns_per_op,ns_per_nnz\n");
-  for (const auto& [name,fn] : cases) if (only.empty() ? name!="G" || smoke : only.contains(name)) fn(smoke);
+  for (const auto& [name,fn] : cases) if (only.empty() ? (name!="G" && name!="H") || smoke : only.contains(name)) fn(smoke);
 }

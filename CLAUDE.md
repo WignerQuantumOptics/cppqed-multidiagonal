@@ -144,7 +144,9 @@ ctest --test-dir build --output-on-failure
   axis 0, and the crossover of the two loop shapes, which sets `operator()`'s choice). It
   times the library as `operator()` chooses and with each shape forced. Case G, the
   placement scan of #25 (psi at every 16-byte offset of a page relative to dpsidt, both
-  shapes), takes minutes and runs only when named, or in `--smoke`. It is built
+  shapes), takes minutes and runs only when named, or in `--smoke`. So does case H, the
+  distance between psi and dpsidt in one buffer, on huge pages and on 4 KB pages (it
+  calls `madvise` under `__linux__` and reads `AnonHugePages` from `/proc`). It is built
   twice: `cppqed-multidiagonal-kernels` and `cppqed-multidiagonal-kernels-cxlr`
   (`-fcx-limited-range`; Clang 18 also needs `-Wno-overriding-option`). It validates
   before timing too.
@@ -189,17 +191,26 @@ ctest --test-dir build --output-on-failure
   - `applyByDiagonals` stores once per diagonal and element. That makes its speed depend on
     where `psi` lies relative to `dpsidt` within a page (4K aliasing, #25): typically 6%, up
     to 1.2×, and occasionally 2× for a whole process. `applyByRows` stores once per element
-    and varies by at most 1.10×. Out of cache, physical placement matters for both (up to
-    30% between processes). Compare as medians over processes. Code layout matters too: the
-    same per-diagonal loop measured 0.78 and 0.89 ns per nonzero in two binaries.
+    and varies by at most 1.10×. Compare as medians over processes. Code layout matters too:
+    the same per-diagonal loop measured 0.78 and 0.89 ns per nonzero in two binaries.
+  - Out of cache, on transparent huge pages (`always` on bench, `madvise` on the laptop), the
+    *distance* between `psi` and `dpsidt` matters (`kernels.cc` case H, 2026-11-04): when they
+    nearly coincide modulo 1 MiB (`dpsidt` from 16 bytes short to 64 beyond), one diagonal at a
+    time is up to 3.4× slower and the row shape up to 1.7×; on 4 KB pages nothing changes.
+    Two arrays of a multiple of 1 MiB allocated back to back lie exactly there (2²⁴ + 16 for
+    16 MiB). This, not the slice length, made case F's power-of-two slices slow. The mechanism
+    (which structure conflicts) is not established. Control or report the distance in every
+    out-of-cache measurement.
   - Out of cache: 1.4–2.5× faster than Eigen, except with the qubit first (0.6–0.9×, still
-    one diagonal at a time). Once both are bandwidth bound, a format gains at most about 20%;
+    one diagonal at a time). Those figures were measured without controlling the distance and
+    are to be re-measured. Once both are bandwidth bound, a format gains at most about 20%;
     single-threaded on the reference machine Eigen isn't.
   - In C++QED's slice-by-slice setting, the honest competitor is a CSR matrix of the term's
     own space on the same slices. MultiDiagonal is 1.7–2.6× faster at n = 30, and on strided
     slices of power-of-two length too (the row shape avoids the L1 set conflicts). Contiguous
-    slices of power-of-two length, out of cache, are slow in both shapes, for a reason not yet
-    known (parity with term CSR). C++QED's `SliceIterator` used to produce the slices last
+    slices of length 32 came out at parity with term CSR, but at the slow distance; the library
+    takes 0.84–0.89 ns per nonzero at a neutral one (case H), term CSR is not yet re-measured.
+    C++QED's `SliceIterator` used to produce the slices last
     dummy axis fastest, which cost every method 1.1–2.3× more; it takes them in memory order
     since 2026-11-04 (cppqed#90).
   - Composition wins up to 7× at rank 1 (0.9–1.8× for Jaynes–Cummings), but it happens at
@@ -210,19 +221,20 @@ ctest --test-dir build --output-on-failure
 
 ## Open items (roughly in priority order)
 
-Recommended next (2026-11-04): the power-of-two investigation; cppqed#90 (slices in memory
-order) and the placement regression check (`kernels.cc` case G) are done. In case F the
-power-of-two slice lengths are also the only points whose state holds exactly 2²⁰ amplitudes
-(the others fall a few short; case D's n = 32 is 2²⁰ too), so the first run separates slice
-length from array size. Outside performance, the items below are unchanged: the `std::mdspan`
-decision, the README usage snippet (which waits on an API decision), and the deferred review of
-the install rules.
+Recommended next (2026-11-04): re-measure the out-of-cache figures with the distance between
+`psi` and `dpsidt` controlled (#5), Eigen included, since some, the qubit case among them, may
+carry the slow distance of case H. The power-of-two investigation (case H), cppqed#90 and the
+placement regression check (case G) are done. Outside performance, the items below are
+unchanged: the `std::mdspan` decision, the README usage snippet (which waits on an API
+decision), and the deferred review of the install rules.
 
-1. Application performance (#1; see `benchmarks/performance.md`, next steps): contiguous
-   slices of power-of-two length are slow out of cache, for a reason not yet known; and a
-   short axis 0 of a state larger than cache (qubit first) is still applied one diagonal at
-   a time. (The hoisted loop, the multiplication in real arithmetic, the short axis 0, the
-   row shape for long operands and strided views, and the placement scan are done.)
+1. Application performance (#1; see `benchmarks/performance.md`, next steps): a short axis 0
+   of a state larger than cache (qubit first) is still applied one diagonal at a time, but
+   re-measure it first (above). Whether to keep arrays out of the slow distance, e.g. an
+   allocator in `StorageType` that pads each allocation, is an open design question; C++QED's
+   ODE stepper allocates its scratch arrays as `StorageType` itself. (The hoisted loop, the
+   multiplication in real arithmetic, the short axis 0, the row shape for long operands and
+   strided views, the placement scan, and the power-of-two investigation are done.)
 2. Decide on migrating to `std::mdspan`/`std::extents` (Kokkos reference implementation,
    Apache-2.0, FetchContent-pinnable) versus writing the paper on the current
    architecture. **The decision is open; do not start the migration unasked.**
