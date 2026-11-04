@@ -199,18 +199,21 @@ ctest --test-dir build --output-on-failure
     time is up to 3.4× slower and the row shape up to 1.7×; on 4 KB pages nothing changes.
     Two arrays of a multiple of 1 MiB allocated back to back lie exactly there (2²⁴ + 16 for
     16 MiB). This, not the slice length, made case F's power-of-two slices slow. The mechanism
-    (which structure conflicts) is not established. Control or report the distance in every
-    out-of-cache measurement.
-  - Out of cache: 1.4–2.5× faster than Eigen, except with the qubit first (0.6–0.9×, still
-    one diagonal at a time). Those figures were measured without controlling the distance and
-    are to be re-measured. Once both are bandwidth bound, a format gains at most about 20%;
-    single-threaded on the reference machine Eigen isn't.
+    (which structure conflicts) is not established. Measure out of cache with `--no-thp`
+    (both executables: `prctl(PR_SET_THP_DISABLE)`), where the distance doesn't matter, or
+    control the distance. Re-measured that way on 2026-11-04: 76 of 289 configurations had
+    moved by more than 8% on huge pages, almost all of them the library's or the hand-written
+    loops' (Eigen's in four, by 1.09–1.32×); scattered access
+    (the old `SliceIterator` order) is instead 1.1–1.3× faster on huge pages (TLB).
+  - Out of cache, on 4 KB pages: 2.0–2.4× faster than Eigen, with the qubit first 0.9–1.1×
+    (still one diagonal at a time; 0.89× at N = 2²⁰). On huge pages these were 1.4–2.5× and
+    0.6–0.8×. Once both are bandwidth bound, a format gains at most about 20%; single-threaded
+    on the reference machine Eigen isn't.
   - In C++QED's slice-by-slice setting, the honest competitor is a CSR matrix of the term's
-    own space on the same slices. MultiDiagonal is 1.7–2.6× faster at n = 30, and on strided
-    slices of power-of-two length too (the row shape avoids the L1 set conflicts). Contiguous
-    slices of length 32 came out at parity with term CSR, but at the slow distance; the library
-    takes 0.84–0.89 ns per nonzero at a neutral one (case H), term CSR is not yet re-measured.
-    C++QED's `SliceIterator` used to produce the slices last
+    own space on the same slices. On 4 KB pages MultiDiagonal is 2.5× faster on contiguous
+    slices (n = 30 and 32) and 1.6–1.7× on strided ones (the row shape avoids the L1 set
+    conflicts of power-of-two strides). The earlier parity at n = 32 contiguous was the slow
+    distance. C++QED's `SliceIterator` used to produce the slices last
     dummy axis fastest, which cost every method 1.1–2.3× more; it takes them in memory order
     since 2026-11-04 (cppqed#90).
   - Composition wins up to 7× at rank 1 (0.9–1.8× for Jaynes–Cummings), but it happens at
@@ -221,20 +224,21 @@ ctest --test-dir build --output-on-failure
 
 ## Open items (roughly in priority order)
 
-Recommended next (2026-11-04): re-measure the out-of-cache figures with the distance between
-`psi` and `dpsidt` controlled (#5), Eigen included, since some, the qubit case among them, may
-carry the slow distance of case H. The power-of-two investigation (case H), cppqed#90 and the
-placement regression check (case G) are done. Outside performance, the items below are
-unchanged: the `std::mdspan` decision, the README usage snippet (which waits on an API
+Recommended next (2026-11-04): decide how to keep arrays out of the slow distance (#26), which
+costs the library up to about 3× on huge pages, against at most about 1.1× left in the qubit-first
+loop shape. The out-of-cache re-measurement (`--no-thp`), the power-of-two investigation (case H),
+cppqed#90 and the placement regression check (case G) are done. Outside performance, the items
+below are unchanged: the `std::mdspan` decision, the README usage snippet (which waits on an API
 decision), and the deferred review of the install rules.
 
-1. Application performance (#1; see `benchmarks/performance.md`, next steps): a short axis 0
-   of a state larger than cache (qubit first) is still applied one diagonal at a time, but
-   re-measure it first (above). Whether to keep arrays out of the slow distance, e.g. an
-   allocator in `StorageType` that pads each allocation, is an open design question; C++QED's
-   ODE stepper allocates its scratch arrays as `StorageType` itself. (The hoisted loop, the
-   multiplication in real arithmetic, the short axis 0, the row shape for long operands and
-   strided views, the placement scan, and the power-of-two investigation are done.)
+1. Application performance (#1, #26; see `benchmarks/performance.md`, next steps): whether to
+   keep arrays out of the slow distance, e.g. an allocator in `StorageType` that pads each
+   allocation, is an open design question (#26); C++QED's ODE stepper allocates its scratch
+   arrays as `StorageType` itself. A short axis 0 of a state larger than cache (qubit first) is
+   still applied one diagonal at a time, at 0.9–1.1× of Eigen on 4 KB pages. (The hoisted loop,
+   the multiplication in real arithmetic, the short axis 0, the row shape for long operands and
+   strided views, the placement scan, the power-of-two investigation and the out-of-cache
+   re-measurement are done.)
 2. Decide on migrating to `std::mdspan`/`std::extents` (Kokkos reference implementation,
    Apache-2.0, FetchContent-pinnable) versus writing the paper on the current
    architecture. **The decision is open; do not start the migration unasked.**

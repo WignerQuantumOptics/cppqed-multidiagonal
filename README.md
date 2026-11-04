@@ -49,13 +49,13 @@ On the reference machine (Intel Core i7-7700, GCC 16, Eigen 5.0.1), with the ope
 - 2.7–3.6× faster than Eigen's sparse matrices for operators on one axis and on several axes (1.8–2.2× for the smallest, of dimension 16);
 - 1.4–2.2× faster with a qubit on axis 0.
 
-Out of cache, where the operator is as large as the state, it is 1.4–2.5× faster than Eigen, but still 0.6–0.9× as fast with a qubit on axis 0. Once both sides are limited by memory bandwidth, no format gains much over a sparse matrix.
+Out of cache, where the operator is as large as the state, it is 2.0–2.4× faster than Eigen, and 0.9–1.1× as fast with a qubit on axis 0. These figures are on 4 KB pages; on transparent huge pages see the last point below. Once both sides are limited by memory bandwidth, no format gains much over a sparse matrix.
 
 These figures are for the default build of both. In cache they move by up to 20% between builds, because Eigen's own speed depends on the layout of the code around it. They also depend on the processor: on a 2022 laptop core they were 1.5–2.4× and 1.0–1.6× in cache. `-fcx-limited-range` makes Eigen 10–17% faster and leaves the library unchanged, since its kernel multiplies in real arithmetic.
 
 The application loop was rewritten in three steps ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1), [#23](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23), [#25](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25)). Before it, the Jaynes–Cummings coupling was 3.4–4.5× slower than Eigen. Since the last step, large operands and strided slices are applied with the diagonals of a row summed before one store, so the state is swept once rather than once per diagonal, and where input and output lie relative to each other within a page matters by at most about 10% rather than by up to 20% (and occasionally 2× for a whole process). What remains:
 - a qubit on axis 0 of a state larger than cache is still applied one diagonal at a time;
-- out of cache, on transparent huge pages, input and output lying nearly a multiple of 1 MiB apart, as arrays of a power-of-two size allocated back to back do, make application up to 3× slower one diagonal at a time and up to 1.7× by rows. The out-of-cache figures above, the qubit case included, were measured without controlling that distance and are to be re-measured.
+- out of cache, on transparent huge pages, input and output lying nearly a multiple of 1 MiB apart, as arrays of a power-of-two size allocated back to back do, make application up to about 3× slower one diagonal at a time and up to 1.7× by rows. How to keep arrays out of that distance is an open decision ([#26](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/26)).
 
 Measurements, causes and outlook, including what is not yet measured (the interaction picture): [Performance of MultiDiagonal](benchmarks/performance.md).
 

@@ -39,8 +39,10 @@
 // NaN checks) and cppqed-multidiagonal-kernels-cxlr (-fcx-limited-range). The library and the loops
 // here multiply with textbookProduct, which has no NaN check, so the flag changes only Eigen's figures.
 //
-// usage: cppqed-multidiagonal-kernels[-cxlr] [--smoke] [case ...]
+// usage: cppqed-multidiagonal-kernels[-cxlr] [--smoke] [--no-thp] [case ...]
 //        case ∈ {A,B,C,D,E,F,G,H}; none = A–F. --smoke shrinks the sizes for CI; its timings are meaningless.
+//        --no-thp keeps the process off transparent huge pages (Linux), where out of cache the distance between input
+//        and output arrays can cost up to 3× (case H).
 #include <multidiagonal/MultiDiagonal.h>
 
 #include <Eigen/SparseCore>
@@ -66,6 +68,7 @@
 
 #ifdef __linux__
 #include <sys/mman.h>
+#include <sys/prctl.h>
 #endif
 
 using namespace cppqedutils;
@@ -576,6 +579,18 @@ void caseH(bool smoke)
   }
 }
 
+/// --no-thp: keep this process off transparent huge pages, on which the distance between input and output matters out of
+/// cache (kernels.cc case H); on 4 KB pages it doesn't. Linux only.
+void disableHugePages()
+{
+#ifdef __linux__
+  if (prctl(PR_SET_THP_DISABLE,1,0,0,0)!=0 || prctl(PR_GET_THP_DISABLE,0,0,0,0)!=1) { std::perror("--no-thp: prctl(PR_SET_THP_DISABLE)"); std::exit(2); }
+  std::fprintf(stderr,"transparent huge pages disabled for this process\n");
+#else
+  std::fprintf(stderr,"--no-thp: not supported on this system, ignored\n");
+#endif
+}
+
 } // anonymous
 
 
@@ -585,7 +600,7 @@ int main(int argc, char** argv)
   std::set<std::string_view> only;
   for (int i=1; i<argc; ++i) {
     std::string_view a{argv[i]};
-    if (a=="--smoke") smoke=true; else only.insert(a);
+    if (a=="--smoke") smoke=true; else if (a=="--no-thp") disableHugePages(); else only.insert(a);
   }
 
   static constexpr std::array<std::pair<std::string_view,void(*)(bool)>,8> cases{{{"A",caseA},{"B",caseB},{"C",caseC},{"D",caseD},{"E",caseE},{"F",caseF},{"G",caseG},{"H",caseH}}};
