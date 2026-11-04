@@ -34,7 +34,7 @@ window.MathJax = {
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.4.0</span>
+   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.4.1</span>
    </div>
    <div id="projectbrief">Multidiagonal sparse operator algebra for C++QED</div>
   </td>
@@ -110,7 +110,7 @@ $(document).ready(function(){initNavTree('md_benchmarks_2performance.html',''); 
 <li><b>In C++QED's actual setting</b>, a small operator applied slice by slice across a large state, the library is 1.7–2.6× faster than a CSR matrix of the same term (1.4–1.9× against its build with <code>-fcx-limited-range</code>), also on strided slices of power-of-two length. The exception is contiguous slices of power-of-two length, where it is at parity.</li>
 <li><b>The loop has two shapes</b> since 2026-11-04: one diagonal at a time, and the diagonals contributing to a row summed before one store (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1">#1</a>, <a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25">#25</a>). <code>operator()</code> chooses from the view's strides and extents. The row shape sweeps a large state once instead of once per diagonal, and makes the speed nearly independent of where input and output lie in memory. The other is faster where axis 0 is short, and for small views.</li>
 <li><b>History.</b> Up to v0.4.0, the multi-axis loop recomputed every address per element, which made it 3.4–4.5× slower than Eigen at rank 2 and 18× slower at rank 4; fixed on 2026-11-01 (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1">#1</a>). Complex multiplication with the C99 Annex G NaN checks halved the speed of the default build; fixed on 2026-11-02, together with a compile-time unrolled short axis 0 (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23">#23</a>). Up to 2026-11-03 the loop stored the output once per diagonal, which made it up to 1.45× slower than Eigen out of cache and its speed depend on placement by up to 1.2–2×.</li>
-<li><b>What remains.</b> A qubit on axis 0 of a state larger than cache is still applied one diagonal at a time. Out of cache, contiguous slices of power-of-two length are up to 3× slower than slices of other lengths, for a reason not yet known. Small views are applied one diagonal at a time, and there placement still costs up to 17%.</li>
+<li><b>What remains.</b> A qubit on axis 0 of a state larger than cache is still applied one diagonal at a time. Out of cache, contiguous slices of power-of-two length are up to 3× slower than slices of other lengths, for a reason not yet known. Small views are applied one diagonal at a time, and there placement still costs up to 23%, though that shape stays faster than the other at any placement.</li>
 <li><b>The interaction picture</b> has not been benchmarked systematically yet (see the section on it below).</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md18"></a>
@@ -124,7 +124,7 @@ Setup</h1>
 <li>"v0.4.0": the library of v0.4.0, with the benchmarks of e49319b;</li>
 <li>"before #23": 84cf7d4;</li>
 <li>"after #23": 7725d79;</li>
-<li>"now": c346b8a, the two loop shapes; case F of <code>kernels.cc</code> was added with this page, over the same library.</li>
+<li>"now": c346b8a, the two loop shapes; cases F and G of <code>kernels.cc</code> were added after it, over the same library.</li>
 </ul>
 <p class="startli">The first three were measured on 2026-11-03. "Now" was measured on 2026-11-04, interleaved with "after #23" again, which reproduced the library's earlier figures within 1–3%.</p>
 </li>
@@ -141,6 +141,7 @@ Setup</h1>
 <div class="fragment"><div class="line">cmake -B build-release -DCMAKE_BUILD_TYPE=Release</div>
 <div class="line">cmake --build build-release --target cppqed-multidiagonal-benchmarks cppqed-multidiagonal-kernels cppqed-multidiagonal-kernels-cxlr</div>
 <div class="line">./build-release/benchmarks/cppqed-multidiagonal-kernels        # cases A–F, default complex multiplication</div>
+<div class="line">./build-release/benchmarks/cppqed-multidiagonal-kernels G      # the placement scan; a summary per shape goes to stderr</div>
 <div class="line">./build-release/benchmarks/cppqed-multidiagonal-kernels-cxlr   # the same with -fcx-limited-range</div>
 <div class="line">./build-release/benchmarks/cppqed-multidiagonal-benchmarks     # apply1, compose1, …, picture1</div>
 </div><!-- fragment --><p><code>kernels.cc</code> times the library as <code>operator()</code> chooses its loop shape ("library"), and with each shape forced: <code>applyByDiagonals</code> ("one diagonal at a time") and <code>applyByRows</code> ("by rows"). Its cases:</p>
@@ -158,7 +159,9 @@ Setup</h1>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">E   </td><td class="markdownTableBodyNone">tridiagonal ⊗ tridiagonal on extents {n₀, 8192/n₀}, for an axis 0 of n₀ = 1 … 32 elements    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">F   </td><td class="markdownTableBodyNone">where the two loop shapes cross over: case D's operator on contiguous slices of length n; tridiagonal ⊗ tridiagonal on extents {n₀, T/n₀} for T = 8192, 65536, 2²⁰   </td></tr>
+<td class="markdownTableBodyNone">F   </td><td class="markdownTableBodyNone">where the two loop shapes cross over: case D's operator on contiguous slices of length n; tridiagonal ⊗ tridiagonal on extents {n₀, T/n₀} for T = 8192, 65536, 2²⁰    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">G   </td><td class="markdownTableBodyNone">placement: <code>psi</code> at every 16-byte offset of a page relative to <code>dpsidt</code>, both shapes; rank 1 at N = 64, 1024, 4096, and Jaynes–Cummings in both axis orders (state 4096). It takes a few minutes and runs only when named   </td></tr>
 </table>
 <h1><a class="anchor" id="autotoc_md19"></a>
 Complex multiplication</h1>
@@ -290,35 +293,37 @@ A short axis 0</h2>
 <h1><a class="anchor" id="autotoc_md22"></a>
 Placement of the arrays</h1>
 <p>The shape that applies one diagonal at a time writes <code>dpsidt</code> once per diagonal and element. So its speed depends on where <code>psi</code> lies relative to <code>dpsidt</code> within a 4 KB page (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25">#25</a>). The processor compares only the low 12 address bits of a load with the stores still in flight. For some placements it then holds loads from <code>psi</code> back behind stores to <code>dpsidt</code> that they don't depend on ("4K aliasing"). The row shape writes <code>dpsidt</code> once per element.</p>
-<p>A standalone probe placed <code>psi</code> at every 16-byte offset of a page relative to <code>dpsidt</code> (rank 1, five diagonals; ns per application):</p>
+<p>Case G of <code>kernels.cc</code> places <code>psi</code> at every 16-byte offset of a page relative to <code>dpsidt</code>, for both shapes (ns per application; the first of two runs):</p>
 <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadNone">loop   </th><th class="markdownTableHeadNone">N   </th><th class="markdownTableHeadNone">best   </th><th class="markdownTableHeadNone">median   </th><th class="markdownTableHeadNone">worst   </th><th class="markdownTableHeadNone">offsets more than 5% above the best    </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">one diagonal at a time   </td><td class="markdownTableBodyNone">1024   </td><td class="markdownTableBodyNone">2940   </td><td class="markdownTableBodyNone">3129   </td><td class="markdownTableBodyNone">3510   </td><td class="markdownTableBodyNone">140 / 256    </td></tr>
+<td class="markdownTableBodyNone">one diagonal at a time (chosen by <code>operator()</code> here)   </td><td class="markdownTableBodyNone">64   </td><td class="markdownTableBodyNone">161   </td><td class="markdownTableBodyNone">163   </td><td class="markdownTableBodyNone">198   </td><td class="markdownTableBodyNone">21 / 256    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">by rows   </td><td class="markdownTableBodyNone">1024   </td><td class="markdownTableBodyNone">2595   </td><td class="markdownTableBodyNone">2631   </td><td class="markdownTableBodyNone">2773   </td><td class="markdownTableBodyNone">4 / 256    </td></tr>
+<td class="markdownTableBodyNone">by rows   </td><td class="markdownTableBodyNone">64   </td><td class="markdownTableBodyNone">215   </td><td class="markdownTableBodyNone">218   </td><td class="markdownTableBodyNone">240   </td><td class="markdownTableBodyNone">6 / 256    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">one diagonal at a time   </td><td class="markdownTableBodyNone">4096   </td><td class="markdownTableBodyNone">13896   </td><td class="markdownTableBodyNone">14380   </td><td class="markdownTableBodyNone">15655   </td><td class="markdownTableBodyNone">40 / 256    </td></tr>
+<td class="markdownTableBodyNone">one diagonal at a time   </td><td class="markdownTableBodyNone">1024   </td><td class="markdownTableBodyNone">2968   </td><td class="markdownTableBodyNone">3136   </td><td class="markdownTableBodyNone">3577   </td><td class="markdownTableBodyNone">142 / 256    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">by rows   </td><td class="markdownTableBodyNone">4096   </td><td class="markdownTableBodyNone">11626   </td><td class="markdownTableBodyNone">11784   </td><td class="markdownTableBodyNone">12226   </td><td class="markdownTableBodyNone">1 / 256    </td></tr>
+<td class="markdownTableBodyNone">by rows   </td><td class="markdownTableBodyNone">1024   </td><td class="markdownTableBodyNone">2764   </td><td class="markdownTableBodyNone">2792   </td><td class="markdownTableBodyNone">2899   </td><td class="markdownTableBodyNone">1 / 256    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">one diagonal at a time, Jaynes–Cummings, mode first, state 4096   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">11595   </td><td class="markdownTableBodyNone">11857   </td><td class="markdownTableBodyNone">12782   </td><td class="markdownTableBodyNone">34 / 256    </td></tr>
+<td class="markdownTableBodyNone">one diagonal at a time   </td><td class="markdownTableBodyNone">4096   </td><td class="markdownTableBodyNone">13657   </td><td class="markdownTableBodyNone">14164   </td><td class="markdownTableBodyNone">15500   </td><td class="markdownTableBodyNone">83 / 256    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">by rows, the same   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">8849   </td><td class="markdownTableBodyNone">9295   </td><td class="markdownTableBodyNone">9768   </td><td class="markdownTableBodyNone">129 / 256    </td></tr>
+<td class="markdownTableBodyNone">by rows   </td><td class="markdownTableBodyNone">4096   </td><td class="markdownTableBodyNone">12197   </td><td class="markdownTableBodyNone">12467   </td><td class="markdownTableBodyNone">12835   </td><td class="markdownTableBodyNone">2 / 256    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">one diagonal at a time (chosen by <code>operator()</code> here)   </td><td class="markdownTableBodyNone">64   </td><td class="markdownTableBodyNone">167   </td><td class="markdownTableBodyNone">167   </td><td class="markdownTableBodyNone">195   </td><td class="markdownTableBodyNone">19 / 256    </td></tr>
+<td class="markdownTableBodyNone">one diagonal at a time, Jaynes–Cummings, mode first, state 4096   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">11142   </td><td class="markdownTableBodyNone">11307   </td><td class="markdownTableBodyNone">12330   </td><td class="markdownTableBodyNone">27 / 256    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">by rows   </td><td class="markdownTableBodyNone">64   </td><td class="markdownTableBodyNone">222   </td><td class="markdownTableBodyNone">223   </td><td class="markdownTableBodyNone">239   </td><td class="markdownTableBodyNone">4 / 256   </td></tr>
+<td class="markdownTableBodyNone">by rows, the same   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">8918   </td><td class="markdownTableBodyNone">9365   </td><td class="markdownTableBodyNone">9813   </td><td class="markdownTableBodyNone">128 / 256    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">one diagonal at a time, Jaynes–Cummings, qubit first, state 4096 (chosen by <code>operator()</code>)   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">17199   </td><td class="markdownTableBodyNone">17545   </td><td class="markdownTableBodyNone">19000   </td><td class="markdownTableBodyNone">14 / 256   </td></tr>
 </table>
-<p>"Worst" leaves out single offsets far above both their neighbours: six in 2816 measurements, 1.27–1.57× the best, in both shapes. Two repeated scans of the row shape at N = 1024 put the one there within 1% of the best, and one of them had another such offset elsewhere. They are disturbances during that measurement, not placement.</p>
+<p>"Worst" leaves out single offsets far above both their neighbours: nine of the 2560 measurements in this run, 1.2–1.9× the best, in both shapes. The second run had them at other offsets. They are disturbances during that measurement, not placement. Otherwise the second run agrees within a few percent, except that the first two offsets of one of its scans came out 1.4× slow.</p>
 <ul>
-<li><b>One diagonal at a time: a typical placement costs 2–6%, a bad one 10–19%.</b> The slow placements are those where <code>psi</code> lies a little below <code>dpsidt</code>, and the default allocation puts the two arrays exactly there.</li>
+<li><b>One diagonal at a time: a typical placement costs 1–6%, a bad one 10–23%.</b> The slow placements are those where <code>psi</code> lies a little below <code>dpsidt</code>, and the default allocation puts the two arrays exactly there.</li>
 <li><b>Occasionally a whole process runs about 2× slower</b> with an identical layout, presumably because of the state of the processor's memory-disambiguation predictor.</li>
-<li><b>By rows, at rank 1, every offset is within 2–3% of the best</b>, except a rise of 4–8% for <code>psi</code> within about 100 bytes below <code>dpsidt</code>. It is also 1.2× faster at the median. With Jaynes–Cummings it alternates between 1–3% and 6–8% above the best with a period of 32 bytes, which is the alignment of 32-byte vector loads against cache lines, not aliasing; the worst offset is 1.10× the best.</li>
+<li><b>By rows, at rank 1, every offset is within 5% of the best from N = 1024 on</b>, and the rise for <code>psi</code> just below <code>dpsidt</code> is 4–6%. At N = 64 a few offsets cost up to 12%. The row shape is also 1.1–1.2× faster at the median there. With Jaynes–Cummings it alternates between 1–3% and 6–8% above the best with a period of 32 bytes, which is the alignment of 32-byte vector loads against cache lines, not aliasing; the worst offset is 1.10× the best.</li>
 <li><b>Eigen stores once per row and is not affected.</b></li>
-<li><b>With the qubit on axis 0, placement barely matters</b>: one diagonal at a time, 13 offsets in 256 are more than 5% slower, and the worst is 1.10×.</li>
-<li><b>Small views are still applied one diagonal at a time</b> (N = 64 above), and there the placements just below cost up to 17%.</li>
+<li><b>With the qubit on axis 0, placement barely matters</b>: one diagonal at a time, 14 offsets in 256 are more than 5% slower, and the worst is 1.10×.</li>
+<li><b>Small views are still applied one diagonal at a time</b> (N = 64 above), and there the placements just below cost up to 23%. Even at its worst placement, though, this shape is faster than the row shape at its best (198 against 215 ns), so <code>operator()</code> has nothing to gain by switching.</li>
 <li><b>Out of cache, physical placement matters too.</b> At N = 1048576 an isolated process took 2.2 ns per nonzero for <code>apply1</code> one diagonal at a time, but 3.4 ns inside the main suite, with the same in-page offsets. The physical pages there come from a long allocation history. Huge pages make at most a 5% difference. Case B out of cache varies by up to 30% between processes, for both shapes.</li>
 </ul>
 <p>This is why every figure on this page is a median over separate processes.</p>
@@ -482,25 +487,26 @@ Assessment and next steps</h1>
 <li>the per-axis offsets are the quanta moved per subsystem, and they give per-axis strides, one phase per diagonal for linear spectra, and composition closure without index bookkeeping;</li>
 <li>it is far more readable than a flattened matrix.</li>
 </ul>
-<p>Next steps, in order:</p>
+<p>Next steps:</p>
 <ol type="1">
 <li>Done on 2026-11-01: <code>operator()</code> rewritten with hoisted addresses and the innermost loop over axis 0 (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1">#1</a>).</li>
 <li>Done on 2026-11-02: complex multiply-add in real arithmetic inside the kernel, and an axis 0 of up to four elements unrolled at compile time (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23">#23</a>).</li>
 <li>Done on 2026-11-04: the diagonals of a row summed before one store, for long operands and strided views, with <code>operator()</code> choosing the shape from the view's strides and extents (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1">#1</a>, <a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25">#25</a>). This also settled the strided half of the next step.</li>
-<li>The loop shapes that remain (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1">#1</a>):<ul>
-<li>a short axis 0 of a state larger than cache (qubit first), still applied one diagonal at a time: block the outer axes, or sum the diagonals over the few rows of axis 0;</li>
-<li>find out why contiguous slices of power-of-two length are slow out of cache, in both shapes.</li>
+<li>The loop shapes that remain (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1">#1</a>), in this order:<ul>
+<li>find out why contiguous slices of power-of-two length are slow out of cache, in both shapes (case F reproduces it);</li>
+<li>a short axis 0 of a state larger than cache (qubit first), still applied one diagonal at a time: block the outer axes, or sum the diagonals over the few rows of axis 0.</li>
 </ul>
 </li>
 <li>Benchmarks (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/5">#5</a>):<ul>
+<li>done on 2026-11-04: the placement scan as a regression check for #25, for both shapes (case G);</li>
 <li>make <code>picture1</code> call the library;</li>
 <li>add term CSR through slices to the main suite;</li>
-<li>add update plus apply for the interaction picture in the slice setting;</li>
-<li>add the placement scan as a regression check for #25, for both shapes.</li>
+<li>add update plus apply for the interaction picture in the slice setting.</li>
 </ul>
 </li>
 </ol>
-<p>In C++QED: produce slices in memory order (<a href="https://github.com/WignerQuantumOptics/cppqed/issues/90">cppqed#90</a>), and benchmark the interaction picture end to end (<a href="https://github.com/WignerQuantumOptics/cppqed/issues/91">cppqed#91</a>). </p>
+<p>In C++QED: produce slices in memory order (<a href="https://github.com/WignerQuantumOptics/cppqed/issues/90">cppqed#90</a>), and benchmark the interaction picture end to end (<a href="https://github.com/WignerQuantumOptics/cppqed/issues/91">cppqed#91</a>).</p>
+<p><b>What to do next:</b> cppqed#90, since it helps C++QED's real workload most. In C++QED's setting, the order of the slices costs every method 1.1–2.3×, more than any remaining change of the loop would gain there. On the library side, the power-of-two investigation comes next. The placement regression check, which would have come before it, is done. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->
