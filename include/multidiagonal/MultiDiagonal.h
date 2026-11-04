@@ -89,20 +89,37 @@ struct MultiDiagonal
   /// The views may be strided and offset, e.g. slices of a larger state, each with its own strides.
   /// **@p psi and @p dpsidt must not overlap.**
   ///
+  /// Chooses between two loop shapes, which give the same result up to rounding:
+  /// - `applyByDiagonals`, one diagonal at a time, for an axis 0 of up to four elements (e.g. a qubit), and for views
+  ///   contiguous along axis 0 that are either small (up to 128 amplitudes, e.g. C++QED's slices of a single mode), or
+  ///   fit in a last-level cache (up to 2¹⁸ amplitudes) with an axis 0 shorter than 32;
+  /// - `applyByRows`, the diagonals of a row summed before one store, otherwise: for long axes, for operands larger than
+  ///   cache, and for views strided along axis 0.
+  ///
+  /// The row-oriented shape pays a fixed cost per row of axis 0 (the rows at either end); the other sweeps the view once
+  /// per diagonal. The bounds are where the two cross over on the reference machine.
+  /// @see @ref md_benchmarks_2performance "Performance of MultiDiagonal" for what the two shapes cost and why.
+  void operator () (double, MultiArrayConstView<dcomp,RANK> psi, MultiArrayView<dcomp,RANK> dpsidt) const
+  {
+    const size_t length0{dpsidt.extents[0]}, size{multiarray::calculateExtent(dpsidt.extents)};
+    if (length0<=4 || (psi.strides[0]==1 && dpsidt.strides[0]==1 && (size<=128 || (length0<32 && size<=(1uz<<18)))))
+      applyByDiagonals(psi,dpsidt);
+    else applyByRows(psi,dpsidt);
+  }
+
+  /// @brief The loop shape of application one diagonal at a time. Same contract as `operator()`.
+  ///
   /// Per diagonal, the addresses of the first row and column are computed once. A loop nest generated at compile
   /// time then runs over the axes with axis 0 innermost, i.e. in memory order for both the diagonal and the state.
   /// The outer axes only add strides to pointers. The innermost loop multiplies with `textbookProduct`, so that it
   /// vectorizes also without `-fcx-limited-range`, and has a separate branch for unit stride. An axis 0 of up to four
   /// elements (e.g. a qubit) is unrolled at compile time instead, and the loop over axis 1 becomes the innermost one.
-  /// @see @ref md_benchmarks_2performance "Performance of MultiDiagonal" for what this loop costs and why.
-  void operator () (double, MultiArrayConstView<dcomp,RANK> psi, MultiArrayView<dcomp,RANK> dpsidt) const
+  ///
+  /// This shape stores into @p dpsidt once per diagonal and element. For a view larger than cache it therefore sweeps
+  /// @p dpsidt once per diagonal, and its speed depends on where @p psi lies relative to @p dpsidt within a page.
+  void applyByDiagonals(MultiArrayConstView<dcomp,RANK> psi, MultiArrayView<dcomp,RANK> dpsidt) const
   {
-    if (diagonals.empty()) return;
-
-#ifndef NDEBUG
-    if (psi.extents != calculateAndCheckDimensions(*this)) throw std::runtime_error("Mismatch between StateVector and MultiDiagonal dimensions");
-    checkExtents(psi,MultiArrayConstView<dcomp,RANK>{dpsidt},"MultiDiagonal application");
-#endif // NDEBUG
+    if (!checkApplication(psi,dpsidt)) return;
 
     const size_t strideRows0{dpsidt.strides[0]}, strideCols0{psi.strides[0]};
 
@@ -157,6 +174,112 @@ struct MultiDiagonal
       }
     }
   }
+
+  /// @brief The loop shape of application by rows: the diagonals contributing to a row are summed before one store.
+  /// Same contract as `operator()`.
+  ///
+  /// A loop nest generated at compile time runs over the rows with axis 0 innermost. Along the outer axes it keeps the
+  /// list of diagonals that have entries in the current row, with the addresses where their entries and columns start.
+  /// Along axis 0, the rows in which all of them have entries are summed in one loop, with the number of diagonals
+  /// fixed at compile time, so that it vectorizes. The few rows at either end, where some diagonals have no entry, are
+  /// summed one by one. @p dpsidt is thus stored once per element. An operand larger than cache is therefore swept
+  /// once, rather than once per diagonal, and where @p psi lies relative to @p dpsidt within a page matters by a few
+  /// percent, rather than by up to 1.5×.
+  ///
+  /// Up to six diagonals are summed per store, since each needs two pointers in registers, and up to sixteen are listed
+  /// per sweep. An operator with more diagonals per row is stored into several times, and one with more diagonals in all
+  /// is swept several times.
+  void applyByRows(MultiArrayConstView<dcomp,RANK> psi, MultiArrayView<dcomp,RANK> dpsidt) const
+  {
+    if (!checkApplication(psi,dpsidt)) return;
+
+    struct Tap {Offsets o; Extents<RANK> strides;}; // a diagonal: its offsets, and its strides in storage
+    std::array<Tap,maxListed> taps;
+
+    using Pointers = std::array<const dcomp*,maxListed>;
+    // the diagonals with entries in a row: their indices in taps, and where their entries and their columns start
+    struct Listed {size_t size; std::array<size_t,maxListed> tap; Pointers d, c;};
+
+    const auto loop=[&] (auto n, const auto& self, const Listed& listed, dcomp* r) -> void
+    {
+      using namespace hana::literals;
+      const size_t extent{dpsidt.extents[n]}, sR{dpsidt.strides[n]}, sC{psi.strides[n]};
+      const auto bounds=[&] (size_t i) {const ptrdiff_t o{taps[listed.tap[i]].o[n]}; return std::pair{size_t(o<0 ? -o : 0),size_t(o>0 ? o : 0)};};
+
+      if constexpr (n!=0_c) for (size_t k=0; k<extent; ++k) { // row k along axis n: entry k-o⁻ of each diagonal with k ∈ [o⁻,D-o⁺)
+        Listed next{};
+        for (size_t i=0; i<listed.size; ++i)
+          if (const auto [om,op]=bounds(i); k>=om && k<extent-op) {
+            const size_t t{listed.tap[i]};
+            next.tap[next.size]=t; next.d[next.size]=listed.d[i]+(k-om)*taps[t].strides[n]; next.c[next.size]=listed.c[i]+(k-om+op)*sC;
+            ++next.size;
+          }
+        if (next.size) self(n-1_c,self,next,r+k*sR);
+      }
+      else {
+        // rows [lo,hi) have entries in every listed diagonal
+        size_t lo=0, hi=extent;
+        for (size_t i=0; i<listed.size; ++i) {const auto [om,op]=bounds(i); lo=std::max(lo,om); hi=std::min(hi,extent-op);}
+
+        const auto sumOneByOne=[&] (size_t row) { // entry row-o⁻, column row-o⁻+o⁺
+          dcomp sum{};
+          for (size_t i=0; i<listed.size; ++i)
+            if (const auto [om,op]=bounds(i); row>=om && row<extent-op) sum+=textbookProduct(listed.d[i][row-om],listed.c[i][(row-om+op)*sC]);
+          r[row*sR]+=sum;
+        };
+        for (size_t row=0; row<lo; ++row) sumOneByOne(row);
+        for (size_t row=std::max(lo,hi); row<extent; ++row) sumOneByOne(row);
+
+        if (lo<hi) for (size_t i=0; i<listed.size; i+=maxSummed) {
+          const size_t count{std::min(maxSummed,listed.size-i)};
+          std::array<const dcomp*,maxSummed> d{}, c{};
+          for (size_t j=0; j<count; ++j) {const auto [om,op]=bounds(i+j); d[j]=listed.d[i+j]+(lo-om); c[j]=listed.c[i+j]+(lo-om+op)*sC;}
+          [&] <size_t... m> (std::index_sequence<m...>) {
+            ((count==m+1 ? sumRows(d,c,r+lo*sR,hi-lo,sR,sC,std::make_index_sequence<m+1>{}) : void()), ...);
+          } (std::make_index_sequence<maxSummed>{});
+        }
+      }
+    };
+
+    for (auto diag=diagonals.begin(); diag!=diagonals.end(); ) {
+      Listed all{};
+      for (; diag!=diagonals.end() && all.size<maxListed; ++diag) if (!diag->second.dataView.empty()) {
+        taps[all.size]={diag->first,diag->second.strides};
+        all.tap[all.size]=all.size; all.d[all.size]=diag->second.dataView.data(); all.c[all.size]=psi.dataView.data()+psi.offset;
+        ++all.size;
+      }
+      if (all.size) loop(hana::llong_c<RANK-1>,loop,all,dpsidt.dataView.data()+dpsidt.offset);
+    }
+  }
+
+private:
+  static constexpr size_t maxSummed=6, maxListed=16; // the most diagonals applyByRows sums per store, and lists per sweep
+
+  /// Debug checks of application. Returns false if there is nothing to apply.
+  bool checkApplication(MultiArrayConstView<dcomp,RANK> psi, MultiArrayView<dcomp,RANK> dpsidt) const
+  {
+    if (diagonals.empty()) return false;
+#ifndef NDEBUG
+    if (psi.extents != calculateAndCheckDimensions(*this)) throw std::runtime_error("Mismatch between StateVector and MultiDiagonal dimensions");
+    checkExtents(psi,MultiArrayConstView<dcomp,RANK>{dpsidt},"MultiDiagonal application");
+#else
+    (void)psi; (void)dpsidt;
+#endif // NDEBUG
+    return true;
+  }
+
+  /// The rows [0,len) of a line, with the diagonals g summed before one store. Their entries start at d[g], and their
+  /// columns at c[g]. The pointers are copied, so that the compiler sees that the stores into r don't change them.
+  template <size_t... g>
+  static void sumRows(const std::array<const dcomp*,maxSummed>& dAll, const std::array<const dcomp*,maxSummed>& cAll,
+                      dcomp* r, size_t len, size_t sR, size_t sC, std::index_sequence<g...>)
+  {
+    const std::array d{dAll[g]...}, c{cAll[g]...};
+    if (sR==1 && sC==1) for (size_t k=0; k<len; ++k) r[k]+=(... + textbookProduct(d[g][k],c[g][k]));
+    else for (size_t k=0; k<len; ++k) r[k*sR]+=(... + textbookProduct(d[g][k],c[g][k*sC]));
+  }
+
+public:
 
 
   /// @brief Tensor (direct) product: concatenates the signed offset arrays, reflecting the tensor

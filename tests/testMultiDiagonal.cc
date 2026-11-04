@@ -156,6 +156,11 @@ TEST_CASE("a zero-extent diagonal on a non-leading axis is skipped in applicatio
   auto op = identity(3)*identity(1) + identity(3)*a1; // the zero-extent diagonal sits on axis 1
   REQUIRE(op.diagonals.size() == 2);
   CHECK(approxEqual(densify(op), CMatrix::Identity(3,3)));
+
+  MultiArray<dcomp,2> psi{{3,1}, multiarray::zeroInit<dcomp>}, d{{3,1}, multiarray::zeroInit<dcomp>};
+  psi(1,0)=2.+1i;
+  op.applyByRows(psi, d);
+  CHECK(d(1,0) == psi(1,0));
 }
 
 
@@ -434,12 +439,27 @@ TEST_CASE("rank-3 application and composition with colliding offsets — #4", "[
 
 namespace {
 
+/// The loop shapes of application: as `operator()` chooses, and each one forced
+enum class Shape {chosen, byDiagonals, byRows};
+constexpr std::array shapes{Shape::chosen, Shape::byDiagonals, Shape::byRows};
+
+template <size_t RANK>
+void apply(Shape shape, const MultiDiagonal<RANK>& md, MultiArrayConstView<dcomp,RANK> psi, MultiArrayView<dcomp,RANK> dpsidt)
+{
+  switch (shape) {
+    case Shape::chosen:      md(0., psi, dpsidt); break;
+    case Shape::byDiagonals: md.applyByDiagonals(psi, dpsidt); break;
+    case Shape::byRows:      md.applyByRows(psi, dpsidt); break;
+  }
+}
+
 /// Applies @p md through views into larger buffers, each side with its own strides and offset, as when C++QED
 /// applies an operator to slices of a state. Returns the result in flat order (axis 0 fastest), and checks that
 /// the dpsidt buffer is untouched outside the view.
 template <size_t RANK>
 CVector applyThroughViews(const MultiDiagonal<RANK>& md, const CVector& psiFlat,
-                          Extents<RANK> stridesPsi, size_t offsetPsi, Extents<RANK> stridesDpsidt, size_t offsetDpsidt)
+                          Extents<RANK> stridesPsi, size_t offsetPsi, Extents<RANK> stridesDpsidt, size_t offsetDpsidt,
+                          Shape shape = Shape::chosen)
 {
   const auto ext = calculateAndCheckDimensions(md);
   const auto flat = multiarray::calculateStrides(ext);
@@ -451,7 +471,7 @@ CVector applyThroughViews(const MultiDiagonal<RANK>& md, const CVector& psiFlat,
   MultiArrayView<dcomp,RANK> psi{ext,stridesPsi,offsetPsi,std::span<dcomp>{psiBuffer}}, dpsidt{ext,stridesDpsidt,offsetDpsidt,std::span<dcomp>{dpsidtBuffer}};
 
   for (Extents<RANK> idx{}; idx[0]!=ext[0]; incrementMultiIndex(idx,ext)) {psi(idx)=psiFlat(flatIndex(idx)); dpsidt(idx)=0.;}
-  md(0., psi, dpsidt);
+  apply<RANK>(shape, md, psi, dpsidt);
 
   CVector res(psiFlat.size());
   for (Extents<RANK> idx{}; idx[0]!=ext[0]; incrementMultiIndex(idx,ext)) {res(flatIndex(idx))=dpsidt(idx); dpsidt(idx)=sentinel;}
@@ -476,22 +496,34 @@ TEST_CASE("application through strided, offset views of larger arrays — #1", "
 
   const auto agrees = [&] (const CVector& v) {return (v-ref).norm() < tol*ref.norm();};
 
-  // sub-block of a {5,3,4} array: unit stride along axis 0, gaps between rows
-  CHECK(agrees(applyThroughViews(X, psi, {1,5,15}, 7, {1,5,15}, 7)));
-  // strided along axis 0, as a slice along an inner axis of a larger state
-  CHECK(agrees(applyThroughViews(X, psi, {2,7,15}, 3, {2,7,15}, 3)));
-  // different layouts on the two sides: strided psi, contiguous dpsidt, and the converse
-  CHECK(agrees(applyThroughViews(X, psi, {3,10,25}, 1, {1,3,6}, 4)));
-  CHECK(agrees(applyThroughViews(X, psi, {1,3,6}, 0, {3,10,25}, 2)));
-  // last axis fastest in memory
-  CHECK(agrees(applyThroughViews(X, psi, {8,4,1}, 0, {8,4,1}, 5)));
+  // X|X has 75 diagonals, more than applyByRows lists per sweep, and up to 27 contributing to one row
+  auto XX = X | X;
+  const CVector refXX = dense*ref;
+  const auto agreesXX = [&] (const CVector& v) {return (v-refXX).norm() < tol*refXX.norm();};
+
+  for (Shape shape : shapes) {
+    CAPTURE(shape);
+    // sub-block of a {5,3,4} array: unit stride along axis 0, gaps between rows
+    CHECK(agrees(applyThroughViews(X, psi, {1,5,15}, 7, {1,5,15}, 7, shape)));
+    // strided along axis 0, as a slice along an inner axis of a larger state
+    CHECK(agrees(applyThroughViews(X, psi, {2,7,15}, 3, {2,7,15}, 3, shape)));
+    // different layouts on the two sides: strided psi, contiguous dpsidt, and the converse
+    CHECK(agrees(applyThroughViews(X, psi, {3,10,25}, 1, {1,3,6}, 4, shape)));
+    CHECK(agrees(applyThroughViews(X, psi, {1,3,6}, 0, {3,10,25}, 2, shape)));
+    // last axis fastest in memory
+    CHECK(agrees(applyThroughViews(X, psi, {8,4,1}, 0, {8,4,1}, 5, shape)));
+
+    CHECK(agreesXX(applyThroughViews(XX, psi, {1,3,6}, 0, {1,3,6}, 0, shape)));
+    CHECK(agreesXX(applyThroughViews(XX, psi, {2,7,15}, 3, {3,10,25}, 1, shape)));
+  }
 }
 
 
 TEST_CASE("application with axis 0 of every length, unrolled up to four elements — #23", "[multidiagonal]")
 {
-  // a tridiagonal on axis 0 has diagonals of length n0 and n0-1: this covers the unrolled lengths 1–4 and the loop
-  for (size_t n0 : {1uz,2uz,3uz,4uz,5uz,7uz}) {
+  // a tridiagonal on axis 0 has diagonals of length n0 and n0-1: this covers the unrolled lengths 1–4 and the loop;
+  // with n0=70 operator() chooses applyByRows also for the contiguous view
+  for (size_t n0 : {1uz,2uz,3uz,4uz,5uz,7uz,70uz}) {
     CAPTURE(n0);
     auto A0 = complexTridiag(n0,0.3), A1 = complexTridiag(3,-1.2);
     const CMatrix dense = kron(densify(A1), densify(A0));
@@ -503,8 +535,71 @@ TEST_CASE("application with axis 0 of every length, unrolled up to four elements
     const CVector ref = dense*psi;
     const auto agrees = [&] (const CVector& v) {return (v-ref).norm() < tol*ref.norm();};
 
-    CHECK(agrees(applyThroughViews(X, psi, {1,n0+2}, 3, {1,n0+1}, 1)));       // unit stride along axis 0, gaps between rows
-    CHECK(agrees(applyThroughViews(X, psi, {2,2*n0+1}, 1, {3,3*n0}, 2)));     // strided along axis 0
+    for (Shape shape : shapes) {
+      CAPTURE(shape);
+      CHECK(agrees(applyThroughViews(X, psi, {1,n0}, 0, {1,n0}, 0, shape)));                // contiguous
+      CHECK(agrees(applyThroughViews(X, psi, {1,n0+2}, 3, {1,n0+1}, 1, shape)));       // unit stride along axis 0, gaps between rows
+      CHECK(agrees(applyThroughViews(X, psi, {2,2*n0+1}, 1, {3,3*n0}, 2, shape)));     // strided along axis 0
+    }
+  }
+}
+
+
+namespace {
+
+/// A complex operator with all 2m+1 diagonals at offsets −m…m on dimension dim, and its dense matrix, built
+/// independently from the storage convention d[k] = A(k+o⁻, k+o⁺)
+std::pair<MultiDiagonal<1>,CMatrix> band(size_t dim, ptrdiff_t m)
+{
+  MultiDiagonal<1> md; CMatrix dense{CMatrix::Zero(Eigen::Index(dim),Eigen::Index(dim))};
+  for (ptrdiff_t o=-m; o<=m; ++o) {
+    const size_t om=size_t(std::max(-o,ptrdiff_t{0})), op=size_t(std::max(o,ptrdiff_t{0}));
+    std::vector<dcomp> v(dim-om-op);
+    for (size_t k=0; k<v.size(); ++k) dense(Eigen::Index(k+om),Eigen::Index(k+op)) = v[k] = dcomp(std::cos(0.3*double(k)+double(o)), std::sin(0.2*double(k)-double(o)));
+    md.diagonals.emplace(MultiDiagonal<1>::Offsets{o}, multiarray::fromStorage(std::move(v)));
+  }
+  return {std::move(md),dense};
+}
+
+} // anonymous
+
+
+TEST_CASE("application by rows: rows at the edges, and more diagonals per row than summed per store — #1", "[multidiagonal]")
+{
+  // m=4 gives nine diagonals, more than applyByRows sums per store; for dim ≤ 2m no row has entries in all of them
+  for (size_t dim : {1uz,2uz,3uz,5uz,8uz,9uz,70uz,130uz}) {
+    const ptrdiff_t m = std::min(ptrdiff_t{4}, ptrdiff_t(dim)-1);
+    CAPTURE(dim, m);
+    const auto [md, dense] = band(dim, m);
+
+    CVector psi{Eigen::Index(dim)};
+    for (Eigen::Index k=0; k<psi.size(); ++k) psi(k)=dcomp(std::cos(0.7*double(k)), std::sin(1.3*double(k)));
+    const CVector ref = dense*psi;
+    const auto agrees = [&] (const CVector& v) {return (v-ref).norm() < tol*ref.norm();};
+
+    for (Shape shape : shapes) {
+      CAPTURE(shape);
+      CHECK(agrees(applyThroughViews(md, psi, {1}, 0, {1}, 0, shape)));
+      CHECK(agrees(applyThroughViews(md, psi, {3}, 2, {2}, 1, shape)));
+    }
+
+    // on axis 0 and on axis 1 of a rank-2 operator, with a complex tridiagonal on the other axis
+    auto B = complexTridiag(3,0.8);
+    const CMatrix dB = densify(B);
+    for (bool first : {true,false}) {
+      CAPTURE(first);
+      auto X = first ? copy(md)*B : B*copy(md);
+      const CMatrix dX = first ? kron(dB,dense) : kron(dense,dB);
+      CVector psi2(dX.cols());
+      for (Eigen::Index k=0; k<psi2.size(); ++k) psi2(k)=dcomp(std::cos(0.7*double(k)), std::sin(1.3*double(k)));
+      const CVector ref2 = dX*psi2;
+      const size_t n0 = first ? dim : 3;
+      for (Shape shape : shapes) {
+        CAPTURE(shape);
+        CHECK((applyThroughViews(X, psi2, {1,n0}, 0, {1,n0}, 0, shape)-ref2).norm() < tol*ref2.norm());
+        CHECK((applyThroughViews(X, psi2, {2,2*n0+3}, 1, {1,n0+1}, 2, shape)-ref2).norm() < tol*ref2.norm());
+      }
+    }
   }
 }
 

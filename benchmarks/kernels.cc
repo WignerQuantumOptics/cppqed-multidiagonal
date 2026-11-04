@@ -5,19 +5,23 @@
 // N is the length of the state vector. Every variant is cross-validated against Eigen before timing
 // (exit 1 on mismatch).
 //
+// The library is timed as operator() chooses its loop shape ("library"), and with each of its two shapes forced
+// ("library_byDiagonals": one diagonal at a time; "library_byRows": all diagonals of a row summed before one store).
+//
 // Cases:
-//   A  rank 1, five diagonals: library operator() vs hoisted loop vs row-blocked loop vs Eigen sparse
-//   B  rank-2 Jaynes–Cummings, mode = axis 0: library operator() vs hoisted loop vs Eigen sparse
+//   A  rank 1, five diagonals: library vs hoisted loop vs row-blocked loop vs Eigen sparse
+//   B  rank-2 Jaynes–Cummings, mode = axis 0: library vs hoisted loop vs Eigen sparse
 //   C  a five-diagonal operator of dimension n on axis j of an n^4 state, without materializing it
 //      (one diagonal at a time / all diagonals per outer block) vs the library
 //      on the materialized rank-4 operator vs Eigen sparse on the flattened Kronecker product
-//   D  the same operator applied slice by slice, as C++QED's Broadcaster does: library operator(),
-//      hoisted loop (one diagonal at a time), row-oriented loop (all diagonals per output row), and
+//   D  the same operator applied slice by slice, as C++QED's Broadcaster does: library,
+//      hoisted loop (one diagonal at a time), row-oriented loop (all diagonals per output row, scalar), and
 //      Eigen sparse of the term's own n×n space on the same strided slices; slices taken either in
 //      SliceIterator's order (last dummy axis fastest) or in memory order (first dummy axis fastest).
 //      Run at n=32 (power-of-two strides) and n=30.
-//   E  a short axis 0: tridiagonal ⊗ tridiagonal on extents {n0, 8192/n0}, n0 = 1…32: library operator()
-//      (which unrolls an axis 0 of up to four elements) vs hoisted loop (always loops over axis 0) vs Eigen sparse
+//   E  a short axis 0: tridiagonal ⊗ tridiagonal on extents {n0, 8192/n0}, n0 = 1…32: library
+//      (which unrolls an axis 0 of up to four elements one diagonal at a time) vs hoisted loop (always loops over
+//      axis 0) vs Eigen sparse
 //
 // Built twice: cppqed-multidiagonal-kernels (default complex multiplication, with the C99 Annex G
 // NaN checks) and cppqed-multidiagonal-kernels-cxlr (-fcx-limited-range). The library and the loops
@@ -265,9 +269,13 @@ void caseA(bool smoke)
     const auto S=toSparse(md,{N}); const CVector x=toVec(psi); CVector ye=CVector::Zero(Eigen::Index(N));
     const double nnz=double(S.nonZeros());
     md(0.,psi,y); const CVector ref=S*x; check("A library",toVec(y),ref);
+    zero(y); md.applyByDiagonals(psi,y); check("A library_byDiagonals",toVec(y),ref);
+    zero(y); md.applyByRows(psi,y); check("A library_byRows",toVec(y),ref);
     zero(y); hoisted(md,psi,y); check("A hoisted",toVec(y),ref);
     zero(y); rowBlocked(md,psi,y); check("A rowBlocked",toVec(y),ref);
     out("A_rank1","library",N,perOp([&]{md(0.,psi,y); doNotOptimize(y.dataView.data());}),nnz);
+    out("A_rank1","library_byDiagonals",N,perOp([&]{md.applyByDiagonals(psi,y); doNotOptimize(y.dataView.data());}),nnz);
+    out("A_rank1","library_byRows",N,perOp([&]{md.applyByRows(psi,y); doNotOptimize(y.dataView.data());}),nnz);
     out("A_rank1","hoisted",N,perOp([&]{hoisted(md,psi,y); doNotOptimize(y.dataView.data());}),nnz);
     out("A_rank1","rowBlocked",N,perOp([&]{rowBlocked(md,psi,y); doNotOptimize(y.dataView.data());}),nnz);
     out("A_rank1","eigen_sparse",N,perOp([&]{ye.noalias()+=S*x; doNotOptimize(ye.data());}),nnz);
@@ -287,8 +295,12 @@ void caseB(bool smoke)
     const auto S=toSparse(jc,ext); const CVector x=toVec(psi); CVector ye=CVector::Zero(x.size());
     const double nnz=double(S.nonZeros());
     jc(0.,psi,y); const CVector ref=S*x; check("B library",toVec(y),ref);
+    zero(y); jc.applyByDiagonals(psi,y); check("B library_byDiagonals",toVec(y),ref);
+    zero(y); jc.applyByRows(psi,y); check("B library_byRows",toVec(y),ref);
     zero(y); hoisted(jc,psi,y); check("B hoisted",toVec(y),ref);
     out("B_JC_modefast","library",2*N,perOp([&]{jc(0.,psi,y); doNotOptimize(y.dataView.data());}),nnz);
+    out("B_JC_modefast","library_byDiagonals",2*N,perOp([&]{jc.applyByDiagonals(psi,y); doNotOptimize(y.dataView.data());}),nnz);
+    out("B_JC_modefast","library_byRows",2*N,perOp([&]{jc.applyByRows(psi,y); doNotOptimize(y.dataView.data());}),nnz);
     out("B_JC_modefast","hoisted",2*N,perOp([&]{hoisted(jc,psi,y); doNotOptimize(y.dataView.data());}),nnz);
     out("B_JC_modefast","eigen_sparse",2*N,perOp([&]{ye.noalias()+=S*x; doNotOptimize(ye.data());}),nnz);
   }
@@ -309,10 +321,14 @@ void caseC(bool smoke)
     zero(y); broadcast(A,j,psi,y); check("C broadcast",toVec(y),ref);
     zero(y); broadcastBlocked(A,j,psi,y); check("C broadcastBlocked",toVec(y),ref);
     zero(y); full(0.,psi,y); check("C library",toVec(y),ref);
+    zero(y); full.applyByDiagonals(psi,y); check("C library_byDiagonals",toVec(y),ref);
+    zero(y); full.applyByRows(psi,y); check("C library_byRows",toVec(y),ref);
     const char* c = j==0 ? "C_axis0" : "C_axis2";
     out(c,"diagonalwise",N,perOp([&]{broadcast(A,j,psi,y); doNotOptimize(y.dataView.data());}),nnz);
     out(c,"blocked",N,perOp([&]{broadcastBlocked(A,j,psi,y); doNotOptimize(y.dataView.data());}),nnz);
     out(c,"library_materialized",N,perOp([&]{full(0.,psi,y); doNotOptimize(y.dataView.data());}),nnz);
+    out(c,"library_materialized_byDiagonals",N,perOp([&]{full.applyByDiagonals(psi,y); doNotOptimize(y.dataView.data());}),nnz);
+    out(c,"library_materialized_byRows",N,perOp([&]{full.applyByRows(psi,y); doNotOptimize(y.dataView.data());}),nnz);
     out(c,"eigen_sparse_kron",N,perOp([&]{ye.noalias()+=S*x; doNotOptimize(ye.data());}),nnz);
   }
 }
@@ -344,6 +360,10 @@ void caseD(bool smoke)
       const std::span<const dcomp> xs=psi.dataView; const std::span<dcomp> ys{y.dataStorage()};
       const auto library=[&](const std::vector<size_t>& offs){ for (size_t o : offs)
         A(0.,MultiArrayView<const dcomp,1>{{n},{s},o,xs},MultiArrayView<dcomp,1>{{n},{s},o,ys}); };
+      const auto libraryByDiagonals=[&](const std::vector<size_t>& offs){ for (size_t o : offs)
+        A.applyByDiagonals(MultiArrayView<const dcomp,1>{{n},{s},o,xs},MultiArrayView<dcomp,1>{{n},{s},o,ys}); };
+      const auto libraryByRows=[&](const std::vector<size_t>& offs){ for (size_t o : offs)
+        A.applyByRows(MultiArrayView<const dcomp,1>{{n},{s},o,xs},MultiArrayView<dcomp,1>{{n},{s},o,ys}); };
       const auto diagonalwise=[&](const std::vector<size_t>& offs){ for (size_t o : offs) diagonalsSlice(A,n,s,xs.data()+o,ys.data()+o); };
       const auto rowwise=[&](const std::vector<size_t>& offs){ for (size_t o : offs) rowsSlice(ts,ptrdiff_t(n),s,xs.data()+o,ys.data()+o); };
       using SMap=Eigen::Map<const CVector,0,Eigen::InnerStride<>>; using DMap=Eigen::Map<CVector,0,Eigen::InnerStride<>>;
@@ -352,6 +372,8 @@ void caseD(bool smoke)
         yv.noalias()+=As*SMap(xs.data()+o,Eigen::Index(n),Eigen::InnerStride<>(Eigen::Index(s))); } };
 
       zero(y); library(sliceIteratorOrder); check("D library",toVec(y),ref);
+      zero(y); libraryByDiagonals(memoryOrder); check("D library_byDiagonals",toVec(y),ref);
+      zero(y); libraryByRows(memoryOrder); check("D library_byRows",toVec(y),ref);
       zero(y); diagonalwise(memoryOrder);   check("D diagonalwise",toVec(y),ref);
       zero(y); rowwise(memoryOrder);        check("D rowwise",toVec(y),ref);
       zero(y); termCSR(memoryOrder);        check("D termCSR",toVec(y),ref);
@@ -364,6 +386,8 @@ void caseD(bool smoke)
         std::snprintf(impl,sizeof impl,"rowwise_%s",order);      out(c,impl,N,perOp([&]{rowwise(*offs);      doNotOptimize(ys.data());}),nnz);
         std::snprintf(impl,sizeof impl,"termCSR_%s",order);      out(c,impl,N,perOp([&]{termCSR(*offs);      doNotOptimize(ys.data());}),nnz);
       }
+      out(c,"library_byDiagonals_memoryOrder",N,perOp([&]{libraryByDiagonals(memoryOrder); doNotOptimize(ys.data());}),nnz);
+      out(c,"library_byRows_memoryOrder",N,perOp([&]{libraryByRows(memoryOrder); doNotOptimize(ys.data());}),nnz);
       out(c,"eigen_sparse_kron",N,perOp([&]{ye.noalias()+=S*x; doNotOptimize(ye.data());}),nnz);
     }
   }
@@ -379,9 +403,13 @@ void caseE(bool smoke)
     const auto S=toSparse(op,ext); const CVector x=toVec(psi); CVector ye=CVector::Zero(x.size());
     const double nnz=double(S.nonZeros());
     op(0.,psi,y); const CVector ref=S*x; check("E library",toVec(y),ref);
+    zero(y); op.applyByDiagonals(psi,y); check("E library_byDiagonals",toVec(y),ref);
+    zero(y); op.applyByRows(psi,y); check("E library_byRows",toVec(y),ref);
     zero(y); hoisted(op,psi,y); check("E hoisted",toVec(y),ref);
     char c[32]; std::snprintf(c,sizeof c,"E_axis0_%zu",n0);
     out(c,"library",n0*M,perOp([&]{op(0.,psi,y); doNotOptimize(y.dataView.data());}),nnz);
+    out(c,"library_byDiagonals",n0*M,perOp([&]{op.applyByDiagonals(psi,y); doNotOptimize(y.dataView.data());}),nnz);
+    out(c,"library_byRows",n0*M,perOp([&]{op.applyByRows(psi,y); doNotOptimize(y.dataView.data());}),nnz);
     out(c,"hoisted",n0*M,perOp([&]{hoisted(op,psi,y); doNotOptimize(y.dataView.data());}),nnz);
     out(c,"eigen_sparse",n0*M,perOp([&]{ye.noalias()+=S*x; doNotOptimize(ye.data());}),nnz);
   }
