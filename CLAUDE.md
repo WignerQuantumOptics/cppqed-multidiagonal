@@ -48,7 +48,9 @@ ctest --test-dir build --output-on-failure
 
 - A Debug build enables the bounds and dimension checks, and the tests exercise them.
   CI runs Debug×Release × GCC/Clang with `CMAKE_COMPILE_WARNING_AS_ERROR=ON`, so code
-  must compile warning-free under `-Wall -Wextra -Wpedantic` on both compilers.
+  must compile warning-free under `-Wall -Wextra -Wpedantic` on both compilers. CI builds
+  the benchmarks with `MULTIDIAGONAL_BENCHMARK_NATIVE=OFF`: the runners' processors vary, and
+  Clang 18 with `-march=native` warns about AVX10 on some of them.
 - CI also runs an ASan+UBSan job (Clang Debug, tests and benchmark smoke) and a consumer
   job: `tests/consumer` is a separate CMake project that uses the library via
   `find_package` after install and via FetchContent at the pushed SHA. Runners are pinned
