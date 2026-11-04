@@ -8,7 +8,7 @@ C++QED only when its pin is bumped; its jc_qjmc regression test must still pass 
 It is being prepared for standalone publication, so API stability, honest documentation
 and test coverage matter more than feature growth.
 
-Released as v0.4.0. No DOI yet. License: BSL-1.0.
+Released as v0.4.1. No DOI yet. License: BSL-1.0.
 
 ## Layout
 
