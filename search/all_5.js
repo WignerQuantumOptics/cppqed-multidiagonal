@@ -9,5 +9,6 @@ var searchData=
   ['diagonals_6',['diagonals',['../structquantumoperator_1_1MultiDiagonal.html#a63fc18ca979aba9ed5f3cbce57e7c9b6',1,'quantumoperator::MultiDiagonal::Diagonals'],['../structquantumoperator_1_1MultiDiagonal.html#a8dee2038fd153f62a535b682e4108679',1,'quantumoperator::MultiDiagonal::diagonals']]],
   ['dimensions_7',['Dimensions',['../structquantumoperator_1_1MultiDiagonal.html#abe5166921e9f5aa8dd05d51a403713b5',1,'quantumoperator::MultiDiagonal']]],
   ['directproduct_8',['directProduct',['../namespacecppqedutils.html#ae9bceca3c17fd27ac29dcc9fc8fa4238',1,'cppqedutils']]],
-  ['does_9',['Via FetchContent (as C++QED does)',['../index.html#autotoc_md12',1,'']]]
+  ['distance_20on_20huge_20pages_9',['Distance on huge pages',['../md_benchmarks_2performance.html#autotoc_md23',1,'']]],
+  ['does_10',['Via FetchContent (as C++QED does)',['../index.html#autotoc_md12',1,'']]]
 ];
