@@ -10,21 +10,32 @@
 //                       _qbitfast : qubit = axis 0 → inner loops of length 2
 //                       _modefast : mode  = axis 0 → long unit-stride inner loops
 //   composeJC         rank-2 composition vs sparse-sparse product
-//   constructJC       rank-2 assembly via the operator algebra vs Kronecker triplets
-//   picture1          rank-1 interaction-picture RHS evaluation, harmonic spectrum ω_k = kω:
-//                       multidiagonal_scalarfreq  one exp per DIAGONAL per evaluation
-//                       multidiagonal_tabfreq     freqs tabulated per element (general spectra)
-//                       eigen_sparse_pernnz       one exp per NONZERO (CSR + parallel freq array)
-//                       eigen_sparse_sandwich     phase ψ → static apply → unphase (strong baseline)
-//                       multidiagonal_static      no picture — floor for the same loop structure
+//   constructJC       rank-2 assembly via the operator algebra vs Kronecker triplets (validated against a dense
+//                     matrix from the definition up to N = 256)
+//   picture1          rank-1 interaction-picture RHS evaluation, harmonic spectrum ω_k = kω. C++QED updates the operator
+//                     from (alpha,freqs), then applies it:
+//                       multidiagonal_static      the library's operator(), no picture
+//                       multidiagonal_scalarfreq  update with one exp per diagonal, then operator()
+//                       multidiagonal_tabfreq     update with one exp per element (general spectra), then operator()
+//                       handwritten_scalarfreq    the phase fused into a hand-written application loop, one exp per
+//                       handwritten_tabfreq         diagonal or per element (the library has no such loop)
+//                       eigen_sparse_pernnz       CSR values updated with one exp per nonzero, then Eigen's product
+//                       csr_pernnz                the same phases fused into a hand-written loop over Eigen's CSR arrays
+//                       eigen_sparse_sandwich     ψ transformed around a static Eigen product; C++QED doesn't do this
+//   slices3           a five-diagonal operator of dimension n on axis 0 (contiguous) or axis 2 (stride n²) of an n³
+//                     state, applied slice by slice in memory order as C++QED's Broadcaster does; N = n:
+//                       multidiagonal             operator() per slice
+//                       eigen_sparse_term         Eigen CSR of the term's own n×n space, through strided Maps
+//                       multidiagonal_picture_linear     the term updated first, ω_k = kω: one exp per diagonal
+//                       multidiagonal_picture_quadratic  ω_k = k²ω: along a diagonal scale and ratio
+//                       eigen_sparse_term_picture_pernnz ω_k = k²ω, CSR values updated with one exp per nonzero
 //
-// picture1 note: frequency handling deliberately lives OUTSIDE the library (the picture is a
-// property of the trajectory, not the operator). The implementations here are the ~30-line
-// client-side (alpha,freqs) pattern built on the public `diagonals` map — i.e. what the physics
-// layer does. Their validation doubles as a contract check of that public map.  [contract]
+// picture note: frequency handling deliberately lives OUTSIDE the library (the picture is a property of the trajectory,
+// not the operator). The (alpha,freqs) pattern here is built on the public `diagonals` map, i.e. what the physics layer
+// does. Its validation doubles as a contract check of that public map.  [contract]
 //
 // usage: benchmarkMultiDiagonal [--smoke] [--no-thp] [bench ...]
-//        bench ∈ {apply1,compose1,construct1,applyJC,composeJC,constructJC,picture1}; none = all
+//        bench ∈ {apply1,compose1,construct1,applyJC,composeJC,constructJC,picture1,slices3}; none = all
 //        --no-thp keeps the process off transparent huge pages (Linux), where out of cache the distance between input
 //        and output arrays can cost up to 3× (kernels.cc case H).
 #include <multidiagonal/MultiDiagonal.h>
@@ -397,7 +408,26 @@ void jaynesCummingsCompositionBench(bool smoke)
 // ── benchmark: rank-2 operator assembly ─────────────────────────────────────
 // Times the full JC Hamiltonian build: MultiDiagonal via the algebra (⊗, +, scalar·)
 // vs hand-rolled Kronecker triplets + compression. Both builds are validated against each
-// other (applied to a random state) before timing, independently of applyJC.
+// other (applied to a random state) before timing, independently of applyJC, and up to
+// N = 256 against a dense matrix built from the definition.
+
+/// The Jaynes–Cummings Hamiltonian as a dense matrix, from dense qubit and mode operators, independently of both builders
+CMatrix makeJCdense(size_t N, bool qubitFast)
+{
+  const Eigen::Index n=Eigen::Index(N);
+  CMatrix sp=CMatrix::Zero(2,2), sm=CMatrix::Zero(2,2), id=CMatrix::Identity(2,2), a=CMatrix::Zero(n,n), num=CMatrix::Zero(n,n);
+  sp(1,0)=1.; sm(0,1)=1.;                                        // σ⁺ = |1⟩⟨0|, σ⁻ = |0⟩⟨1|
+  for (Eigen::Index k=0; k+1<n; ++k) a(k,k+1)=std::sqrt(double(k+1));
+  for (Eigen::Index k=0; k<n; ++k) num(k,k)=double(k);
+  const CMatrix ad=a.adjoint(), mode=jcDelta*num+jcEta*ad+conj(jcEta)*a;
+  CMatrix res=CMatrix::Zero(2*n,2*n);
+  const auto add=[&](const CMatrix& q, const CMatrix& m, dcomp s) {   // s·q⊗m in the flat index of the axis order
+    for (Eigen::Index qr=0; qr<2; ++qr) for (Eigen::Index qc=0; qc<2; ++qc) for (Eigen::Index mr=0; mr<n; ++mr) for (Eigen::Index mc=0; mc<n; ++mc)
+      res(qubitFast ? qr+2*mr : mr+n*qr, qubitFast ? qc+2*mc : mc+n*qc) += s*q(qr,qc)*m(mr,mc);
+  };
+  add(sp,a,jcG); add(sm,ad,jcG); add(id,mode,1.);
+  return res;
+}
 
 void jaynesCummingsConstructionBench(bool smoke)
 {
@@ -414,6 +444,7 @@ void jaynesCummingsConstructionBench(bool smoke)
       jc(0.,psi,dpsidt);
       const CVector ref = S*CVector(vectorize(psi));
       validate("constructJC",N,CVector(vectorize(dpsidt)),ref);
+      if (N<=256) validate("constructJC/dense",N,CVector(vectorize(dpsidt)),CVector(makeJCdense(N,false)*CVector(vectorize(psi))));
     }
 
     emit("constructJC","multidiagonal",N,d,
@@ -425,12 +456,14 @@ void jaynesCummingsConstructionBench(bool smoke)
 
 // ── benchmark: interaction-picture RHS evaluation, rank 1 ───────────────────
 //
-// Free Hamiltonian H₀ = ω·n, harmonic spectrum ω_k = kω. In the picture of H₀ the
-// element (i,j) of a static operator acquires e^{i(ω_i−ω_j)t}; along a diagonal of
-// offset o this is CONSTANT: e^{−iωot}. t ↦ e^{−iωot} is a character on the offset
-// group (ℤ,+), so the phased operator costs one exp per DIAGONAL, not per nonzero.
-// The (alpha,freqs) pair below is the physics-layer pattern; alpha and freqs share
-// keys by construction, so the ordered maps iterate in lockstep — no lookups.
+// Free Hamiltonian H₀ = ω·n, harmonic spectrum ω_k = kω. In the picture of H₀ the element (i,j) of a static operator
+// acquires e^{i(ω_i−ω_j)t}. Along a diagonal that moves o quanta this is constant, e^{−iωot}: the phase belongs to the
+// diagonal, so the operator in the picture costs one exp per diagonal, not per nonzero. The (alpha,freqs) pair below is
+// the physics-layer pattern; alpha and freqs share keys by construction, so the ordered maps iterate in lockstep.
+//
+// C++QED's hot loop updates the operator from (alpha,freqs) and then applies it; it never transforms the state around a
+// static product. The library variants do exactly that: rewrite a copy of alpha, then call operator(). The hand-written
+// variants fuse the phase into the application loop instead, which the library doesn't offer.
 
 /// y[k+max(−o,0)] += c · v[k] · x[k+max(o,0)]   — one signed-offset-o diagonal
 void axpyDiagonal(ptrdiff_t o, const dcomp* v, size_t len, dcomp c, const dcomp* x, dcomp* y)
@@ -448,6 +481,7 @@ void pictureBench(bool smoke)
 
   for (size_t N : sweep(smoke)) {
     auto alpha = makeMD(N,offsets);
+    auto phased = copy(alpha);   // what the library applies, rewritten from alpha before each evaluation
 
     // scalar frequencies: δ_o = −iωo, phase(t) = e^{δ_o t} — one dcomp per diagonal
     std::map<MultiDiagonal<1>::Offsets,dcomp> scalarFreqs;
@@ -462,15 +496,19 @@ void pictureBench(bool smoke)
       tabFreqs.diagonals.emplace(kv.first, multiarray::fromStorage(std::move(f)));
     }
 
-    // CSR mirror + parallel per-nonzero frequency array (the v2-Tridiagonal-style cost model)
+    // CSR mirror + parallel per-nonzero frequency array (the v2-Tridiagonal-style cost model);
+    // Sp's values are rewritten from S's before each evaluation
     auto S = makeSparse<Eigen::RowMajor>(N,offsets);
+    auto Sp = S;
+    const std::vector<dcomp> values(S.valuePtr(),S.valuePtr()+S.nonZeros());
     std::vector<dcomp> nnzFreqs(size_t(S.nonZeros()));
     for (Eigen::Index r=0; r<S.outerSize(); ++r)
       for (Eigen::Index p=S.outerIndexPtr()[r]; p<S.outerIndexPtr()[r+1]; ++p)
         nnzFreqs[size_t(p)] = dcomp(0., omega*(double(r)-double(S.innerIndexPtr()[p])));
 
-    auto psiMA = randomState(N,67890u);
-    const CVector x = vectorize(psiMA);
+    auto psi = randomState(N,67890u);
+    MultiArray<dcomp,1> ym{{N},multiarray::zeroInit<dcomp>};   // output of the library variants
+    const CVector x = vectorize(psi);
 
     const Eigen::Index n = Eigen::Index(N);
     CVector y     = CVector::Zero(n);
@@ -480,12 +518,25 @@ void pictureBench(bool smoke)
 
     const dcomp* xp = x.data();
 
-    auto evalStatic = [&](double) {
-      for (auto& kv : alpha.diagonals)
-        axpyDiagonal(kv.first[0], kv.second.dataView.data(),
-                     N-size_t(std::abs(kv.first[0])), dcomp{1.,0.}, xp, y.data());
+    // the library: update the operator, then apply it
+    auto mdStatic = [&](double) { alpha(0.,psi,ym); };
+    auto mdScalarFreq = [&](double t) {
+      auto f = scalarFreqs.cbegin(); auto p = phased.diagonals.begin();
+      for (const auto& kv : alpha.diagonals) {
+        const dcomp c = std::exp((f++)->second*t);              // ONE exp per diagonal
+        std::ranges::transform(kv.second.dataView,(p++)->second.dataStorage().begin(),[c](dcomp v) {return c*v;});
+      }
+      phased(0.,psi,ym);
     };
-    auto evalScalarFreq = [&](double t) {
+    auto mdTabFreq = [&](double t) {
+      auto f = tabFreqs.diagonals.cbegin(); auto p = phased.diagonals.begin();
+      for (const auto& kv : alpha.diagonals)
+        std::ranges::transform(kv.second.dataView,(f++)->second.dataView,(p++)->second.dataStorage().begin(),
+                               [t](dcomp v, dcomp w) {return v*std::exp(w*t);});   // one exp per element
+      phased(0.,psi,ym);
+    };
+    // hand-written: the phase fused into the application loop
+    auto handScalarFreq = [&](double t) {
       auto fIt = scalarFreqs.cbegin();
       for (auto& kv : alpha.diagonals) {
         const dcomp c = std::exp(fIt->second*t); ++fIt;      // ONE exp per diagonal
@@ -493,7 +544,7 @@ void pictureBench(bool smoke)
                      N-size_t(std::abs(kv.first[0])), c, xp, y.data());
       }
     };
-    auto evalTabFreq = [&](double t) {
+    auto handTabFreq = [&](double t) {
       auto fIt = tabFreqs.diagonals.begin();
       for (auto& kv : alpha.diagonals) {
         const dcomp* v = kv.second.dataView.data();
@@ -504,7 +555,14 @@ void pictureBench(bool smoke)
           ys[k] += v[k]*std::exp(f[k]*t)*xs[k];              // one exp per element
       }
     };
-    auto evalPerNnz = [&](double t) {
+    // CSR: Eigen's product after its values are rewritten, one exp per nonzero
+    auto eigenPerNnz = [&](double t) {
+      dcomp* v = Sp.valuePtr();
+      for (size_t p=0; p<values.size(); ++p) v[p] = values[p]*std::exp(nnzFreqs[p]*t);
+      y.noalias() += Sp*x;
+    };
+    // the same phases fused into a hand-written loop over Eigen's CSR arrays
+    auto csrPerNnz = [&](double t) {
       const auto* outer=S.outerIndexPtr(); const auto* inner=S.innerIndexPtr(); const dcomp* val=S.valuePtr();
       dcomp* yp=y.data();
       for (Eigen::Index r=0; r<S.outerSize(); ++r) {
@@ -514,9 +572,10 @@ void pictureBench(bool smoke)
         yp[r] += acc;
       }
     };
-    auto evalSandwich = [&](double t) {
-      // p_k = e^{iωkt}: multiplicative recurrence, refreshed by a true exp every 1024
-      // elements (bounds drift to ~1e-13). Still costs two extra full passes over ψ.
+    // the state transformed around a static Eigen product. C++QED doesn't do this (its hot loop updates the operator);
+    // it is here for codes that do. p_k = e^{iωkt}: multiplicative recurrence, refreshed by a true exp every 1024
+    // elements (bounds drift to ~1e-13). It costs two extra full passes over ψ.
+    auto sandwich = [&](double t) {
       const dcomp step = std::exp(dcomp(0.,omega*t));
       dcomp cur{1.,0.};
       dcomp* pp = phase.data();
@@ -530,26 +589,146 @@ void pictureBench(bool smoke)
     };
 
     { // validate every strategy against an independently phased sparse apply at t = tVal
-      { y.setZero(); evalStatic(0.); const CVector ref = S*x; validate("picture1/static",N,y,ref); }
+      const auto checkMD = [&](const char* impl, auto& eval, double t, const CVector& ref) {
+        std::ranges::fill(ym.dataStorage(),dcomp{}); eval(t); validate(impl,N,CVector(vectorize(ym)),ref); };
+      const auto check = [&](const char* impl, auto& eval, const CVector& ref) { y.setZero(); eval(tVal); validate(impl,N,y,ref); };
+      checkMD("picture1/static",mdStatic,0.,CVector(S*x));
       auto St = makeSparsePhased<Eigen::RowMajor>(N,offsets,omega,tVal);
       const CVector ref = St*x;
-      auto check = [&](const char* impl, auto& eval) { y.setZero(); eval(tVal); validate(impl,N,y,ref); };
-      check("picture1/scalarfreq",evalScalarFreq);
-      check("picture1/tabfreq",   evalTabFreq);
-      check("picture1/pernnz",    evalPerNnz);
-      check("picture1/sandwich",  evalSandwich);
+      checkMD("picture1/scalarfreq",mdScalarFreq,tVal,ref);
+      checkMD("picture1/tabfreq",mdTabFreq,tVal,ref);
+      check("picture1/handwritten_scalarfreq",handScalarFreq,ref);
+      check("picture1/handwritten_tabfreq",handTabFreq,ref);
+      check("picture1/eigen_pernnz",eigenPerNnz,ref);
+      check("picture1/csr_pernnz",csrPerNnz,ref);
+      check("picture1/sandwich",sandwich,ref);
     }
 
     auto time = [&](const char* impl, auto& eval) {
       double t=tVal;
       emit("picture1",impl,N,offsets.size(),
-           medianPerOpNs([&]{ eval(t); t+=dt; doNotOptimize(y.data()); },target,reps));
+           medianPerOpNs([&]{ eval(t); t+=dt; doNotOptimize(y.data()); doNotOptimize(ym.dataView.data()); },target,reps));
     };
-    time("multidiagonal_static",    evalStatic);
-    time("multidiagonal_scalarfreq",evalScalarFreq);
-    time("multidiagonal_tabfreq",   evalTabFreq);
-    time("eigen_sparse_pernnz",     evalPerNnz);
-    time("eigen_sparse_sandwich",   evalSandwich);
+    time("multidiagonal_static",    mdStatic);
+    time("multidiagonal_scalarfreq",mdScalarFreq);
+    time("multidiagonal_tabfreq",   mdTabFreq);
+    time("handwritten_scalarfreq",  handScalarFreq);
+    time("handwritten_tabfreq",     handTabFreq);
+    time("eigen_sparse_pernnz",     eigenPerNnz);
+    time("csr_pernnz",              csrPerNnz);
+    time("eigen_sparse_sandwich",   sandwich);
+  }
+}
+
+// ── benchmark: a term applied slice by slice, and the interaction picture there ──
+//
+// A five-diagonal operator of dimension n on axis 0 (contiguous slices) or axis 2 (stride n²) of an n³ state, applied
+// slice by slice in memory order, first dummy axis fastest, as C++QED's Broadcaster does (cppqed#90). The term is small
+// and the state large, so the honest competitor for the format is a CSR matrix of the term's own n×n space applied to the
+// same slices through strided Maps (kernels.cc case D). The picture variants update the term before each application:
+// O(n) work against O(n³) for the application.
+//   linear spectrum ω_k = kω: one exp per diagonal;
+//   quadratic spectrum ω_k = k²ω (Kerr-like): the element in row r and column r+o acquires e^{−iωo(2r+o)t}, so along a
+//   diagonal a geometric sequence, scale e^{−iωo(2r₀+o)t} and ratio e^{−2iωot};
+//   CSR, quadratic: one exp per nonzero from a parallel frequency array ω(r²−c²).
+
+void slicesBench(bool smoke)
+{
+  static constexpr std::array<ptrdiff_t,5> offsets{-2,-1,0,1,2};
+  const double omega=1.3, tVal=0.3, dt=1e-3;
+  const double target = smoke ? 2e6 : 2e7;  const int reps = smoke ? 2 : 5;
+  using SMap=Eigen::Map<const CVector,0,Eigen::InnerStride<>>; using DMap=Eigen::Map<CVector,0,Eigen::InnerStride<>>;
+  using RowSparse=Eigen::SparseMatrix<dcomp,Eigen::RowMajor>;
+
+  for (size_t n : smoke ? std::vector<size_t>{8,16} : std::vector<size_t>{16,30,32,64,100}) {
+    const size_t N=n*n*n;
+    auto alpha = makeMD(n,offsets);
+    auto phased = copy(alpha);
+    const auto S = makeSparse<Eigen::RowMajor>(n,offsets);
+    auto Sp = S;
+    const std::vector<dcomp> values(S.valuePtr(),S.valuePtr()+S.nonZeros());
+    const auto frequency = [&](bool quadratic, Eigen::Index r, Eigen::Index c) {   // ω_r − ω_c
+      const double dr=double(r), dc=double(c); return quadratic ? omega*(dr*dr-dc*dc) : omega*(dr-dc); };
+    std::vector<double> nnzFreqs(values.size());
+    for (Eigen::Index r=0; r<S.outerSize(); ++r)
+      for (Eigen::Index p=S.outerIndexPtr()[r]; p<S.outerIndexPtr()[r+1]; ++p) nnzFreqs[size_t(p)]=frequency(true,r,S.innerIndexPtr()[p]);
+
+    MultiArray<dcomp,3> psi{{n,n,n},[](size_t e) {
+      std::mt19937 gen{24680u}; std::uniform_real_distribution<double> d{-1.,1.};
+      std::vector<dcomp> v(e); for (auto& x : v) x={d(gen),d(gen)}; return v; }};
+    MultiArray<dcomp,3> dpsidt{{n,n,n},multiarray::zeroInit<dcomp>};
+    const std::span<const dcomp> xs=psi.dataView; const std::span<dcomp> ys{dpsidt.dataStorage()};
+
+    for (size_t axis : {0uz,2uz}) {
+      const size_t s = axis==0 ? 1 : n*n;
+      const auto offset = [&](size_t b) {return axis==0 ? b*n : b;};   // slice b in memory order: first dummy axis fastest
+
+      const auto library = [&](const MultiDiagonal<1>& A) { for (size_t b=0; b<n*n; ++b)
+        A(0.,MultiArrayView<const dcomp,1>{{n},{s},offset(b),xs},MultiArrayView<dcomp,1>{{n},{s},offset(b),ys}); };
+      const auto termCSR = [&](const RowSparse& T) { for (size_t b=0; b<n*n; ++b) {
+        DMap yv(ys.data()+offset(b),Eigen::Index(n),Eigen::InnerStride<>(Eigen::Index(s)));
+        yv.noalias() += T*SMap(xs.data()+offset(b),Eigen::Index(n),Eigen::InnerStride<>(Eigen::Index(s))); } };
+
+      const auto linear = [&](double t) {
+        auto p = phased.diagonals.begin();
+        for (const auto& kv : alpha.diagonals) {
+          const dcomp c = std::exp(dcomp(0.,-omega*double(kv.first[0])*t));
+          std::ranges::transform(kv.second.dataView,(p++)->second.dataStorage().begin(),[c](dcomp v) {return c*v;});
+        }
+        library(phased);
+      };
+      const auto quadratic = [&](double t) {
+        auto p = phased.diagonals.begin();
+        for (const auto& kv : alpha.diagonals) {
+          const double o=double(kv.first[0]), r0=double(std::max(-kv.first[0],ptrdiff_t{0}));
+          dcomp f = std::exp(dcomp(0.,-omega*o*(2*r0+o)*t)); const dcomp ratio = std::exp(dcomp(0.,-2*omega*o*t));
+          auto& dst = (p++)->second.dataStorage();
+          for (size_t k=0; k<dst.size(); ++k) { dst[k]=kv.second.dataView[k]*f; f*=ratio; }
+        }
+        library(phased);
+      };
+      const auto csrPerNnz = [&](double t) {
+        dcomp* v = Sp.valuePtr();
+        for (size_t p=0; p<values.size(); ++p) v[p] = values[p]*std::exp(dcomp(0.,nnzFreqs[p]*t));
+        termCSR(Sp);
+      };
+
+      { // validate against each slice gathered into a contiguous vector and multiplied by a CSR matrix phased element by element
+        const auto reference = [&](const RowSparse& T) {
+          CVector ref = CVector::Zero(Eigen::Index(N)), xv = CVector::Zero(Eigen::Index(n));
+          for (size_t b=0; b<n*n; ++b) {
+            for (size_t k=0; k<n; ++k) xv[Eigen::Index(k)] = xs[offset(b)+k*s];
+            const CVector yv = T*xv;
+            for (size_t k=0; k<n; ++k) ref[Eigen::Index(offset(b)+k*s)] += yv[Eigen::Index(k)];
+          }
+          return ref;
+        };
+        const auto phasedCSR = [&](bool quad) {
+          RowSparse T = S;
+          for (Eigen::Index r=0; r<T.outerSize(); ++r) for (Eigen::Index p=T.outerIndexPtr()[r]; p<T.outerIndexPtr()[r+1]; ++p)
+            T.valuePtr()[p] *= std::exp(dcomp(0.,frequency(quad,r,T.innerIndexPtr()[p])*tVal));
+          return T;
+        };
+        const auto check = [&](const char* what, auto apply, const CVector& ref) {
+          std::ranges::fill(ys,dcomp{}); apply(); validate(what,n,CVector(Eigen::Map<const CVector>(ys.data(),Eigen::Index(N))),ref); };
+        const CVector ref0 = reference(S), refLinear = reference(phasedCSR(false)), refQuadratic = reference(phasedCSR(true));
+        check("slices3/multidiagonal",[&]{library(alpha);},ref0);
+        check("slices3/eigen_sparse_term",[&]{termCSR(S);},ref0);
+        check("slices3/picture_linear",[&]{linear(tVal);},refLinear);
+        check("slices3/picture_quadratic",[&]{quadratic(tVal);},refQuadratic);
+        check("slices3/picture_pernnz",[&]{csrPerNnz(tVal);},refQuadratic);
+      }
+
+      char bench[32]; std::snprintf(bench,sizeof bench,"slices3_axis%zu",axis);
+      double t = tVal;
+      const auto time = [&](const char* impl, auto f) {
+        emit(bench,impl,n,offsets.size(),medianPerOpNs([&]{ f(); doNotOptimize(ys.data()); },target,reps)); };
+      time("multidiagonal",                   [&]{library(alpha);});
+      time("eigen_sparse_term",               [&]{termCSR(S);});
+      time("multidiagonal_picture_linear",    [&]{linear(t); t+=dt;});
+      time("multidiagonal_picture_quadratic", [&]{quadratic(t); t+=dt;});
+      time("eigen_sparse_term_picture_pernnz",[&]{csrPerNnz(t); t+=dt;});
+    }
   }
 }
 
@@ -577,10 +756,10 @@ int main(int argc, char** argv)
     if (a=="--smoke") smoke=true; else if (a=="--no-thp") disableHugePages(); else only.insert(a);
   }
 
-  static constexpr std::array<std::pair<std::string_view,void(*)(bool)>,7> benches{{
+  static constexpr std::array<std::pair<std::string_view,void(*)(bool)>,8> benches{{
     {"apply1",applicationBench}, {"compose1",compositionBench}, {"construct1",constructionBench},
     {"applyJC",jaynesCummingsBench}, {"composeJC",jaynesCummingsCompositionBench},
-    {"constructJC",jaynesCummingsConstructionBench}, {"picture1",pictureBench}}};
+    {"constructJC",jaynesCummingsConstructionBench}, {"picture1",pictureBench}, {"slices3",slicesBench}}};
 
   for (auto sel : only)
     if (std::none_of(benches.begin(),benches.end(),[=](const auto& b){return b.first==sel;})) {

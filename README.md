@@ -57,7 +57,7 @@ The application loop was rewritten in three steps ([#1](https://github.com/Wigne
 - a qubit on axis 0 of a state larger than cache is still applied one diagonal at a time;
 - out of cache, on transparent huge pages, input and output lying nearly a multiple of 1 MiB apart, as arrays of a power-of-two size allocated back to back do, make application up to about 3× slower one diagonal at a time and up to 1.7× by rows. jemalloc, which starts large allocations at varying offsets within a page, avoids that; C++QED links it when installed ([#26](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/26)).
 
-Measurements, causes and outlook, including what is not yet measured (the interaction picture): [Performance of MultiDiagonal](benchmarks/performance.md).
+Measurements, causes and outlook, including the interaction picture: [Performance of MultiDiagonal](benchmarks/performance.md).
 
 ## Requirements
 

@@ -4,8 +4,10 @@
 Usage: benchmarks/plot.py [bench.csv] [outdir]
 
 Writes:
-  benchmarks.{pdf,png}  structural benchmarks — apply / compose / construct, rank 1 and rank 2
-  picture.{pdf,png}     interaction-picture RHS evaluation (absolute times + speedup)
+  benchmarks.{pdf,png}  structural benchmarks — apply / compose / construct, rank 1 and rank 2, and a
+                        term applied slice by slice (slices3)
+  picture.{pdf,png}     interaction-picture RHS evaluation (absolute times + speedup), and the cost of the
+                        picture in the slice-by-slice setting
 
 Panels are emitted only for benchmarks present in the CSV, so partial runs
 (./benchmarkMultiDiagonal picture1 applyJC) plot without editing anything.
@@ -51,11 +53,18 @@ STYLE = {
     'multidiagonal':             ('MultiDiagonal',                'C0',  'o', '-'),
     'eigen_sparse':              ('Eigen sparse',                 'C1',  's', '-'),
     'eigen_dense':               ('Eigen dense',                  'C2',  '^', '-'),
-    'multidiagonal_scalarfreq':  ('MultiDiagonal, scalar freq',   'C0',  'o', '-'),
-    'multidiagonal_tabfreq':     ('MultiDiagonal, tabulated freq','C4',  'v', '-'),
-    'multidiagonal_static':      ('MultiDiagonal, no picture',    '0.45', '', '--'),
-    'eigen_sparse_pernnz':       ('Eigen sparse, exp per nonzero','C1',  's', '-'),
-    'eigen_sparse_sandwich':     ('Eigen sparse, phase sandwich', 'C3',  'D', '-'),
+    'multidiagonal_scalarfreq':  ('MultiDiagonal, scalar freq (update + apply)',    'C0',  'o', '-'),
+    'multidiagonal_tabfreq':     ('MultiDiagonal, tabulated freq (update + apply)', 'C4',  'v', '-'),
+    'multidiagonal_static':      ('MultiDiagonal, no picture',                      '0.45', '', '--'),
+    'handwritten_scalarfreq':    ('hand-written, scalar freq fused',                'C0',  'o', ':'),
+    'handwritten_tabfreq':       ('hand-written, tabulated freq fused',             'C4',  'v', ':'),
+    'eigen_sparse_pernnz':       ('Eigen sparse, exp per nonzero (update + apply)', 'C1',  's', '-'),
+    'csr_pernnz':                ('hand-written CSR, exp per nonzero fused',        'C1',  's', ':'),
+    'eigen_sparse_sandwich':     ('Eigen sparse, state transformed around it',      'C3',  'D', '-'),
+    'eigen_sparse_term':         ('Eigen sparse of the term, on the slices',        'C1',  's', '-'),
+    'multidiagonal_picture_linear':     ('MultiDiagonal, picture, linear spectrum',    'C0', 'o', '-'),
+    'multidiagonal_picture_quadratic':  ('MultiDiagonal, picture, quadratic spectrum', 'C4', 'v', '-'),
+    'eigen_sparse_term_picture_pernnz': ('Eigen sparse of the term, exp per nonzero',  'C1', 's', '-'),
 }
 
 def curve(ax, b, impl, label=None, **kw):
@@ -106,6 +115,15 @@ def draw_jc_apply(ax):
     finish(ax, 'application, Jaynes–Cummings (rank 2)\nboth axis orders',
            xlabel='mode dimension $N$  (total dimension $2N$)')
 
+def draw_slices(ax):
+    for axis, ls, mk in (('0', '-', 'o'), ('2', '--', 'x')):
+        b = 'slices3_axis' + axis
+        for impl in ('multidiagonal', 'eigen_sparse_term'):
+            lab = 'MultiDiagonal' if impl == 'multidiagonal' else 'Eigen sparse of the term'
+            curve(ax, b, impl, label='%s, axis %s' % (lab, axis), ls=ls, marker=mk)
+    finish(ax, 'a term applied slice by slice\n($n^3$ state, slices in memory order)',
+           xlabel='term dimension $n$', ylabel='time per application [s]')
+
 PANELS = [
     (lambda: have('apply1'),      lambda ax: draw_simple(ax, 'apply1',
         'application  $y += (H/i)\\,\\psi$\n(rank 1, pentadiagonal)')),
@@ -118,6 +136,7 @@ PANELS = [
         'composition  $H_\\mathrm{JC}\\,|\\,H_\\mathrm{JC}$\n(rank 2, mode-fast)')),
     (lambda: have('constructJC'), lambda ax: draw_simple(ax, 'constructJC',
         'assembly of $H_\\mathrm{JC}$\n(rank 2, mode-fast)')),
+    (lambda: have('slices3_axis0', 'slices3_axis2'), draw_slices),
 ]
 
 active = [draw for present, draw in PANELS if present()]
@@ -137,14 +156,17 @@ if active:
 # ── figure 2: interaction picture ────────────────────────────────────────────
 
 PIC_IMPLS = ('multidiagonal_static', 'multidiagonal_scalarfreq', 'multidiagonal_tabfreq',
-             'eigen_sparse_sandwich', 'eigen_sparse_pernnz')
+             'handwritten_scalarfreq', 'handwritten_tabfreq',
+             'eigen_sparse_pernnz', 'csr_pernnz', 'eigen_sparse_sandwich')
 
 def ratio(b, num, den):
     a, c = dict(series(b, num)), dict(series(b, den))
     return [(N, a[N] / c[N]) for N in sorted(set(a) & set(c))]
 
-if 'picture1' in data:
-    fig, (axA, axB) = plt.subplots(1, 2, figsize=(9.6, 3.9))
+slicesPicture = have('slices3_axis0', 'slices3_axis2')
+if 'picture1' in data or slicesPicture:
+    fig, axes = plt.subplots(1, 3 if slicesPicture else 2, figsize=(14.4 if slicesPicture else 9.6, 3.9))
+    axA, axB = axes[0], axes[1]
 
     for impl in PIC_IMPLS:
         curve(axA, 'picture1', impl,
@@ -153,18 +175,34 @@ if 'picture1' in data:
     finish(axA, 'interaction-picture RHS evaluation\n(rank 1, pentadiagonal, harmonic $\\omega_k = k\\omega$)',
            ylabel='time per RHS evaluation [s]')
 
-    for num, lab, col, mk in (('eigen_sparse_pernnz',    'vs. exp per nonzero',  'C1', 's'),
-                              ('eigen_sparse_sandwich',  'vs. phase sandwich',   'C3', 'D'),
-                              ('multidiagonal_static',   'cost of the picture\n(scalar freq / static)',
-                                                                                 '0.45', 'o')):
-        pts = ratio('picture1', num, 'multidiagonal_scalarfreq')
+    for num, den, lab, col, mk in (('eigen_sparse_pernnz', 'multidiagonal_scalarfreq', 'vs. Eigen, exp per nonzero', 'C1', 's'),
+                                   ('eigen_sparse_sandwich', 'multidiagonal_scalarfreq', 'vs. state transformed around Eigen', 'C3', 'D'),
+                                   ('multidiagonal_scalarfreq', 'multidiagonal_static', 'cost of the picture\n(scalar freq / static)',
+                                                                                        '0.45', 'o')):
+        pts = ratio('picture1', num, den)
         if pts:
             axB.semilogx([p[0] for p in pts], [p[1] for p in pts],
                          color=col, marker=mk, ms=4, lw=1.6, label=lab)
     axB.axhline(1., color='k', ls=':', lw=1, alpha=.6)
     axB.set_yscale('log')
-    finish(axB, 'speedup of one exp per diagonal\nover the sparse baselines',
-           ylabel='time ratio  (>1 favours MultiDiagonal)')
+    finish(axB, 'one exp per diagonal against the sparse baselines,\nand the cost of the picture',
+           ylabel='time ratio')
+
+    if slicesPicture:
+        axC = axes[2]
+        for axis, ls in (('0', '-'), ('2', '--')):
+            b = 'slices3_axis' + axis
+            for num, den in (('multidiagonal_picture_linear', 'multidiagonal'),
+                             ('multidiagonal_picture_quadratic', 'multidiagonal'),
+                             ('eigen_sparse_term_picture_pernnz', 'eigen_sparse_term')):
+                pts = ratio(b, num, den)
+                if pts:
+                    lab, col, mk, _ = STYLE[num]
+                    axC.semilogx([p[0] for p in pts], [p[1] for p in pts], color=col, marker=mk, ms=4, lw=1.6, ls=ls,
+                                 label='%s, axis %s' % (lab, axis))
+        axC.axhline(1., color='k', ls=':', lw=1, alpha=.6)
+        finish(axC, 'cost of the picture, slice by slice\n(update + apply over static apply)',
+               xlabel='term dimension $n$', ylabel='time ratio')
 
     fig.tight_layout()
     for ext in ('pdf', 'png'):
@@ -187,7 +225,12 @@ for b, num, den in (('apply1',           'eigen_sparse',           'multidiagona
                     ('constructJC',      'eigen_sparse',           'multidiagonal'),
                     ('picture1',         'eigen_sparse_pernnz',    'multidiagonal_scalarfreq'),
                     ('picture1',         'eigen_sparse_sandwich',  'multidiagonal_scalarfreq'),
-                    ('picture1',         'multidiagonal_scalarfreq', 'multidiagonal_static')):
+                    ('picture1',         'multidiagonal_scalarfreq', 'multidiagonal_static'),
+                    ('picture1',         'multidiagonal_scalarfreq', 'handwritten_scalarfreq'),
+                    ('slices3_axis0',    'eigen_sparse_term',      'multidiagonal'),
+                    ('slices3_axis2',    'eigen_sparse_term',      'multidiagonal'),
+                    ('slices3_axis2',    'multidiagonal_picture_quadratic', 'multidiagonal'),
+                    ('slices3_axis2',    'eigen_sparse_term_picture_pernnz', 'eigen_sparse_term')):
     r = at_max_N(b, num, den)
     if r:
         print('  %-18s %-26s / %-26s  N=%-8d %6.2f x' % (b, num, den, r[0], r[1]))

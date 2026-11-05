@@ -136,7 +136,11 @@ ctest --test-dir build --output-on-failure
 
 - `benchmarkMultiDiagonal` compares MultiDiagonal against Eigen sparse and Eigen dense.
   - Benchmarks: `apply1`, `compose1`, `construct1`, `applyJC_{qbitfast,modefast}`,
-    `composeJC`, `constructJC`, and `picture1` (five interaction-picture variants).
+    `composeJC`, `constructJC` (also checked against a dense matrix up to N = 256), `picture1`
+    (library: update, then `operator()`; hand-written fused loops labelled `handwritten_*` and
+    `csr_pernnz`; Eigen's product after a per-nonzero update; the "sandwich"), and `slices3`
+    (a term on axis 0 or 2 of an n³ state, slice by slice in memory order, against term CSR
+    through strided Maps, plus the picture updated and applied there).
   - Every configuration cross-validates against Eigen **before** timing and exits 1 on a
     mismatch.
 - `kernels.cc` holds the application-loop experiments (cases A–F: rank 1, Jaynes–Cummings,
@@ -223,21 +227,30 @@ ctest --test-dir build --output-on-failure
     since 2026-11-04 (cppqed#90).
   - Composition wins up to 7× at rank 1 (0.9–1.8× for Jaynes–Cummings), but it happens at
     setup time, not in the time-stepping loop.
-  - The interaction picture is not benchmarked systematically. C++QED's hot loop updates
-    `(coefficients, frequencies)` and applies; it never transforms the state around a static
-    product. Don't present that "sandwich" as the reference.
+  - Interaction picture (2026-11-05): C++QED's hot loop updates `(coefficients, frequencies)`
+    and applies; it never transforms the state around a static product, so don't present that
+    "sandwich" as the reference. Slice by slice (`slices3`) the update costs almost nothing:
+    (update + apply) ÷ apply is 0.99–1.02 for the library, 0.98–1.10 for term CSR per nonzero;
+    the format's advantage there is the application (term CSR 1.6–2.9× slower, except axis 2 at
+    n = 16, 1.09). For an operator as large as the state (`picture1`) the update costs 1.5–3× an
+    application with one exp per diagonal; one exp per nonzero is 5–11× slower still. An earlier
+    "0.95–1.01×" compared two hand-written loops and is withdrawn.
 
 ## Open items (roughly in priority order)
 
-Recommended next (2026-11-05): the remaining benchmark defects of #5, then #27 (the row shape at
-an axis 0 of 256 on huge pages). Settled: the slow distance on huge pages (#26: jemalloc, linked by
+Recommended next (2026-11-05): decide #27. Its huge-page part is the 1 MiB window of #26; the row
+shape on contiguous slices of a few hundred amplitudes also depends on the placement within a
+page by up to 2.6× (prefetch coverage), where one diagonal at a time doesn't; proposal: raise
+`operator()`'s bound for contiguous views after a crossover over several placements. Settled: the
+benchmark defects of #5, the slow distance on huge pages (#26: jemalloc, linked by
 C++QED when installed; `StorageType` unchanged), the out-of-cache re-measurement (`--no-thp`), the
 power-of-two investigation (case H), cppqed#90 and the placement regression check (case G). Outside performance, the items
 below are unchanged: the `std::mdspan` decision, the README usage snippet (which waits on an API
 decision), and the deferred review of the install rules.
 
-1. Application performance (#1; see `benchmarks/performance.md`, next steps): the row shape at
-   an axis 0 of 256 is 1.1–2.2× slower on huge pages, for a reason not yet known (#27). A short
+1. Application performance (#1; see `benchmarks/performance.md`, next steps): the row shape on
+   contiguous slices of a few hundred amplitudes depends on the placement within a page (#27,
+   above; don't change `operator()`'s bounds before that decision). A short
    axis 0 of a state larger than cache (qubit first) is still applied one diagonal at a time, at
    0.9–1.1× of Eigen on 4 KB pages. The slow distance on huge pages is settled (#26): jemalloc
    avoids it, and `StorageType` stays a plain `std::vector`; don't add an allocator unasked. (The hoisted loop,
