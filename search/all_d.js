@@ -1,11 +1,11 @@
 var searchData=
 [
   ['of_20multidiagonal_3a_20measurements_20and_20outlook_0',['Performance of MultiDiagonal: measurements and outlook',['../md_benchmarks_2performance.html',1,'']]],
-  ['of_20the_20arrays_1',['Placement of the arrays',['../md_benchmarks_2performance.html#autotoc_md22',1,'']]],
+  ['of_20the_20arrays_1',['Placement of the arrays',['../md_benchmarks_2performance.html#autotoc_md23',1,'']]],
   ['offset_2',['offset',['../classcppqedutils_1_1MultiArrayView.html#accfc7d6cce10accec63a82bab146dfe3',1,'cppqedutils::MultiArrayView']]],
   ['offset_20representation_3',['The signed-offset representation',['../index.html#autotoc_md5',1,'']]],
   ['offsets_4',['Offsets',['../structquantumoperator_1_1MultiDiagonal.html#acc7d3d0a41c8b663f539f6f88dd7963a',1,'quantumoperator::MultiDiagonal']]],
-  ['on_20huge_20pages_5',['Distance on huge pages',['../md_benchmarks_2performance.html#autotoc_md23',1,'']]],
+  ['on_20huge_20pages_5',['Distance on huge pages',['../md_benchmarks_2performance.html#autotoc_md24',1,'']]],
   ['operator_6',['What is a multidiagonal operator?',['../index.html#autotoc_md4',1,'']]],
   ['operator_20conventions_7',['Operator conventions',['../structquantumoperator_1_1MultiDiagonal.html#autotoc_md2',1,'']]],
   ['operator_20multiarrayview_3c_20const_20t_2c_20rank_20_3e_8',['operator MultiArrayView&lt; const T, RANK &gt;',['../classcppqedutils_1_1MultiArrayView.html#a4043ac31e6b77b0c36575ecf0604dca9',1,'cppqedutils::MultiArrayView']]],
@@ -20,7 +20,7 @@ var searchData=
   ['operator_2f_17',['operator/',['../structquantumoperator_1_1MultiDiagonal.html#a9479556c5972a4f92b4d5e456f125714',1,'quantumoperator::MultiDiagonal']]],
   ['operator_2f_3d_18',['operator/=',['../structquantumoperator_1_1MultiDiagonal.html#a9a1e3cf3f9378b007d3da99aabc23401',1,'quantumoperator::MultiDiagonal']]],
   ['operator_3d_19',['operator=',['../classcppqedutils_1_1MultiArray.html#a762d6f8791e9d1047e9908a649a2ba5b',1,'cppqedutils::MultiArray::operator=(const MultiArray &amp;)=delete'],['../classcppqedutils_1_1MultiArray.html#ab89b937a0f8968e8c5c0616b21a7c8dd',1,'cppqedutils::MultiArray::operator=(MultiArray &amp;&amp;)=default'],['../structquantumoperator_1_1MultiDiagonal.html#a81a8992f576deb849026841cbe603123',1,'quantumoperator::MultiDiagonal::operator=(const MultiDiagonal &amp;)=delete'],['../structquantumoperator_1_1MultiDiagonal.html#ad207eaa005b7d8e7c99647f835765c99',1,'quantumoperator::MultiDiagonal::operator=(MultiDiagonal &amp;&amp;)=default'],['../classcppqedutils_1_1MultiArrayView.html#a4a2f6552718f1fe26af463df538d6e4b',1,'cppqedutils::MultiArrayView::operator=(MultiArrayView &amp;&amp;)=default'],['../classcppqedutils_1_1MultiArrayView.html#ae1a9727aef569f4289dc45c631b9e059',1,'cppqedutils::MultiArrayView::operator=(const MultiArrayView &amp;)=default']]],
-  ['operators_20applied_20slice_20by_20slice_3a_20c_20qed_20s_20setting_20',['Operators applied slice by slice: C++QED&apos;s setting',['../md_benchmarks_2performance.html#autotoc_md25',1,'']]],
+  ['operators_20applied_20slice_20by_20slice_3a_20c_20qed_20s_20setting_20',['Operators applied slice by slice: C++QED&apos;s setting',['../md_benchmarks_2performance.html#autotoc_md26',1,'']]],
   ['operator_7c_21',['operator|',['../namespacequantumoperator.html#a5f6340e0b9d3a0152812683481ba81b0',1,'quantumoperator']]],
   ['outlook_22',['Performance of MultiDiagonal: measurements and outlook',['../md_benchmarks_2performance.html',1,'']]]
 ];
