@@ -9,12 +9,13 @@ This page records what the benchmarks show about applying a `MultiDiagonal` to a
 - **In C++QED's actual setting**, a small operator applied slice by slice across a large state, the library is 1.7–2.6× faster than a CSR matrix of the same term (1.4–1.9× against its build with `-fcx-limited-range`), also on strided slices of power-of-two length. Contiguous slices of power-of-two length looked like an exception, at parity, but that came from where their arrays lay in memory, not from their length: on 4 KB pages the library is 2.5× faster there as well.
 - **The loop has two shapes** since 2026-11-04: one diagonal at a time, and the diagonals contributing to a row summed before one store ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1), [#25](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25)). `operator()` chooses from the view's strides and extents. The row shape sweeps a large state once instead of once per diagonal, and makes the speed nearly independent of where input and output lie relative to each other within a page. The other is faster where axis 0 is short, and for small views.
 - **History.** Up to v0.4.0, the multi-axis loop recomputed every address per element, which made it 3.4–4.5× slower than Eigen at rank 2 and 18× slower at rank 4; fixed on 2026-11-01 ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)). Complex multiplication with the C99 Annex G NaN checks halved the speed of the default build; fixed on 2026-11-02, together with a compile-time unrolled short axis 0 ([#23](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23)). Up to 2026-11-03 the loop stored the output once per diagonal, which made it up to 1.45× slower than Eigen out of cache and its speed depend on placement by up to 1.2–2×.
+- **These figures need AVX2** (`-march=native` or `-march=x86-64-v3`). On the x86-64 baseline, which C++QED builds by default, the library is typically 1.4–1.7× slower and its advantage over Eigen in cache 1.5–2.0× instead of 2.6–3.4× (see "Instruction set").
 - **What remains.** A qubit on axis 0 of a state larger than cache is still applied one diagonal at a time, and at N = 2²⁰ it is 0.89× as fast as Eigen. On transparent huge pages, input and output that lie nearly a multiple of 1 MiB apart, as arrays of a power-of-two size allocated back to back do, make application up to about 3× slower one diagonal at a time and up to 1.7× by rows ([#26](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/26)). Small views are applied one diagonal at a time, and there placement still costs up to 23%, though that shape stays faster than the other at any placement.
 - **The interaction picture** has not been benchmarked systematically yet (see the section on it below).
 
 ## Setup
 
-- **Reference machine** since 2026-11-03: Intel Core i7-7700 desktop (Kaby Lake, 4 cores; L1d 32 KB and L2 256 KB per core, L3 8 MB), Arch Linux, GCC 16.2.1, Eigen 5.0.1, `-O3 -march=native`, single thread.
+- **Reference machine** since 2026-11-03: Intel Core i7-7700 desktop (Kaby Lake, 4 cores; L1d 32 KB and L2 256 KB per core, L3 8 MB), Arch Linux, GCC 16.2.1, Eigen 5.0.1, `-O3 -march=native` (AVX2 and FMA; see "Instruction set"), single thread.
 - **Prepared for measuring:** no graphical session, timers stopped, SMT off, turbo off (fixed 3.6 GHz, `performance` governor). Each run is pinned to a core that handles no device interrupts. Transparent huge pages are on for all anonymous memory (`always`, Linux 6.18), which matters out of cache (see "Distance on huge pages"). Out-of-cache figures marked "4 KB pages" were measured with `--no-thp`, which keeps the process off huge pages; the others were measured on huge pages, without controlling the distance between the arrays.
 - **Every figure** is the median over five separate processes, with the binaries of different versions interleaved. Processes of the same binary typically agree within 1–2% (90% within 5–8%) in cache. Larger differences come from where the arrays land in memory (see "Placement of the arrays" below), not from the machine. Out of cache, separate runs of the same binary differ by up to 25%.
 - **Code layout** moves small kernels in cache by 10–20% between builds whose code differs elsewhere. Eigen's sparse product for Jaynes–Cummings, unchanged, ran 3–20% faster in the build of c346b8a than in those of 7725d79 and of a build that differed from c346b8a only in `operator()`'s bounds, consistently over five processes. The library's own times agreed within 5% wherever both applied the same shape. For contiguous slices, the build of 7725d79 ran the loop that applies one diagonal at a time 12% faster than every other build of the same loop. Neither aligning loops nor the assembler's mitigation of the jump erratum changed this. Ratios to Eigen in cache are therefore uncertain by up to 20%, while the library's speed-ups over its earlier versions are not.
@@ -80,6 +81,23 @@ Eigen's sparse product gathers through column indices, so it doesn't vectorize, 
 The other loops that multiply complex numbers were checked the same way (laptop). Composition, addition and construction (`compose1`, `composeJC`, `construct1`, `constructJC`) are dominated by index arithmetic, allocation and the map. The flag changes them by nothing beyond the noise, so they keep the standard multiplication.
 
 All further figures are from the default build. With the flag, Eigen's would be 10–17% lower.
+
+## Instruction set
+
+The figures on this page are for `-march=native`, which on the reference machine means AVX2 and FMA. Without `-march`, GCC targets the x86-64 baseline: SSE2, two doubles per vector, no FMA. That is what C++QED builds by default ([cppqed#93](https://github.com/WignerQuantumOptics/cppqed/issues/93)). Measured on 2026-11-05: five interleaved rounds of `kernels` A, B, E and of the main suite's `apply1` and `applyJC`, on 4 KB pages, built three ways. Speed-up over the baseline build:
+
+| | `-march=x86-64-v3` (AVX2, FMA) | `-march=native` |
+|---|---|---|
+| library and hand-written loops, `kernels` A, B, E: median (range) | 1.44× (0.65–2.16×) | 1.44× (0.64–2.18×) |
+| library, `apply1` and `applyJC`: median (range) | 1.70× (1.10–2.37×) | 1.68× (1.10–2.36×) |
+| Eigen sparse, the same: median | 1.25–1.31× | 1.23–1.25× |
+| C++QED `jc_qjmc` per derivative call, state 64 / 1024 / 16384 / 262144 | 1.29 / 1.38 / 1.26 / 1.12× | 1.29 / 1.35 / 1.23 / 1.12× |
+
+- **The library gains more than Eigen**, because contiguous diagonals fill wider vectors while CSR gathers through column indices. On the x86-64 baseline the library is 1.5–2.0× faster than Eigen in cache at rank 1 and with the mode first (`apply1`, `applyJC_modefast`, N = 64 … 65536), against 2.6–3.4× with AVX2. With the qubit first it is 1.5–1.8× at baseline and 1.4–1.9× with AVX2: there both gain alike.
+- **Out of cache the library still gains 1.4–1.7×** at rank 1 and with the mode first, because a single thread is not limited by bandwidth (see "The bandwidth ceiling"). Eigen gains 1.12–1.22× there, and the library with the qubit first 1.10×.
+- **Nothing in the library got slower.** Only the hand-written comparison loop of case E with an axis 0 of 1–4 elements did (0.65–0.95×). The library unrolls that axis and gains 1.2–1.7× there.
+- **`-march=native` adds nothing over `x86-64-v3`** on this machine, which has no AVX-512. `x86-64-v4` has not been measured.
+- **C++QED gains less than the kernels** (1.12–1.38× per derivative call), because the rest of a QJMC step gains less. The `jc_qjmc` regression passes at all three levels: FMA changes the rounding, but every reference line agrees.
 
 ## The library's two loop shapes
 

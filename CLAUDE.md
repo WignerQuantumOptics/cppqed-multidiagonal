@@ -162,6 +162,11 @@ ctest --test-dir build --output-on-failure
     turbo and SMT off, pinned to a core without device interrupts). Every figure is a median
     over five separate processes. Speed-ups over Eigen depend on the processor, so give them
     per machine; the earlier laptop figures are in the page's history.
+  - Instruction set (2026-11-05, performance.md "Instruction set"): all figures are for
+    `-march=native` (AVX2 + FMA on bench). On the x86-64 baseline (no `-march`) the library is
+    typically 1.4–1.7× slower, Eigen 1.25–1.3×, so the in-cache advantage over Eigen drops from
+    2.6–3.4× to 1.5–2.0×. `x86-64-v3` equals `native` on bench. C++QED builds at the baseline by
+    default; `jc_qjmc` gains 1.12–1.38× per derivative call from `x86-64-v3` (cppqed#93).
   - Default `std::complex` multiplication (Annex G NaN checks, `__muldc3`) used to halve the
     library's speed. Since #23 the kernel multiplies with `textbookProduct`, so the default
     build is as fast as `-fcx-limited-range`. That flag makes Eigen 10–17% faster (term CSR
