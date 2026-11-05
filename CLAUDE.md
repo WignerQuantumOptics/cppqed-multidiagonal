@@ -229,18 +229,18 @@ ctest --test-dir build --output-on-failure
 
 ## Open items (roughly in priority order)
 
-Recommended next (2026-11-04): decide how to keep arrays out of the slow distance (#26), which
-costs the library up to about 3× on huge pages, against at most about 1.1× left in the qubit-first
-loop shape. The out-of-cache re-measurement (`--no-thp`), the power-of-two investigation (case H),
-cppqed#90 and the placement regression check (case G) are done. Outside performance, the items
+Recommended next (2026-11-05): the remaining benchmark defects of #5, then #27 (the row shape at
+an axis 0 of 256 on huge pages). Settled: the slow distance on huge pages (#26: jemalloc, linked by
+C++QED when installed; `StorageType` unchanged), the out-of-cache re-measurement (`--no-thp`), the
+power-of-two investigation (case H), cppqed#90 and the placement regression check (case G). Outside performance, the items
 below are unchanged: the `std::mdspan` decision, the README usage snippet (which waits on an API
 decision), and the deferred review of the install rules.
 
-1. Application performance (#1, #26; see `benchmarks/performance.md`, next steps): whether to
-   keep arrays out of the slow distance, e.g. an allocator in `StorageType` that pads each
-   allocation, is an open design question (#26); C++QED's ODE stepper allocates its scratch
-   arrays as `StorageType` itself. A short axis 0 of a state larger than cache (qubit first) is
-   still applied one diagonal at a time, at 0.9–1.1× of Eigen on 4 KB pages. (The hoisted loop,
+1. Application performance (#1; see `benchmarks/performance.md`, next steps): the row shape at
+   an axis 0 of 256 is 1.1–2.2× slower on huge pages, for a reason not yet known (#27). A short
+   axis 0 of a state larger than cache (qubit first) is still applied one diagonal at a time, at
+   0.9–1.1× of Eigen on 4 KB pages. The slow distance on huge pages is settled (#26): jemalloc
+   avoids it, and `StorageType` stays a plain `std::vector`; don't add an allocator unasked. (The hoisted loop,
    the multiplication in real arithmetic, the short axis 0, the row shape for long operands and
    strided views, the placement scan, the power-of-two investigation and the out-of-cache
    re-measurement are done.)
