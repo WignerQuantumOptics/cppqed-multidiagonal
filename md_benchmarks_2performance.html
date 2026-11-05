@@ -112,7 +112,7 @@ $(document).ready(function(){initNavTree('md_benchmarks_2performance.html',''); 
 <li><b>History.</b> Up to v0.4.0, the multi-axis loop recomputed every address per element, which made it 3.4–4.5× slower than Eigen at rank 2 and 18× slower at rank 4; fixed on 2026-11-01 (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1">#1</a>). Complex multiplication with the C99 Annex G NaN checks halved the speed of the default build; fixed on 2026-11-02, together with a compile-time unrolled short axis 0 (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23">#23</a>). Up to 2026-11-03 the loop stored the output once per diagonal, which made it up to 1.45× slower than Eigen out of cache and its speed depend on placement by up to 1.2–2×.</li>
 <li><b>These figures need AVX2</b> (<code>-march=native</code> or <code>-march=x86-64-v3</code>). On the x86-64 baseline, which C++QED builds by default, the library is typically 1.4–1.7× slower and its advantage over Eigen in cache 1.5–2.0× instead of 2.6–3.4× (see "Instruction set").</li>
 <li><b>What remains.</b> A qubit on axis 0 of a state larger than cache is still applied one diagonal at a time, and at N = 2²⁰ it is 0.89× as fast as Eigen. On transparent huge pages, input and output that lie nearly a multiple of 1 MiB apart, as arrays of a power-of-two size allocated back to back do, make application up to about 3× slower one diagonal at a time and up to 1.7× by rows. jemalloc, which starts large allocations at varying offsets within a page, avoids that; C++QED links it when installed (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/26">#26</a>). Small views are applied one diagonal at a time, and there placement still costs up to 23%, though that shape stays faster than the other at any placement.</li>
-<li><b>The interaction picture</b> has not been benchmarked systematically yet (see the section on it below).</li>
+<li><b>The interaction picture</b> costs almost nothing in C++QED's setting, a small term updated and applied slice by slice: at most 2% over the plain application (at most 10% for a CSR matrix updated per nonzero). For an operator as large as the state, updating it costs 2.5–4× the application with one exponential per diagonal, and 15–38× with one per element (see the section on it below).</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md18"></a>
 Setup</h1>
@@ -144,7 +144,7 @@ Setup</h1>
 <div class="line">./build-release/benchmarks/cppqed-multidiagonal-kernels        # cases A–F, default complex multiplication</div>
 <div class="line">./build-release/benchmarks/cppqed-multidiagonal-kernels G      # the placement scan; a summary per shape goes to stderr</div>
 <div class="line">./build-release/benchmarks/cppqed-multidiagonal-kernels-cxlr   # the same with -fcx-limited-range</div>
-<div class="line">./build-release/benchmarks/cppqed-multidiagonal-benchmarks     # apply1, compose1, …, picture1</div>
+<div class="line">./build-release/benchmarks/cppqed-multidiagonal-benchmarks     # apply1, compose1, …, picture1, slices3</div>
 <div class="line"># --no-thp (both executables, Linux) keeps the process off transparent huge pages</div>
 </div><!-- fragment --><p><code>kernels.cc</code> times the library as <code>operator()</code> chooses its loop shape ("library"), and with each shape forced: <code>applyByDiagonals</code> ("one diagonal at a time") and <code>applyByRows</code> ("by rows"). Its cases:</p>
 <table class="markdownTable">
@@ -517,21 +517,44 @@ The interaction picture</h1>
 <p>A polynomial spectrum loses one degree along a diagonal.</p><ul>
 <li>A flattened sparse matrix can do the same update elementwise, with a frequency array parallel to its values. No multi-indices are needed for that. It cannot use one scalar per diagonal, however, because the flat offset does not determine the per-axis offsets. For extents (n₀, n₁), the offsets (−1, +1) and (n₀−1, 0) both have flat offset n₀−1, so one flat diagonal mixes elements with different phases even for a linear spectrum.</li>
 </ul>
-<p>What <code>picture1</code> measures (rank 1, operator as large as the state; time relative to applying with no picture at all, N = 256 / 4096 / 262144):</p>
+<p><code>picture1</code> applies an operator as large as the state (rank 1, five diagonals, ω_k = kω). Time relative to the library's application with no picture at all, N = 256 / 4096 / 262144 (medians of five processes, 4 KB pages, 2026-11-05):</p>
 <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadNone">variant   </th><th class="markdownTableHeadNone">relative time    </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">one scalar per diagonal   </td><td class="markdownTableBodyNone">0.95 / 0.99 / 1.01    </td></tr>
+<td class="markdownTableBodyNone">library: the operator updated with one exponential per diagonal, then <code>operator()</code>   </td><td class="markdownTableBodyNone">3.4 / 2.8 / 2.7    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">one exponential per element   </td><td class="markdownTableBodyNone">8.9 / 7.8 / 6.3    </td></tr>
+<td class="markdownTableBodyNone">library: updated with one exponential per element, then <code>operator()</code>   </td><td class="markdownTableBodyNone">36 / 28 / 17    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">CSR, one exponential per nonzero   </td><td class="markdownTableBodyNone">9.3 / 8.1 / 6.6   </td></tr>
+<td class="markdownTableBodyNone">hand-written: one exponential per diagonal, fused into the application loop   </td><td class="markdownTableBodyNone">4.0 / 3.6 / 2.7    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">hand-written: one exponential per element, fused   </td><td class="markdownTableBodyNone">36 / 26 / 16    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Eigen: the CSR values updated with one exponential per nonzero, then Eigen's product   </td><td class="markdownTableBodyNone">38 / 30 / 18    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">hand-written CSR loop with one exponential per nonzero fused   </td><td class="markdownTableBodyNone">38 / 29 / 17    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">the state transformed around a static Eigen product (C++QED doesn't do this)   </td><td class="markdownTableBodyNone">5.2 / 5.0 / 3.9   </td></tr>
 </table>
-<p><code>picture1</code> also times a transformation of the state around a static product, which C++QED does not use.</p>
-<p>Because the operator is as large as the state here, the per-element update looks far more expensive than it would in C++QED's setting. What is missing:</p>
 <ul>
-<li>update plus apply in the slice-by-slice setting, for linear and quadratic spectra, against term CSR with a per-nonzero frequency array (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/5">#5</a>);</li>
+<li><b>The update is a full pass over an operator as large as the state here</b>, so it costs 1.5–3× an application on top of it with one exponential per diagonal, and far more with one per element or per nonzero, where the exponentials dominate. One exponential per diagonal is 5–11× faster than one per nonzero.</li>
+<li><b>Fusing the phase into the application loop doesn't pay</b> against the library's update and <code>operator()</code> (2.7–4.0× against 2.5–4.0× over N = 16 … 2²⁰), because the library's loop is faster. An earlier version of this table reported 0.95–1.01× for one scalar per diagonal; that compared a fused hand-written loop with a hand-written static one, both about 3× slower than the library, and measured neither the library nor the cost of the update (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/5">#5</a>).</li>
+</ul>
+<p><code>slices3</code> measures C++QED's setting: a five-diagonal term of dimension n on axis 0 (contiguous) or axis 2 (stride n²) of an n³ state, applied slice by slice in memory order. The picture variants update the term before each application: one exponential per diagonal for ω_k = kω; scale and ratio for ω_k = k²ω; one exponential per nonzero for term CSR. Medians of five processes, 4 KB pages:</p>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">term CSR ÷ library, application   </th><th class="markdownTableHeadNone">n = 16   </th><th class="markdownTableHeadNone">30   </th><th class="markdownTableHeadNone">32   </th><th class="markdownTableHeadNone">64   </th><th class="markdownTableHeadNone">100    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">axis 0   </td><td class="markdownTableBodyNone">1.98   </td><td class="markdownTableBodyNone">2.78   </td><td class="markdownTableBodyNone">2.69   </td><td class="markdownTableBodyNone">2.89   </td><td class="markdownTableBodyNone">2.90    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">axis 2   </td><td class="markdownTableBodyNone">1.09   </td><td class="markdownTableBodyNone">1.78   </td><td class="markdownTableBodyNone">1.62   </td><td class="markdownTableBodyNone">1.93   </td><td class="markdownTableBodyNone">2.27   </td></tr>
+</table>
+<ul>
+<li><b>The update costs almost nothing here</b>: (update + application) ÷ application is 0.99–1.02 for the library with either spectrum, and 0.98–1.10 for term CSR with one exponential per nonzero, the most at n = 16. The update is O(n) work against O(n³) for the application.</li>
+<li><b>So the format's advantage in C++QED's setting lies in the application itself</b>, 1.6–2.9× over term CSR except on axis 2 at n = 16 (1.09), not in the update. One phase per diagonal matters only where the operator is as large as the state.</li>
+</ul>
+<p>What is missing:</p>
+<ul>
 <li>the end-to-end question: how many fewer and longer ODE steps the interaction picture buys, by integrating the fast free evolution exactly. That gain is independent of the storage format and is probably the larger one. It can only be measured in C++QED once its exact propagators work (<a href="https://github.com/WignerQuantumOptics/cppqed/issues/91">cppqed#91</a>, blocked by <a href="https://github.com/WignerQuantumOptics/cppqed/issues/57">cppqed#57</a>).</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md28"></a>
@@ -570,7 +593,7 @@ Assessment and next steps</h1>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">slice by slice, n = 32, contiguous / strided   </td><td class="markdownTableBodyNone">2.5× / 1.7× faster (4 KB pages; contiguous at parity on huge pages)   </td><td class="markdownTableBodyNone">same    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">interaction picture   </td><td class="markdownTableBodyNone">—   </td><td class="markdownTableBodyNone">not yet measured systematically   </td></tr>
+<td class="markdownTableBodyNone">interaction picture, slice by slice: (update + application) ÷ application   </td><td class="markdownTableBodyNone">0.99–1.02 (term CSR, one exponential per nonzero: 0.98–1.10)   </td><td class="markdownTableBodyNone">same   </td></tr>
 </table>
 <ul>
 <li>**"Today"** is the library as it is, in the default build, with both sides taking the slices in the same order. Ranges in cache span two builds of today's library (c346b8a, and one that differed only in <code>operator()</code>'s bounds), between which Eigen's speed moved by up to 20%.</li>
@@ -595,14 +618,13 @@ Assessment and next steps</h1>
 <li>Benchmarks (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/5">#5</a>):<ul>
 <li>done on 2026-11-04: the out-of-cache figures re-measured on 4 KB pages (<code>--no-thp</code>) against huge pages, interleaved;</li>
 <li>done on 2026-11-04: the placement scan as a regression check for #25, for both shapes (case G);</li>
-<li>make <code>picture1</code> call the library;</li>
-<li>add term CSR through slices to the main suite;</li>
-<li>add update plus apply for the interaction picture in the slice setting.</li>
+<li>done on 2026-11-05: <code>picture1</code> measures the library (update, then <code>operator()</code>); hand-written variants are labelled as such; the Eigen variant uses Eigen's product; <code>constructJC</code> is checked against a dense matrix; <code>plot.py</code> draws the cost of the picture the right way up;</li>
+<li>done on 2026-11-05: term CSR through slices, and the interaction picture updated and applied slice by slice, in the main suite (<code>slices3</code>).</li>
 </ul>
 </li>
 </ol>
 <p>In C++QED: done on 2026-11-04, the slices in memory order (<a href="https://github.com/WignerQuantumOptics/cppqed/issues/90">cppqed#90</a>); still to do, benchmark the interaction picture end to end (<a href="https://github.com/WignerQuantumOptics/cppqed/issues/91">cppqed#91</a>).</p>
-<p><b>What to do next:</b> the remaining benchmark defects of <a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/5">#5</a>, since this page is the evidence for the paper; then the row shape at an axis 0 of 256 on huge pages (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/27">#27</a>). The remaining loop shape, for a qubit on axis 0 of a large state, is worth at most about 1.1×. The slow distance on huge pages is settled (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/26">#26</a>: jemalloc, no change to <code>StorageType</code>), and so are the re-measurement, the power-of-two investigation, cppqed#90 and the placement regression check. </p>
+<p><b>What to do next:</b> decide on <a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/27">#27</a>: its huge-page part is the 1 MiB window of #26, but the row shape on contiguous slices of a few hundred amplitudes also depends on the placement within a page by up to 2.6×, where one diagonal at a time doesn't. The proposal there is to raise <code>operator()</code>'s bound for contiguous views after a crossover measured over several placements. The benchmark defects of #5 are fixed. The remaining loop shape, for a qubit on axis 0 of a large state, is worth at most about 1.1×. The slow distance on huge pages is settled (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/26">#26</a>: jemalloc, no change to <code>StorageType</code>), and so are the re-measurement, the power-of-two investigation, cppqed#90 and the placement regression check. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->
