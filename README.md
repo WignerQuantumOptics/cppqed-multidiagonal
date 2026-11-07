@@ -68,7 +68,7 @@ Measurements, causes and outlook, including the interaction picture: [Performanc
 
 ## Building and testing
 
-The library itself is header-only — nothing to build. Configuring and building compiles the test suite:
+The library itself is header-only — nothing to build. Configuring and building compiles the test suite and the benchmarks:
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Debug
@@ -77,6 +77,11 @@ ctest --test-dir build --output-on-failure
 ```
 
 (Debug enables the library's bounds and dimension checks, which the test suite exercises; CI runs the Debug×Release matrix on GCC and Clang.)
+
+Options:
+- `BUILD_TESTING=OFF` skips the tests, `MULTIDIAGONAL_BUILD_BENCHMARKS=OFF` the benchmarks, and `MULTIDIAGONAL_BENCHMARK_NATIVE=OFF` compiles the benchmarks without `-march=native`. Tests and benchmarks are built only when the library is the top-level project.
+- `MULTIDIAGONAL_INSTALL` generates the install rules: on by default in a top-level build, off when the library is a subproject.
+- The tests use an installed Catch2 3 when found, and otherwise fetch Catch2 at a pinned commit. Without network, pass `-DFETCHCONTENT_FULLY_DISCONNECTED=ON -DFETCHCONTENT_SOURCE_DIR_CATCH2=<copy of the Catch2 source tree>`.
 
 ## Integration into a CMake project
 
@@ -101,9 +106,11 @@ cmake --install build
 ```
 
 ```cmake
-find_package(cppqed-multidiagonal REQUIRED)
+find_package(cppqed-multidiagonal 0.4 REQUIRED)
 target_link_libraries(MyTarget PUBLIC cppqed::multidiagonal)
 ```
+
+While the major version is 0, a new minor version may change the API, so a request for 0.4 accepts 0.4.x but not 0.5. The library sets C++23 for its consumers, and needs Boost ≥ 1.80 and Eigen ≥ 3.4 (Eigen 5 included).
 
 Either way, the headers are included with their directory prefix, e.g. `#include <multidiagonal/MultiDiagonal.h>`.
 

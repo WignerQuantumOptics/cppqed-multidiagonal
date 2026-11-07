@@ -6,6 +6,12 @@
 #   -DMULTIDIAGONAL_CONSUME=FetchContent   from MULTIDIAGONAL_GIT_REPOSITORY at MULTIDIAGONAL_GIT_TAG
 cmake_minimum_required(VERSION 3.24)
 
+# Boost through its own package config (Boost >= 1.70 ships one): CMake 3.30 removed the FindBoost module, and warns
+# while this policy is unset
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
 project(cppqed-multidiagonal-consumer LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -15,7 +21,19 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(MULTIDIAGONAL_CONSUME "find_package" CACHE STRING "find_package or FetchContent")
 
 if(MULTIDIAGONAL_CONSUME STREQUAL "find_package")
-  find_package(cppqed-multidiagonal 0.3 REQUIRED)   # first version with <multidiagonal/X.h>
+  find_package(cppqed-multidiagonal REQUIRED)
+  set(major ${cppqed-multidiagonal_VERSION_MAJOR})
+  set(minor ${cppqed-multidiagonal_VERSION_MINOR})
+  # The package accepts a request for its own minor version, and while the major version is 0 not one for an
+  # earlier minor version (#9)
+  find_package(cppqed-multidiagonal ${major}.${minor} REQUIRED)
+  if(major EQUAL 0 AND minor GREATER 0)
+    math(EXPR previous "${minor} - 1")
+    find_package(cppqed-multidiagonal 0.${previous} QUIET)
+    if(cppqed-multidiagonal_FOUND)
+      message(FATAL_ERROR "the installed 0.${minor} accepted a request for 0.${previous}")
+    endif()
+  endif()
 elseif(MULTIDIAGONAL_CONSUME STREQUAL "FetchContent")
   include(FetchContent)
   FetchContent_Declare(cppqed-multidiagonal

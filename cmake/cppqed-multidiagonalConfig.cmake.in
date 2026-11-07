@@ -2,8 +2,15 @@
 
 include(CMakeFindDependencyMacro)
 
-find_dependency(Boost COMPONENTS json serialization)
+find_dependency(Boost @MULTIDIAGONAL_BOOST_MINIMUM@ COMPONENTS json serialization)
+
+# Eigen without a version, checked afterwards: Eigen's package version file would reject Eigen 5 for a request of 3.4
 find_dependency(Eigen3 NO_MODULE)
+if(Eigen3_VERSION VERSION_LESS @MULTIDIAGONAL_EIGEN_MINIMUM@)
+  set(cppqed-multidiagonal_FOUND FALSE)
+  set(cppqed-multidiagonal_NOT_FOUND_MESSAGE "cppqed-multidiagonal needs Eigen >= @MULTIDIAGONAL_EIGEN_MINIMUM@, found ${Eigen3_VERSION}")
+  return()
+endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/cppqed-multidiagonalTargets.cmake")
 
