@@ -2,7 +2,8 @@
 
 include(CMakeFindDependencyMacro)
 
-find_dependency(Boost @MULTIDIAGONAL_BOOST_MINIMUM@ COMPONENTS json serialization)
+# Boost.Serialization's headers come with Boost::headers; whoever writes archives links the compiled library itself
+find_dependency(Boost @MULTIDIAGONAL_BOOST_MINIMUM@ COMPONENTS json)
 
 # Eigen without a version, checked afterwards: Eigen's package version file would reject Eigen 5 for a request of 3.4
 find_dependency(Eigen3 NO_MODULE)

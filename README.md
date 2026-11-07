@@ -94,7 +94,7 @@ Measurements, causes and outlook, including the interaction picture: [Performanc
 ## Requirements
 
 - C++23 compiler (GCC ≥ 13, Clang ≥ 17)
-- [Boost](https://www.boost.org/) ≥ 1.80 (Hana, JSON, Serialization) — header-only use plus Boost.JSON/Serialization
+- [Boost](https://www.boost.org/) ≥ 1.80: the headers (Hana, and Serialization for `MultiArray`'s save and load) and the compiled Boost.JSON. Writing or reading Boost.Serialization archives needs the compiled Boost.Serialization, which the library doesn't link; the tests do
 - [Eigen3](https://eigen.tuxfamily.org/) ≥ 3.4
 - CMake ≥ 3.24 (for the build/test/install machinery; as a header-only library it can also be consumed by simply adding `include/` to the include path and writing `#include <multidiagonal/MultiDiagonal.h>`)
 

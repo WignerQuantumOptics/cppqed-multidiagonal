@@ -93,10 +93,11 @@ jobs:
         with:
           fetch-depth: 0   # FetchContent clones this checkout at github.sha
 
+      # Without the compiled Boost.Serialization: consumers need only its headers, which come with libboost-dev (#16)
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build libboost-dev libboost-json-dev libboost-serialization-dev libeigen3-dev g++-14
+          sudo apt-get install -y ninja-build libboost-dev libboost-json-dev libeigen3-dev g++-14
 
       - name: Install the library
         run: |

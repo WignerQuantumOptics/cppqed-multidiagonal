@@ -14,8 +14,13 @@ add_executable(cppqed-multidiagonal-tests
   testMultiDiagonal.cc
 )
 
+# The tests write and read Boost.Serialization archives, so they link the compiled library, which the library itself
+# doesn't (#16)
+find_package(Boost ${MULTIDIAGONAL_BOOST_MINIMUM} REQUIRED COMPONENTS serialization)
+
 target_link_libraries(cppqed-multidiagonal-tests PRIVATE
-  cppqed::multidiagonal          # brings Boost/Eigen transitively (PUBLIC on the lib)
+  cppqed::multidiagonal          # Boost headers, Boost.JSON and Eigen
+  Boost::serialization
   Catch2::Catch2WithMain)
 
 target_compile_options(cppqed-multidiagonal-tests PRIVATE

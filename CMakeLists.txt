@@ -21,7 +21,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(MULTIDIAGONAL_BOOST_MINIMUM 1.80)
 set(MULTIDIAGONAL_EIGEN_MINIMUM 3.4)
 
-find_package(Boost ${MULTIDIAGONAL_BOOST_MINIMUM} REQUIRED COMPONENTS json serialization)
+# Boost.Serialization: the headers only (MultiArray's save/load), which come with Boost::headers. Whoever writes or reads
+# archives links the compiled library itself, as C++QED and the tests do (#16).
+find_package(Boost ${MULTIDIAGONAL_BOOST_MINIMUM} REQUIRED COMPONENTS json)
 
 # Eigen is found without a version and checked afterwards: its package version file accepts only its own major
 # version, so a request for 3.4 would reject Eigen 5
@@ -44,16 +46,15 @@ set_target_properties(cppqed-multidiagonal PROPERTIES EXPORT_NAME multidiagonal)
 # instead of failing with obscure errors in the headers (#9)
 target_compile_features(cppqed-multidiagonal INTERFACE cxx_std_23)
 
+# (the installed include directory is set by install(TARGETS … INCLUDES DESTINATION))
 target_include_directories(cppqed-multidiagonal
   INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>)
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 target_link_libraries(cppqed-multidiagonal
   INTERFACE
     Boost::headers
     Boost::json
-    Boost::serialization
     Eigen3::Eigen)
 
 # ── Tests and benchmarks: only in a top-level build ─────────────────────────
@@ -77,11 +78,17 @@ if(MULTIDIAGONAL_INSTALL)
   include(GNUInstallDirs)
   include(CMakePackageConfigHelpers)
 
+  # The headers go where the exported target looks for them, also for a CMAKE_INSTALL_INCLUDEDIR other than include (#16)
   install(TARGETS cppqed-multidiagonal
-    EXPORT cppqed-multidiagonalTargets)
+    EXPORT cppqed-multidiagonalTargets
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
   install(DIRECTORY include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+  # The headers refer to "the accompanying file LICENSE.txt", and the license asks for it in every copy (#16)
+  install(FILES LICENSE.txt
+    DESTINATION ${CMAKE_INSTALL_DOCDIR})
 
   install(EXPORT cppqed-multidiagonalTargets
     FILE cppqed-multidiagonalTargets.cmake

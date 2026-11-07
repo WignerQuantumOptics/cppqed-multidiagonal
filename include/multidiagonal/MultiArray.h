@@ -379,6 +379,7 @@ private:
   friend class boost::serialization::access;
   
   /// @brief Boost.Serialization save: archives extents and raw data. @note Transitional — will be superseded by HDF5.
+  /// The library uses only Boost.Serialization's headers: whoever writes or reads archives links the compiled library.
   template<class Archive> void save(Archive& ar, const unsigned int) const {ar & this->extents & data_;}
 
   /// @brief Boost.Serialization load: restores extents and data, then recomputes strides.
