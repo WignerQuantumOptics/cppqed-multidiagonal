@@ -400,6 +400,21 @@ public:
       arr.push_back( json::object{ {"offsets",json::value_from(offsets)}, {"diagonal",json::value_from(diag)} } );
   }
 
+  /// @brief Boost.JSON deserialization: reconstructs from the array that `value_from` emits.
+  /// Throws if two entries have the same offsets, or if the diagonals imply different dimensions
+  /// (see `calculateAndCheckDimensions`).
+  friend MultiDiagonal tag_invoke( const json::value_to_tag< MultiDiagonal >&, const json::value& jv )
+  {
+    MultiDiagonal res;
+    for (const json::value& entry : jv.as_array()) {
+      const json::object& o{entry.as_object()};
+      if (!res.diagonals.emplace(json::value_to<Offsets>(o.at("offsets")),json::value_to<Diagonal>(o.at("diagonal"))).second)
+        throw std::runtime_error("Duplicate offsets in the JSON of a MultiDiagonal: "+json::serialize(o.at("offsets")));
+    }
+    calculateAndCheckDimensions(res);
+    return res;
+  }
+
 };
 
 

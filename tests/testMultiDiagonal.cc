@@ -639,3 +639,40 @@ TEST_CASE("JSON serialization of MultiDiagonal — finding F2", "[multidiagonal]
   // map order is lexicographic in the signed offsets: −1 before +1
   CHECK(json::value_to<std::array<ptrdiff_t,1>>(jv.as_array().at(0).as_object().at("offsets"))[0] == -1);
 }
+
+TEST_CASE("JSON round trip of MultiDiagonal — #18", "[multidiagonal][json]")
+{
+  // rank 2, genuinely complex, diagonals at signed offsets on both axes
+  auto md = complexTridiag(4,0.3) * complexTridiag(3,-1.2) + destroy(4) * hermitianConjugateOf(destroy(3));
+
+  auto back = json::value_to<MultiDiagonal<2>>(json::value_from(md));
+  REQUIRE(back.diagonals.size() == md.diagonals.size());
+  for (auto&& [a,b] : std::views::zip(md.diagonals,back.diagonals)) {
+    CHECK(a.first == b.first);
+    CHECK((a.second.extents == b.second.extents));
+    CHECK(a.second.dataStorage() == b.second.dataStorage());
+  }
+
+  // through the text, whose parsing may round the last digit
+  CHECK(approxEqual(densify(json::value_to<MultiDiagonal<2>>(json::parse(toStringJSON(md)))), densify(md)));
+}
+
+
+TEST_CASE("JSON of a MultiDiagonal with duplicate offsets or inconsistent dimensions is rejected — #18", "[multidiagonal][json]")
+{
+  json::value jv = json::value_from(destroy(4) + singleDiag(0,sqrtRamp(4)));   // dimension 4
+  json::array& arr = jv.as_array();
+
+  SECTION("duplicate offsets") {
+    json::value duplicate = arr.at(0);
+    arr.push_back(std::move(duplicate));
+    CHECK_THROWS_AS(json::value_to<MultiDiagonal<1>>(jv), std::runtime_error);
+  }
+
+  SECTION("a diagonal implying another dimension") {
+    arr.push_back(json::value_from(singleDiag(-1,sqrtRamp(4))).as_array().at(0));   // dimension 5
+    CHECK_THROWS_AS(json::value_to<MultiDiagonal<1>>(jv), std::runtime_error);
+  }
+
+  CHECK_NOTHROW(json::value_to<MultiDiagonal<1>>(json::value_from(destroy(4) + singleDiag(0,sqrtRamp(4)))));
+}

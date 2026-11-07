@@ -39,7 +39,7 @@ The truncated algebra is represented *exactly*, including its physical deviation
 - **Application**: accumulates $A\psi$ into a state vector, which may be a strided slice of a larger array. Loop nests generated at compile time with Boost.Hana run in memory order, axis 0 innermost, from addresses computed once. Small views, a short axis 0 such as a qubit (which is unrolled), and slices of up to 512 amplitudes of a state larger than cache are applied one diagonal at a time; otherwise the diagonals contributing to a row are summed before one store. It applies no factor $1/i$: C++QED's convention is to store $A = H/i$.
 - **Move-only semantics**: no accidental copies of large diagonal arrays; deep copies are explicit (`copy`)
 - **Deterministic results**: diagonals are stored in an ordered map keyed by signed offsets, so accumulation order in composition is well-defined and reproducible across platforms
-- **JSON serialization**: via Boost.JSON `tag_invoke`, useful for testing and debugging
+- **JSON serialization**: written and read back via Boost.JSON `tag_invoke`, useful for testing and debugging
 - **No time dependence**: operators carry no frequencies. Interaction-picture time dependence ($\alpha_{m,n} e^{\delta_{m,n} t}$) belongs to the consumer; in C++QED the trajectory owns the interaction picture
 - **Property-tested**: the algebraic identities — associativity, $(A|B)^\dagger = B^\dagger|A^\dagger$, distributivity, the mixed-product law $(A{\otimes}B)|(C{\otimes}D) = (A|C){\otimes}(B|D)$ — are verified against dense-matrix oracles in CI
 
