@@ -32,6 +32,38 @@ The predecessor class `Tridiagonal<RANK>` in C++QED v2 stored exactly three diag
 
 The truncated algebra is represented *exactly*, including its physical deviations from the untruncated one: e.g. $[a,a^\dagger]$ at cutoff $D$ is $\mathrm{diag}(1,\ldots,1,1-D)$, not $\mathbb{1}$ — as it must be for any finite-dimensional representation.
 
+## Usage
+
+Operators are built from single diagonals with `multidiagonal::diagonal(offset, values)`, and combined with `+`, `|` (composition, the offsets add up) and `*` (direct product, the left operand's axes first). A Jaynes–Cummings coupling between a qubit and a mode with cutoff 5, applied to the state $|0\rangle|1\rangle$:
+
+```cpp
+#include <multidiagonal/MultiDiagonal.h>
+
+#include <cmath>
+
+using namespace cppqedutils;                     // dcomp, MultiArray
+namespace md = quantumoperator::multidiagonal;
+
+int main()
+{
+  const size_t N=5;                              // cutoff of the mode
+  std::vector<dcomp> ladder(N-1);
+  for (size_t k=0; k<N-1; ++k) ladder[k]=std::sqrt(k+1.);
+
+  auto a {md::diagonal(+1,std::move(ladder))};   // ⟨n|a|n+1⟩ = √(n+1): the diagonal at offset +1
+  auto sm{md::diagonal(+1,{1.})};                // σ⁻ = |0⟩⟨1|
+
+  auto n {hermitianConjugateOf(a) | a};                                  // composition: the offsets add up to 0
+  auto jc{hermitianConjugateOf(sm) * a + sm * hermitianConjugateOf(a)};  // direct product: qubit on axis 0, mode on axis 1
+
+  MultiArray<dcomp,2> psi{{2,N},multiarray::zeroInit<dcomp>}, dpsi{{2,N},multiarray::zeroInit<dcomp>};
+  psi(0,1)=1.;                                   // |0⟩|1⟩
+  jc(0.,psi,dpsi);                               // accumulates jc|0⟩|1⟩ = |1⟩|0⟩ into dpsi
+}
+```
+
+Application accumulates into its last argument and applies no factor $1/i$ (C++QED stores $H/i$). A diagonal whose coefficients don't factorize over the axes goes into the operator's `diagonals` map directly. CI compiles and runs this example against the installed library: it is the first part of [`tests/consumer/consumer.cc`](tests/consumer/consumer.cc).
+
 ## Features
 
 - **Arbitrary rank**: `MultiDiagonal<RANK>` for any compile-time arity $M$, including composition at arbitrary rank
@@ -123,7 +155,7 @@ include/multidiagonal/
   MultiDiagonal.h — multidiagonal operator algebra (incl. identity and composition)
 tests/
   testMultiArray.cc, testMultiArrayComplex.cc, testMultiDiagonal.cc
-  consumer/ — downstream project used by CI (find_package and FetchContent)
+  consumer/ — downstream project used by CI (find_package and FetchContent); starts with the usage example
 benchmarks/
   benchmarkMultiDiagonal.cc, plot.py — comparison with Eigen sparse and dense
   kernels.cc — application loop experiments (built with and without -fcx-limited-range)

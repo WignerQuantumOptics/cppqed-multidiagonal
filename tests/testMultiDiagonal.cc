@@ -7,6 +7,7 @@
 
 using namespace cppqedutils;
 using quantumoperator::MultiDiagonal;
+namespace md = quantumoperator::multidiagonal;
 
 namespace {
 
@@ -48,14 +49,6 @@ CMatrix densify(const MultiDiagonal<RANK>& md)
   return res;
 }
 
-/// Single diagonal at a **signed** offset. Storage convention: `d[k] = A(k+o⁻, k+o⁺)`.
-MultiDiagonal<1> singleDiag(ptrdiff_t offset, std::vector<dcomp> v)
-{
-  MultiDiagonal<1> res;
-  res.diagonals.emplace(MultiDiagonal<1>::Offsets{offset}, multiarray::fromStorage(std::move(v)));
-  return res;
-}
-
 std::vector<dcomp> sqrtRamp(size_t n)               // {√1, √2, …, √n}
 {
   std::vector<dcomp> v(n);
@@ -65,7 +58,7 @@ std::vector<dcomp> sqrtRamp(size_t n)               // {√1, √2, …, √n}
 
 MultiDiagonal<1> destroy(size_t dim)                // a: ⟨n|a|n+1⟩ = √(n+1) — upper, offset +1
 {
-  return singleDiag(+1, sqrtRamp(dim-1));
+  return md::diagonal(+1, sqrtRamp(dim-1));
 }
 
 CMatrix denseDestroy(size_t dim)
@@ -75,7 +68,7 @@ CMatrix denseDestroy(size_t dim)
   return a;
 }
 
-MultiDiagonal<1> sigmaMinus() {return singleDiag(+1,{1.});}   // ⟨0|σ⁻|1⟩ = 1
+MultiDiagonal<1> sigmaMinus() {return md::diagonal(+1,{1.});}   // ⟨0|σ⁻|1⟩ = 1
 
 /// Complex tridiagonal on dimension `dim`, all three bands, no element real; `s` varies the values.
 MultiDiagonal<1> complexTridiag(size_t dim, double s)
@@ -85,7 +78,7 @@ MultiDiagonal<1> complexTridiag(size_t dim, double s)
     for (size_t k=0;k<n;++k) v[k]=c*dcomp(1.+double(k),s-double(k));
     return v;
   };
-  return singleDiag(-1,band(dim-1,1i)) + singleDiag(0,band(dim,1.)) + singleDiag(+1,band(dim-1,0.5-1i));
+  return md::diagonal(-1,band(dim-1,1i)) + md::diagonal(0,band(dim,1.)) + md::diagonal(+1,band(dim-1,0.5-1i));
 }
 
 CMatrix denseSigmaMinus() {CMatrix s{CMatrix::Zero(2,2)}; s(0,1)=1.; return s;}
@@ -111,7 +104,7 @@ TEST_CASE("a non-const lvalue doesn't match the variadic constructor — #12", "
 
 TEST_CASE("identity densifies to the identity matrix", "[multidiagonal]")
 {
-  CHECK(approxEqual(densify(quantumoperator::multidiagonal::identity(5)), CMatrix::Identity(5,5)));
+  CHECK(approxEqual(densify(md::identity(5)), CMatrix::Identity(5,5)));
 }
 
 
@@ -124,13 +117,31 @@ TEST_CASE("positive offset is the upper diagonal", "[multidiagonal]")
 TEST_CASE("negative offset is the lower diagonal, min(row,col)-anchored", "[multidiagonal]")
 {
   // a† has ⟨n+1|a†|n⟩ = √(n+1): lower diagonal, storage d[k] = A(k+1,k) = √(k+1)
-  CHECK(approxEqual(densify(singleDiag(-1,sqrtRamp(3))), denseDestroy(4).adjoint()));
+  CHECK(approxEqual(densify(md::diagonal(-1,sqrtRamp(3))), denseDestroy(4).adjoint()));
+}
+
+
+TEST_CASE("multidiagonal::diagonal: values, offset and dimension — #15", "[multidiagonal]")
+{
+  const std::vector<dcomp> v{1.+2i, -3i, 0.5};
+  for (ptrdiff_t o : {-2, 0, +2}) {
+    const size_t dim=v.size()+size_t(std::abs(o));
+    CMatrix ref{CMatrix::Zero(dim,dim)};
+    for (size_t k=0; k<v.size(); ++k) ref(k+size_t(std::max(-o,ptrdiff_t{0})), k+size_t(std::max(o,ptrdiff_t{0}))) = v[k];
+    auto d{md::diagonal(o,v)};
+    CHECK((calculateAndCheckDimensions(d) == Extents<1>{dim}));
+    CHECK(approxEqual(densify(d), ref));
+  }
+  // empty values: a structural zero of dimension |offset|, e.g. a for a cutoff of 1
+  auto z{md::diagonal(+1,{})};
+  CHECK((calculateAndCheckDimensions(z) == Extents<1>{1}));
+  CHECK(approxEqual(densify(z), CMatrix::Zero(1,1)));
 }
 
 
 TEST_CASE("application accumulates and ignores t", "[multidiagonal]")
 {
-  auto id = quantumoperator::multidiagonal::identity(3);
+  auto id = md::identity(3);
   MultiArray<dcomp,1> psi{{3}, multiarray::zeroInit<dcomp>}, d{{3}, multiarray::zeroInit<dcomp>};
   psi(1)=2.+1i;
   id(0., psi, d); id(1., psi, d);
@@ -180,7 +191,7 @@ TEST_CASE("calculateAndCheckDimensions", "[multidiagonal]")
 {
   CHECK((calculateAndCheckDimensions(MultiDiagonal<1>{}) == Extents<1>{}));
   CHECK((calculateAndCheckDimensions(destroy(7)) == Extents<1>{7}));
-  CHECK((calculateAndCheckDimensions(singleDiag(-2,sqrtRamp(3))) == Extents<1>{5}));  // extent + |o| = D
+  CHECK((calculateAndCheckDimensions(md::diagonal(-2,sqrtRamp(3))) == Extents<1>{5}));  // extent + |o| = D
 
   MultiDiagonal<1> bad;
   bad.diagonals.emplace(MultiDiagonal<1>::Offsets{ 1}, multiarray::fromStorage(std::vector<dcomp>(3,1.))); // implies dim 4
@@ -295,7 +306,7 @@ TEST_CASE("truncated commutator [a,a†]: identity except the top level", "[mult
 
 TEST_CASE("composition accumulates contributions across diagonal pairs — finding F1b", "[multidiagonal][composition]")
 {
-  auto sx = singleDiag(+1,{1.}) + singleDiag(-1,{1.});
+  auto sx = md::diagonal(+1,{1.}) + md::diagonal(-1,{1.});
   CHECK(approxEqual(densify(sx|sx), CMatrix::Identity(2,2)));   // two pairs merge on s=0
 
   auto x = destroy(5) + hermitianConjugateOf(destroy(5));
@@ -307,7 +318,7 @@ TEST_CASE("composition accumulates contributions across diagonal pairs — findi
 TEST_CASE("composition: identity is two-sided neutral on all branches", "[multidiagonal][composition]")
 {
   auto a = destroy(5); auto ad = hermitianConjugateOf(a);
-  auto id = quantumoperator::multidiagonal::identity(5);
+  auto id = md::identity(5);
   const CMatrix da = denseDestroy(5);
   CHECK(approxEqual(densify(id | a),  da));
   CHECK(approxEqual(densify(a | id),  da));
@@ -328,7 +339,7 @@ TEST_CASE("composition distributes over addition", "[multidiagonal][composition]
 {
   auto a = destroy(4);
   auto ad = hermitianConjugateOf(destroy(4));
-  auto id = quantumoperator::multidiagonal::identity(4);
+  auto id = md::identity(4);
   CHECK(approxEqual(densify(a|(ad+id)), densify((a|ad)+(a|id))));
   CHECK(approxEqual(densify((ad+id)|a), densify((ad|a)+(id|a))));
 }
@@ -337,7 +348,7 @@ TEST_CASE("composition distributes over addition", "[multidiagonal][composition]
 TEST_CASE("(A|B)† == B†|A† on a non-Hermitian witness", "[multidiagonal][composition]")
 {
   auto a = destroy(5);
-  auto K = destroy(5) + (1.+2i)*quantumoperator::multidiagonal::identity(5);
+  auto K = destroy(5) + (1.+2i)*md::identity(5);
   CHECK(approxEqual(densify(hermitianConjugateOf(a|K)),
                     densify(hermitianConjugateOf(K)|hermitianConjugateOf(a))));
 }
@@ -357,7 +368,7 @@ TEST_CASE("composition beyond the truncation is the zero operator", "[multidiago
 TEST_CASE("direct product densifies to a Kronecker product (axis 0 fastest)", "[multidiagonal][directproduct]")
 {
   auto a  = destroy(3);
-  auto id = quantumoperator::multidiagonal::identity(2);
+  auto id = md::identity(2);
   CHECK(approxEqual(densify(a * id), kron(CMatrix::Identity(2,2), denseDestroy(3))));  // a on axis 0 (fast)
   CHECK(approxEqual(densify(id * a), kron(denseDestroy(3), CMatrix::Identity(2,2))));  // a on axis 1 (slow)
 }
@@ -660,7 +671,7 @@ TEST_CASE("JSON round trip of MultiDiagonal — #18", "[multidiagonal][json]")
 
 TEST_CASE("JSON of a MultiDiagonal with duplicate offsets or inconsistent dimensions is rejected — #18", "[multidiagonal][json]")
 {
-  json::value jv = json::value_from(destroy(4) + singleDiag(0,sqrtRamp(4)));   // dimension 4
+  json::value jv = json::value_from(destroy(4) + md::diagonal(0,sqrtRamp(4)));   // dimension 4
   json::array& arr = jv.as_array();
 
   SECTION("duplicate offsets") {
@@ -670,9 +681,9 @@ TEST_CASE("JSON of a MultiDiagonal with duplicate offsets or inconsistent dimens
   }
 
   SECTION("a diagonal implying another dimension") {
-    arr.push_back(json::value_from(singleDiag(-1,sqrtRamp(4))).as_array().at(0));   // dimension 5
+    arr.push_back(json::value_from(md::diagonal(-1,sqrtRamp(4))).as_array().at(0));   // dimension 5
     CHECK_THROWS_AS(json::value_to<MultiDiagonal<1>>(jv), std::runtime_error);
   }
 
-  CHECK_NOTHROW(json::value_to<MultiDiagonal<1>>(json::value_from(destroy(4) + singleDiag(0,sqrtRamp(4)))));
+  CHECK_NOTHROW(json::value_to<MultiDiagonal<1>>(json::value_from(destroy(4) + md::diagonal(0,sqrtRamp(4)))));
 }

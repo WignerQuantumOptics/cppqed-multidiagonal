@@ -494,6 +494,23 @@ MultiDiagonal<RANK> operator|(const MultiDiagonal<RANK>& a, const MultiDiagonal<
 
 namespace multidiagonal {
 
+/// @brief The rank-1 operator with the single diagonal @p values at the signed offset @p offset: the building block of operators.
+///
+/// Operators with several diagonals, or on several axes, are built from these with `operator+`, `operator|`
+/// (composition) and `operator*` (direct product, the left operand's axes first). Only a diagonal whose coefficients
+/// don't factorize over the axes needs to be put into `MultiDiagonal::diagonals` directly.
+///
+/// Following the storage convention of `MultiDiagonal`, `values[k]` is the matrix element \f$A_{k+o^-,\,k+o^+}\f$,
+/// i.e. \f$\langle k|A|k+o\rangle\f$ for an upper diagonal (\f$o>0\f$), and the dimension is `values.size()+|offset|`.
+/// Empty @p values give a structural zero of dimension `|offset|`, e.g. \f$a\f$ for a cutoff of 1.
+///
+/// ```
+/// auto a {multidiagonal::diagonal(+1,{1.,std::sqrt(2.),std::sqrt(3.)})};   // a for a cutoff of 4
+/// auto sm{multidiagonal::diagonal(+1,{1.})};                              // σ⁻ = |0⟩⟨1|
+/// auto jc{hermitianConjugateOf(sm) * a + sm * hermitianConjugateOf(a)};   // qubit on axis 0, mode on axis 1
+/// ```
+MultiDiagonal<1> diagonal(ptrdiff_t offset, std::vector<dcomp> values);
+
 /// @brief Constructs the rank-1 identity operator of dimension @p dim.
 MultiDiagonal<1> identity(size_t dim);
 
@@ -503,13 +520,16 @@ MultiDiagonal<1> identity(size_t dim);
 } // quantumoperator
 
 
-/// @brief Rank-1 identity operator: a single main diagonal (signed offset 0) filled with 1.
-/** (This could be compiled separately, but let’s not drop header-onliness for a single function) */
-inline quantumoperator::MultiDiagonal<1> quantumoperator::multidiagonal::identity(size_t dim)
+inline quantumoperator::MultiDiagonal<1> quantumoperator::multidiagonal::diagonal(ptrdiff_t offset, std::vector<dcomp> values)
 {
   MultiDiagonal<1> res;
-  res.diagonals.emplace(
-    MultiDiagonal<1>::Offsets{0},
-    MultiDiagonal<1>::Diagonal{ {dim}, [] (size_t e) {return multiarray::StorageType<dcomp>(e,1.);} } );
+  res.diagonals.emplace(MultiDiagonal<1>::Offsets{offset}, multiarray::fromStorage(std::move(values)));
   return res;
+}
+
+
+/// @brief Rank-1 identity operator: a single main diagonal (signed offset 0) filled with 1.
+inline quantumoperator::MultiDiagonal<1> quantumoperator::multidiagonal::identity(size_t dim)
+{
+  return diagonal(0, std::vector<dcomp>(dim,1.));
 }
