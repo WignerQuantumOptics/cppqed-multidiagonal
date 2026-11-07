@@ -19,7 +19,8 @@ include/multidiagonal/
   MultiArrayComplex.h dcomp specializations, textbookProduct, directProduct, twoTimesRealPartOf…, Eigen interop
   MultiDiagonal.h     the operator algebra, including identity() and composition
 tests/                Catch2 v3 suites: testMultiArray, testMultiArrayComplex, testMultiDiagonal
-  consumer/           downstream CMake project for the CI consumer job
+  consumer/           downstream CMake project for the CI consumer job; consumer.cc starts with
+                      the README's usage example
 benchmarks/           benchmarkMultiDiagonal.cc, plot.py; kernels.cc (loop experiments);
                       performance.md (measurements and outlook, a Doxygen page)
 cmake/                package config template
@@ -92,6 +93,11 @@ ctest --test-dir build --output-on-failure
   design boundary, recorded for the paper. Phase tabulation, i.e. a `(coefficients,
   frequencies)` pair of MultiDiagonals, belongs to C++QED proper. Do not add it to this
   repo.
+- Construction (#15, decided 2026-11-07): `multidiagonal::diagonal(offset, values)` gives the rank-1
+  operator with one diagonal (dimension `values.size()+|offset|`), and operators are built from these
+  with `+`, `|` and `*`. Only a diagonal whose coefficients don't factorize over the axes is emplaced
+  into `diagonals` directly. The README's usage example is the first part of
+  `tests/consumer/consumer.cc`; keep the two in sync.
 - Rank-1 construction from raw storage goes through `multiarray::fromStorage`. The vector
   constructor was removed to fix an ambiguity (finding F9).
 
@@ -258,9 +264,9 @@ pins; what remains of it is the qubit-first loop shape (#1, worth at most about 
 of #26, and the placement-dependent row shape, handled by the new rule), the benchmark defects of #5, the slow distance on huge pages (#26: jemalloc, linked by
 C++QED when installed; `StorageType` unchanged), the out-of-cache re-measurement (`--no-thp`), the
 power-of-two investigation (case H), cppqed#90 and the placement regression check (case G). Outside performance: the
-`std::mdspan` question is decided (#14, below); the README usage snippet waits on the construction API
-(#15); CMake packaging (#9), the Catch2 pin (#11), the Clang 23 warning (#24) and reading JSON back (#18)
-are done (2026-11-07).
+`std::mdspan` question is decided (#14, below); the construction API (#15) with the README usage
+example, CMake packaging (#9, #16), the Catch2 pin (#11), the Clang 23 warning (#24) and reading JSON
+back (#18) are done (2026-11-07).
 
 1. Application performance (#1; see `benchmarks/performance.md`, next steps): A short
    axis 0 of a state larger than cache (qubit first) is still applied one diagonal at a time, at
@@ -273,13 +279,12 @@ are done (2026-11-07).
    current `MultiArray`/`MultiArrayView` architecture, and `std::mdspan` is a prospect for its outlook.
    The prototype (#19) and C++QED's epic (cppqed#20, #75–#78) stay open as prospects, unscheduled.
    **Do not start a migration unasked.**
-3. README usage snippet. This waits on an API decision: whether test helpers like
-   `singleDiag`/`fromStorage` are the blessed construction idiom, or a small factory
-   namespace graduates into the library.
-4. Deferred: Boost.Serialization as an optional dependency (#16). The library uses only its headers
-   (`MultiArray`'s `save`/`load`); the compiled `Boost::serialization` is needed by whoever writes
-   archives (C++QED, which links it itself, and this test suite). The install rules got the
-   subproject guard in #9; the rest of #16's review is open.
+3. For the paper, outside the code: a DOI (Zenodo's GitHub integration, a repository setting, so
+   András's action), an ORCID in `CITATION.cff`, the venue, and the draft. Cosmetic: #17 (finding
+   test names, `[contract]` tags), #20 (the Doxygen theme).
+4. Boost.Serialization (#16, done): the library uses only its headers (`MultiArray`'s `save`/`load`)
+   and doesn't link the compiled library; whoever writes archives does (C++QED, and this test
+   suite). CI's consumer job builds without it. HDF5 is a separate, later C++QED question.
 
 ## Style
 
