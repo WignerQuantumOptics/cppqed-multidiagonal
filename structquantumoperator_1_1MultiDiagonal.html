@@ -210,6 +210,9 @@ Friends</h2></td></tr>
 <tr class="memitem:a3a71231d0a020e838124fb5dcb36d257" id="r_a3a71231d0a020e838124fb5dcb36d257"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html#a3a71231d0a020e838124fb5dcb36d257">tag_invoke</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> json::value_from_tag &amp;, json::value &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">jv</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a> &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">md</a>)</td></tr>
 <tr class="memdesc:a3a71231d0a020e838124fb5dcb36d257"><td class="mdescLeft">&#160;</td><td class="mdescRight">Boost.JSON serialization: emits an array of <code>{"offsets": [...], "diagonal": {...}}</code> objects.  <br /></td></tr>
 <tr class="separator:a3a71231d0a020e838124fb5dcb36d257"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aad6ee89e2846ddee279a309b6427227f" id="r_aad6ee89e2846ddee279a309b6427227f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html#aad6ee89e2846ddee279a309b6427227f">tag_invoke</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> json::value_to_tag&lt; <a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a> &gt; &amp;, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> json::value &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">jv</a>)</td></tr>
+<tr class="memdesc:aad6ee89e2846ddee279a309b6427227f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Boost.JSON deserialization: reconstructs from the array that <code>value_from</code> emits. Throws if two entries have the same offsets, or if the diagonals imply different dimensions (see <code>calculateAndCheckDimensions</code>).  <br /></td></tr>
+<tr class="separator:aad6ee89e2846ddee279a309b6427227f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> RANK&gt;<br />
@@ -1097,7 +1100,7 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
 </div>
 </div>
 <a id="a3a71231d0a020e838124fb5dcb36d257" name="a3a71231d0a020e838124fb5dcb36d257"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3a71231d0a020e838124fb5dcb36d257">&#9670;&#160;</a></span>tag_invoke</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a3a71231d0a020e838124fb5dcb36d257">&#9670;&#160;</a></span>tag_invoke <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1139,6 +1142,46 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
 </div><div class="memdoc">
 
 <p>Boost.JSON serialization: emits an array of <code>{"offsets": [...], "diagonal": {...}}</code> objects. </p>
+
+</div>
+</div>
+<a id="aad6ee89e2846ddee279a309b6427227f" name="aad6ee89e2846ddee279a309b6427227f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aad6ee89e2846ddee279a309b6427227f">&#9670;&#160;</a></span>tag_invoke <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> RANK&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a> tag_invoke </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> json::value_to_tag&lt; <a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; &gt; &amp;&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> json::value &amp;&#160;</td>
+          <td class="paramname"><em>jv</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Boost.JSON deserialization: reconstructs from the array that <code>value_from</code> emits. Throws if two entries have the same offsets, or if the diagonals imply different dimensions (see <code>calculateAndCheckDimensions</code>). </p>
 
 </div>
 </div>

@@ -29,6 +29,7 @@ var structquantumoperator_1_1MultiDiagonal =
     [ "operator-", "structquantumoperator_1_1MultiDiagonal.html#a65f765098920962aceabbc04642a28e5", null ],
     [ "operator/", "structquantumoperator_1_1MultiDiagonal.html#a9479556c5972a4f92b4d5e456f125714", null ],
     [ "tag_invoke", "structquantumoperator_1_1MultiDiagonal.html#a3a71231d0a020e838124fb5dcb36d257", null ],
+    [ "tag_invoke", "structquantumoperator_1_1MultiDiagonal.html#aad6ee89e2846ddee279a309b6427227f", null ],
     [ "twoITimesImagPartOf", "structquantumoperator_1_1MultiDiagonal.html#a2876049efccbe178d468931472784f57", null ],
     [ "twoTimesRealPartOf", "structquantumoperator_1_1MultiDiagonal.html#a462f4d5cd073ec58dd4721733ddbc5db", null ],
     [ "diagonals", "structquantumoperator_1_1MultiDiagonal.html#a8dee2038fd153f62a535b682e4108679", null ]

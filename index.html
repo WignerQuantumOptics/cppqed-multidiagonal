@@ -133,7 +133,7 @@ Features</h1>
 <li><b>Application</b>: accumulates \(A\psi\) into a state vector, which may be a strided slice of a larger array. Loop nests generated at compile time with Boost.Hana run in memory order, axis 0 innermost, from addresses computed once. Small views, a short axis 0 such as a qubit (which is unrolled), and slices of up to 512 amplitudes of a state larger than cache are applied one diagonal at a time; otherwise the diagonals contributing to a row are summed before one store. It applies no factor \(1/i\): C++QED's convention is to store \(A = H/i\).</li>
 <li><b>Move-only semantics</b>: no accidental copies of large diagonal arrays; deep copies are explicit (<code>copy</code>)</li>
 <li><b>Deterministic results</b>: diagonals are stored in an ordered map keyed by signed offsets, so accumulation order in composition is well-defined and reproducible across platforms</li>
-<li><b>JSON serialization</b>: via Boost.JSON <code>tag_invoke</code>, useful for testing and debugging</li>
+<li><b>JSON serialization</b>: written and read back via Boost.JSON <code>tag_invoke</code>, useful for testing and debugging</li>
 <li><b>No time dependence</b>: operators carry no frequencies. Interaction-picture time dependence ( \(\alpha_{m,n} e^{\delta_{m,n} t}\)) belongs to the consumer; in C++QED the trajectory owns the interaction picture</li>
 <li><b>Property-tested</b>: the algebraic identities — associativity, \((A|B)^\dagger = B^\dagger|A^\dagger\), distributivity, the mixed-product law \((A{\otimes}B)|(C{\otimes}D) = (A|C){\otimes}(B|D)\) — are verified against dense-matrix oracles in CI</li>
 </ul>
@@ -160,11 +160,16 @@ Requirements</h1>
 </ul>
 <h1><a class="anchor" id="autotoc_md10"></a>
 Building and testing</h1>
-<p>The library itself is header-only — nothing to build. Configuring and building compiles the test suite:</p>
+<p>The library itself is header-only — nothing to build. Configuring and building compiles the test suite and the benchmarks:</p>
 <div class="fragment"><div class="line">cmake -B build -DCMAKE_BUILD_TYPE=Debug</div>
 <div class="line">cmake --build build</div>
 <div class="line">ctest --test-dir build --output-on-failure</div>
 </div><!-- fragment --><p>(Debug enables the library's bounds and dimension checks, which the test suite exercises; CI runs the Debug×Release matrix on GCC and Clang.)</p>
+<p>Options:</p><ul>
+<li><code>BUILD_TESTING=OFF</code> skips the tests, <code>MULTIDIAGONAL_BUILD_BENCHMARKS=OFF</code> the benchmarks, and <code>MULTIDIAGONAL_BENCHMARK_NATIVE=OFF</code> compiles the benchmarks without <code>-march=native</code>. Tests and benchmarks are built only when the library is the top-level project.</li>
+<li><code>MULTIDIAGONAL_INSTALL</code> generates the install rules: on by default in a top-level build, off when the library is a subproject.</li>
+<li>The tests use an installed Catch2 3 when found, and otherwise fetch Catch2 at a pinned commit. Without network, pass <code>-DFETCHCONTENT_FULLY_DISCONNECTED=ON -DFETCHCONTENT_SOURCE_DIR_CATCH2=&lt;copy of the Catch2 source tree&gt;</code>.</li>
+</ul>
 <h1><a class="anchor" id="autotoc_md11"></a>
 Integration into a CMake project</h1>
 <h2><a class="anchor" id="autotoc_md12"></a>
@@ -180,9 +185,10 @@ Via FetchContent (as C++QED does)</h2>
 <h2><a class="anchor" id="autotoc_md13"></a>
 Via &lt;tt&gt;find_package&lt;/tt&gt; (after installation)</h2>
 <div class="fragment"><div class="line">cmake --install build</div>
-</div><!-- fragment --><div class="fragment"><div class="line">find_package(cppqed-multidiagonal REQUIRED)</div>
+</div><!-- fragment --><div class="fragment"><div class="line">find_package(cppqed-multidiagonal 0.4 REQUIRED)</div>
 <div class="line">target_link_libraries(MyTarget PUBLIC cppqed::multidiagonal)</div>
-</div><!-- fragment --><p>Either way, the headers are included with their directory prefix, e.g. <code>#include &lt;<a class="el" href="MultiDiagonal_8h.html">multidiagonal/MultiDiagonal.h</a>&gt;</code>.</p>
+</div><!-- fragment --><p>While the major version is 0, a new minor version may change the API, so a request for 0.4 accepts 0.4.x but not 0.5. The library sets C++23 for its consumers, and needs Boost ≥ 1.80 and Eigen ≥ 3.4 (Eigen 5 included).</p>
+<p>Either way, the headers are included with their directory prefix, e.g. <code>#include &lt;<a class="el" href="MultiDiagonal_8h.html">multidiagonal/MultiDiagonal.h</a>&gt;</code>.</p>
 <h1><a class="anchor" id="autotoc_md14"></a>
 Repository structure</h1>
 <div class="fragment"><div class="line">include/multidiagonal/</div>
