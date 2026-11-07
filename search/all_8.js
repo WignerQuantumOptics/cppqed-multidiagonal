@@ -6,5 +6,5 @@ var searchData=
   ['hermitianconjugate_3',['hermitianConjugate',['../structquantumoperator_1_1MultiDiagonal.html#abc6f3181c1acb94ede9a0d9c84d70c0d',1,'quantumoperator::MultiDiagonal']]],
   ['hermitianconjugateof_4',['hermitianConjugateOf',['../structquantumoperator_1_1MultiDiagonal.html#ab32de4ad2aab3d28f0120882d6b1a2aa',1,'quantumoperator::MultiDiagonal']]],
   ['hermitianconjugateself_5',['hermitianConjugateSelf',['../namespacecppqedutils.html#a2b8f3a2cc99f33abbbf6c5356e07380a',1,'cppqedutils']]],
-  ['huge_20pages_6',['Distance on huge pages',['../md_benchmarks_2performance.html#autotoc_md25',1,'']]]
+  ['huge_20pages_6',['Distance on huge pages',['../md_benchmarks_2performance.html#autotoc_md26',1,'']]]
 ];

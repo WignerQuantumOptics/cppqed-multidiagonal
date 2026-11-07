@@ -437,36 +437,36 @@ $(document).ready(function(){initNavTree('MultiArray_8h_source.html',''); initRe
 <div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span> </div>
 <div class="line"><a id="l00379" name="l00379"></a><span class="lineno"><a class="line" href="classcppqedutils_1_1MultiArray.html#ac98d07dd8f7b70e16ccb9a01abf56b9c">  379</a></span>  <span class="keyword">friend</span> <span class="keyword">class </span>boost::serialization::access;</div>
 <div class="line"><a id="l00380" name="l00380"></a><span class="lineno">  380</span>  </div>
-<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span>  <span class="keyword">template</span>&lt;<span class="keyword">class</span> Archive&gt; <span class="keywordtype">void</span> save(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">Archive</a>&amp; <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">ar</a>, <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)<span class="keyword"> const </span>{<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">ar</a> &amp; this-&gt;extents &amp; data_;}</div>
-<div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span> </div>
-<div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span>  <span class="keyword">template</span>&lt;<span class="keyword">class</span> Archive&gt; <span class="keywordtype">void</span> load(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">Archive</a>&amp; <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">ar</a>, <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)</div>
-<div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span>  {</div>
-<div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span>    <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">ar</a> &amp; this-&gt;extents &amp; data_; this-&gt;strides=<a class="code hl_function" href="namespacecppqedutils_1_1multiarray.html#ad7a2d893811f70de1c658fc8fa1ed535">multiarray::calculateStrides</a>(this-&gt;extents); this-&gt;offset=0;</div>
-<div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span>    this-&gt;dataView=std::span&lt;T&gt;(data_);</div>
-<div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span>  }</div>
-<div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span> </div>
-<div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span>  BOOST_SERIALIZATION_SPLIT_MEMBER()</div>
-<div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span>  </div>
-<div class="line"><a id="l00393" name="l00393"></a><span class="lineno">  393</span>};</div>
+<div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span>  <span class="keyword">template</span>&lt;<span class="keyword">class</span> Archive&gt; <span class="keywordtype">void</span> save(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">Archive</a>&amp; <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">ar</a>, <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)<span class="keyword"> const </span>{<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">ar</a> &amp; this-&gt;extents &amp; data_;}</div>
+<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span> </div>
+<div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span>  <span class="keyword">template</span>&lt;<span class="keyword">class</span> Archive&gt; <span class="keywordtype">void</span> load(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">Archive</a>&amp; <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">ar</a>, <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)</div>
+<div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span>  {</div>
+<div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span>    <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">ar</a> &amp; this-&gt;extents &amp; data_; this-&gt;strides=<a class="code hl_function" href="namespacecppqedutils_1_1multiarray.html#ad7a2d893811f70de1c658fc8fa1ed535">multiarray::calculateStrides</a>(this-&gt;extents); this-&gt;offset=0;</div>
+<div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span>    this-&gt;dataView=std::span&lt;T&gt;(data_);</div>
+<div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span>  }</div>
+<div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span> </div>
+<div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span>  BOOST_SERIALIZATION_SPLIT_MEMBER()</div>
+<div class="line"><a id="l00393" name="l00393"></a><span class="lineno">  393</span>  </div>
+<div class="line"><a id="l00394" name="l00394"></a><span class="lineno">  394</span>};</div>
 </div>
-<div class="line"><a id="l00394" name="l00394"></a><span class="lineno">  394</span> </div>
 <div class="line"><a id="l00395" name="l00395"></a><span class="lineno">  395</span> </div>
-<div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span><span class="keyword">namespace </span>multiarray {</div>
-<div class="line"><a id="l00397" name="l00397"></a><span class="lineno">  397</span> </div>
-<div class="line"><a id="l00399" name="l00399"></a><span class="lineno">  399</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span>MultiArray&lt;T,1&gt; fromStorage(std::vector&lt;T&gt; v)</div>
-<div class="line"><a id="l00401" name="l00401"></a><span class="lineno">  401</span>{</div>
-<div class="line"><a id="l00402" name="l00402"></a><span class="lineno">  402</span>  <span class="keyword">const</span> <span class="keywordtype">size_t</span> s = v.size();</div>
-<div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span>  <span class="keywordflow">return</span> MultiArray&lt;T,1&gt;{ {s}, [&amp;] (size_t) {<span class="keywordflow">return</span> std::move(v);} };</div>
-<div class="line"><a id="l00404" name="l00404"></a><span class="lineno">  404</span>}</div>
-<div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span> </div>
-<div class="line"><a id="l00406" name="l00406"></a><span class="lineno">  406</span>} <span class="comment">// multiarray</span></div>
-<div class="line"><a id="l00407" name="l00407"></a><span class="lineno">  407</span> </div>
-<div class="line"><a id="l00409" name="l00409"></a><span class="lineno">  409</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keywordtype">size_t</span> RANK&gt;</div>
-<div class="line"><a id="l00410" name="l00410"></a><span class="lineno"><a class="line" href="namespacecppqedutils.html#a71357bd53380a39de24f2573ae2a0827">  410</a></span><span class="keyword">constexpr</span> <span class="keyword">auto</span> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">passByValue_v&lt;MultiArray&lt;T,RANK&gt;</a>&gt; = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00411" name="l00411"></a><span class="lineno">  411</span> </div>
+<div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span> </div>
+<div class="line"><a id="l00397" name="l00397"></a><span class="lineno">  397</span><span class="keyword">namespace </span>multiarray {</div>
+<div class="line"><a id="l00398" name="l00398"></a><span class="lineno">  398</span> </div>
+<div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
+<div class="line"><a id="l00401" name="l00401"></a><span class="lineno">  401</span>MultiArray&lt;T,1&gt; fromStorage(std::vector&lt;T&gt; v)</div>
+<div class="line"><a id="l00402" name="l00402"></a><span class="lineno">  402</span>{</div>
+<div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span>  <span class="keyword">const</span> <span class="keywordtype">size_t</span> s = v.size();</div>
+<div class="line"><a id="l00404" name="l00404"></a><span class="lineno">  404</span>  <span class="keywordflow">return</span> MultiArray&lt;T,1&gt;{ {s}, [&amp;] (size_t) {<span class="keywordflow">return</span> std::move(v);} };</div>
+<div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span>}</div>
+<div class="line"><a id="l00406" name="l00406"></a><span class="lineno">  406</span> </div>
+<div class="line"><a id="l00407" name="l00407"></a><span class="lineno">  407</span>} <span class="comment">// multiarray</span></div>
+<div class="line"><a id="l00408" name="l00408"></a><span class="lineno">  408</span> </div>
+<div class="line"><a id="l00410" name="l00410"></a><span class="lineno">  410</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keywordtype">size_t</span> RANK&gt;</div>
+<div class="line"><a id="l00411" name="l00411"></a><span class="lineno"><a class="line" href="namespacecppqedutils.html#a71357bd53380a39de24f2573ae2a0827">  411</a></span><span class="keyword">constexpr</span> <span class="keyword">auto</span> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">passByValue_v&lt;MultiArray&lt;T,RANK&gt;</a>&gt; = <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00412" name="l00412"></a><span class="lineno">  412</span> </div>
-<div class="line"><a id="l00413" name="l00413"></a><span class="lineno">  413</span>} <span class="comment">// cppqedutils</span></div>
+<div class="line"><a id="l00413" name="l00413"></a><span class="lineno">  413</span> </div>
+<div class="line"><a id="l00414" name="l00414"></a><span class="lineno">  414</span>} <span class="comment">// cppqedutils</span></div>
 </div>
 <div class="ttc" id="aTraits_8h_html"><div class="ttname"><a href="Traits_8h.html">Traits.h</a></div></div>
 <div class="ttc" id="aTraits_8h_html_a868eaefc70f7695a5a597bf7cf597586"><div class="ttname"><a href="Traits_8h.html#a868eaefc70f7695a5a597bf7cf597586">FWD</a></div><div class="ttdeci">#define FWD(x)</div><div class="ttdoc">Perfect-forwarding macro. Expands to std::forward&lt;decltype(x)&gt;(x), avoiding the need to repeat the ty...</div><div class="ttdef"><b>Definition</b> Traits.h:5</div></div>

@@ -11,6 +11,6 @@ var searchData=
   ['multidiagonal_20operator_8',['What is a multidiagonal operator?',['../index.html#autotoc_md4',1,'']]],
   ['multidiagonal_2eh_9',['MultiDiagonal.h',['../MultiDiagonal_8h.html',1,'']]],
   ['multidiagonal_3a_20measurements_20and_20outlook_10',['Performance of MultiDiagonal: measurements and outlook',['../md_benchmarks_2performance.html',1,'']]],
-  ['multiplication_11',['Complex multiplication',['../md_benchmarks_2performance.html#autotoc_md19',1,'']]],
+  ['multiplication_11',['Complex multiplication',['../md_benchmarks_2performance.html#autotoc_md20',1,'']]],
   ['mutableview_12',['mutableView',['../classcppqedutils_1_1MultiArray.html#acf54dd99a6715a152d8e0245ac965e1d',1,'cppqedutils::MultiArray']]]
 ];

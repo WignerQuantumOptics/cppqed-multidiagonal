@@ -126,6 +126,37 @@ Why not &lt;tt&gt;Tridiagonal&lt;/tt&gt;?</h1>
 <p>The predecessor class <code>Tridiagonal&lt;RANK&gt;</code> in C++QED v2 stored exactly three diagonals per axis — at positions \(-K\), \(0\), \(+K\) for a single shared offset \(K\) — and was <b>not closed under composition</b>: the product of two tridiagonal operators is in general pentadiagonal, and with different offsets is not tridiagonal at all. <code>MultiDiagonal</code> lifts all these restrictions — any number of diagonals at independent arbitrary offsets, and the operator algebra is closed under composition (<code>operator|</code>), direct product (<code>operator*</code>), addition, and Hermitian conjugation.</p>
 <p>The truncated algebra is represented <em>exactly</em>, including its physical deviations from the untruncated one: e.g. \([a,a^\dagger]\) at cutoff \(D\) is \(\mathrm{diag}(1,\ldots,1,1-D)\), not \(\mathbb{1}\) — as it must be for any finite-dimensional representation.</p>
 <h1><a class="anchor" id="autotoc_md7"></a>
+Usage</h1>
+<p>Operators are built from single diagonals with <code>multidiagonal::diagonal(offset, values)</code>, and combined with <code>+</code>, <code>|</code> (composition, the offsets add up) and <code>*</code> (direct product, the left operand's axes first). A Jaynes–Cummings coupling between a qubit and a mode with cutoff 5, applied to the state \(|0\rangle|1\rangle\):</p>
+<div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="MultiDiagonal_8h.html">multidiagonal/MultiDiagonal.h</a>&gt;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="preprocessor">#include &lt;cmath&gt;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacecppqedutils.html">cppqedutils</a>;                     <span class="comment">// dcomp, MultiArray</span></div>
+<div class="line"><span class="keyword">namespace </span><a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">md</a> = <a class="code hl_namespace" href="namespacequantumoperator_1_1multidiagonal.html">quantumoperator::multidiagonal</a>;</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">int</span> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">main</a>()</div>
+<div class="line">{</div>
+<div class="line">  <span class="keyword">const</span> <span class="keywordtype">size_t</span> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">N</a>=5;                              <span class="comment">// cutoff of the mode</span></div>
+<div class="line">  std::vector&lt;dcomp&gt; <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">ladder</a>(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">N</a>-1);</div>
+<div class="line">  <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">k</a>=0; <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">k</a>&lt;<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">N</a>-1; ++<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">k</a>) <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">ladder</a>[<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">k</a>]=std::sqrt(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">k</a>+1.);</div>
+<div class="line"> </div>
+<div class="line">  <span class="keyword">auto</span> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">a</a> {md::diagonal(+1,std::move(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">ladder</a>))};   <span class="comment">// ⟨n|a|n+1⟩ = √(n+1): the diagonal at offset +1</span></div>
+<div class="line">  <span class="keyword">auto</span> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">sm</a>{md::diagonal(+1,{1.})};                <span class="comment">// σ⁻ = |0⟩⟨1|</span></div>
+<div class="line"> </div>
+<div class="line">  <span class="keyword">auto</span> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">n</a> {hermitianConjugateOf(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">a</a>) | <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">a</a>};                                  <span class="comment">// composition: the offsets add up to 0</span></div>
+<div class="line">  <span class="keyword">auto</span> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">jc</a>{hermitianConjugateOf(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">sm</a>) * <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">a</a> + <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">sm</a> * hermitianConjugateOf(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">a</a>)};  <span class="comment">// direct product: qubit on axis 0, mode on axis 1</span></div>
+<div class="line"> </div>
+<div class="line">  <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">MultiArray&lt;dcomp,2&gt;</a> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">psi</a>{{2,<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">N</a>},multiarray::zeroInit&lt;dcomp&gt;}, <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">dpsi</a>{{2,<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">N</a>},multiarray::zeroInit&lt;dcomp&gt;};</div>
+<div class="line">  <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">psi</a>(0,1)=1.;                                   <span class="comment">// |0⟩|1⟩</span></div>
+<div class="line">  <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">jc</a>(0.,<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">psi</a>,<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">dpsi</a>);                               <span class="comment">// accumulates jc|0⟩|1⟩ = |1⟩|0⟩ into dpsi</span></div>
+<div class="line">}</div>
+<div class="ttc" id="aMultiDiagonal_8h_html"><div class="ttname"><a href="MultiDiagonal_8h.html">MultiDiagonal.h</a></div></div>
+<div class="ttc" id="aclasscppqedutils_1_1MultiArrayView_html"><div class="ttname"><a href="classcppqedutils_1_1MultiArrayView.html">cppqedutils::MultiArrayView</a></div><div class="ttdoc">A non-owning, strided view over a contiguous buffer. Should be passed by value.</div><div class="ttdef"><b>Definition</b> MultiArray.h:106</div></div>
+<div class="ttc" id="anamespacecppqedutils_html"><div class="ttname"><a href="namespacecppqedutils.html">cppqedutils</a></div><div class="ttdoc">Namespace alias for Boost.Hana, used for compile-time sequences and heterogeneous containers.</div><div class="ttdef"><b>Definition</b> MultiArray.h:17</div></div>
+<div class="ttc" id="anamespacequantumoperator_1_1multidiagonal_html"><div class="ttname"><a href="namespacequantumoperator_1_1multidiagonal.html">quantumoperator::multidiagonal</a></div><div class="ttdef"><b>Definition</b> MultiDiagonal.h:495</div></div>
+</div><!-- fragment --><p>Application accumulates into its last argument and applies no factor \(1/i\) (C++QED stores \(H/i\)). A diagonal whose coefficients don't factorize over the axes goes into the operator's <code>diagonals</code> map directly. CI compiles and runs this example against the installed library: it is the first part of <a href="tests/consumer/consumer.cc"><code>tests/consumer/consumer.cc</code></a>.</p>
+<h1><a class="anchor" id="autotoc_md8"></a>
 Features</h1>
 <ul>
 <li><b>Arbitrary rank</b>: <code>MultiDiagonal&lt;RANK&gt;</code> for any compile-time arity \(M\), including composition at arbitrary rank</li>
@@ -137,7 +168,7 @@ Features</h1>
 <li><b>No time dependence</b>: operators carry no frequencies. Interaction-picture time dependence ( \(\alpha_{m,n} e^{\delta_{m,n} t}\)) belongs to the consumer; in C++QED the trajectory owns the interaction picture</li>
 <li><b>Property-tested</b>: the algebraic identities — associativity, \((A|B)^\dagger = B^\dagger|A^\dagger\), distributivity, the mixed-product law \((A{\otimes}B)|(C{\otimes}D) = (A|C){\otimes}(B|D)\) — are verified against dense-matrix oracles in CI</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md8"></a>
+<h1><a class="anchor" id="autotoc_md9"></a>
 Performance</h1>
 <p>On the reference machine (Intel Core i7-7700, GCC 16, Eigen 5.0.1), with the operator in cache, applying a <code>MultiDiagonal</code> is:</p><ul>
 <li>2.7–3.6× faster than Eigen's sparse matrices for operators on one axis and on several axes (1.8–2.2× for the smallest, of dimension 16);</li>
@@ -150,15 +181,15 @@ Performance</h1>
 <li>out of cache, on transparent huge pages, input and output lying nearly a multiple of 1 MiB apart, as arrays of a power-of-two size allocated back to back do, make application up to about 3× slower one diagonal at a time and up to 1.7× by rows. jemalloc, which starts large allocations at varying offsets within a page, avoids that; C++QED links it when installed (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/26">#26</a>).</li>
 </ul>
 <p>Measurements, causes and outlook, including the interaction picture: <a class="el" href="md_benchmarks_2performance.html">Performance of MultiDiagonal</a>.</p>
-<h1><a class="anchor" id="autotoc_md9"></a>
+<h1><a class="anchor" id="autotoc_md10"></a>
 Requirements</h1>
 <ul>
 <li>C++23 compiler (GCC ≥ 13, Clang ≥ 17)</li>
-<li><a href="https://www.boost.org/">Boost</a> ≥ 1.80 (Hana, JSON, Serialization) — header-only use plus Boost.JSON/Serialization</li>
+<li><a href="https://www.boost.org/">Boost</a> ≥ 1.80: the headers (Hana, and Serialization for <code>MultiArray</code>'s save and load) and the compiled Boost.JSON. Writing or reading Boost.Serialization archives needs the compiled Boost.Serialization, which the library doesn't link; the tests do</li>
 <li><a href="https://eigen.tuxfamily.org/">Eigen3</a> ≥ 3.4</li>
 <li>CMake ≥ 3.24 (for the build/test/install machinery; as a header-only library it can also be consumed by simply adding <code>include/</code> to the include path and writing <code>#include &lt;<a class="el" href="MultiDiagonal_8h.html">multidiagonal/MultiDiagonal.h</a>&gt;</code>)</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md10"></a>
+<h1><a class="anchor" id="autotoc_md11"></a>
 Building and testing</h1>
 <p>The library itself is header-only — nothing to build. Configuring and building compiles the test suite and the benchmarks:</p>
 <div class="fragment"><div class="line">cmake -B build -DCMAKE_BUILD_TYPE=Debug</div>
@@ -170,9 +201,9 @@ Building and testing</h1>
 <li><code>MULTIDIAGONAL_INSTALL</code> generates the install rules: on by default in a top-level build, off when the library is a subproject.</li>
 <li>The tests use an installed Catch2 3 when found, and otherwise fetch Catch2 at a pinned commit. Without network, pass <code>-DFETCHCONTENT_FULLY_DISCONNECTED=ON -DFETCHCONTENT_SOURCE_DIR_CATCH2=&lt;copy of the Catch2 source tree&gt;</code>.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md11"></a>
+<h1><a class="anchor" id="autotoc_md12"></a>
 Integration into a CMake project</h1>
-<h2><a class="anchor" id="autotoc_md12"></a>
+<h2><a class="anchor" id="autotoc_md13"></a>
 Via FetchContent (as C++QED does)</h2>
 <div class="fragment"><div class="line">include(FetchContent)</div>
 <div class="line">FetchContent_Declare(cppqed-multidiagonal</div>
@@ -182,14 +213,14 @@ Via FetchContent (as C++QED does)</h2>
 <div class="line">FetchContent_MakeAvailable(cppqed-multidiagonal)</div>
 <div class="line">target_link_libraries(MyTarget PUBLIC cppqed::multidiagonal)</div>
 </div><!-- fragment --><p>A copy of the source tree in your project works too, via <code>add_subdirectory</code>.</p>
-<h2><a class="anchor" id="autotoc_md13"></a>
+<h2><a class="anchor" id="autotoc_md14"></a>
 Via &lt;tt&gt;find_package&lt;/tt&gt; (after installation)</h2>
 <div class="fragment"><div class="line">cmake --install build</div>
 </div><!-- fragment --><div class="fragment"><div class="line">find_package(cppqed-multidiagonal 0.4 REQUIRED)</div>
 <div class="line">target_link_libraries(MyTarget PUBLIC cppqed::multidiagonal)</div>
 </div><!-- fragment --><p>While the major version is 0, a new minor version may change the API, so a request for 0.4 accepts 0.4.x but not 0.5. The library sets C++23 for its consumers, and needs Boost ≥ 1.80 and Eigen ≥ 3.4 (Eigen 5 included).</p>
 <p>Either way, the headers are included with their directory prefix, e.g. <code>#include &lt;<a class="el" href="MultiDiagonal_8h.html">multidiagonal/MultiDiagonal.h</a>&gt;</code>.</p>
-<h1><a class="anchor" id="autotoc_md14"></a>
+<h1><a class="anchor" id="autotoc_md15"></a>
 Repository structure</h1>
 <div class="fragment"><div class="line">include/multidiagonal/</div>
 <div class="line">  Traits.h — FWD, Boost.Hana/JSON setup, passByValue_v, ReferenceMF</div>
@@ -198,7 +229,7 @@ Repository structure</h1>
 <div class="line">  MultiDiagonal.h — multidiagonal operator algebra (incl. identity and composition)</div>
 <div class="line">tests/</div>
 <div class="line">  testMultiArray.cc, testMultiArrayComplex.cc, testMultiDiagonal.cc</div>
-<div class="line">  consumer/ — downstream project used by CI (find_package and FetchContent)</div>
+<div class="line">  consumer/ — downstream project used by CI (find_package and FetchContent); starts with the usage example</div>
 <div class="line">benchmarks/</div>
 <div class="line">  benchmarkMultiDiagonal.cc, plot.py — comparison with Eigen sparse and dense</div>
 <div class="line">  kernels.cc — application loop experiments (built with and without -fcx-limited-range)</div>
@@ -206,10 +237,10 @@ Repository structure</h1>
 <div class="line">cmake/</div>
 <div class="line">  cppqed-multidiagonalConfig.cmake.in</div>
 <div class="line">Doxyfile, doxygen-math.sed — API docs; this README is their main page</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md15"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md16"></a>
 License</h1>
 <p>Distributed under the <a href="LICENSE.txt">Boost Software License, Version 1.0</a>.</p>
-<h1><a class="anchor" id="autotoc_md16"></a>
+<h1><a class="anchor" id="autotoc_md17"></a>
 Authors</h1>
 <p>András Vukics — extracted from C++QED, originally developed 2006–2026. </p>
 </div></div><!-- PageDoc -->

@@ -28,33 +28,34 @@ var NAVTREE =
     [ "What is a multidiagonal operator?", "index.html#autotoc_md4", null ],
     [ "The signed-offset representation", "index.html#autotoc_md5", null ],
     [ "Why not <tt>Tridiagonal</tt>?", "index.html#autotoc_md6", null ],
-    [ "Features", "index.html#autotoc_md7", null ],
-    [ "Performance", "index.html#autotoc_md8", null ],
-    [ "Requirements", "index.html#autotoc_md9", null ],
-    [ "Building and testing", "index.html#autotoc_md10", null ],
-    [ "Integration into a CMake project", "index.html#autotoc_md11", [
-      [ "Via FetchContent (as C++QED does)", "index.html#autotoc_md12", null ],
-      [ "Via <tt>find_package</tt> (after installation)", "index.html#autotoc_md13", null ]
+    [ "Usage", "index.html#autotoc_md7", null ],
+    [ "Features", "index.html#autotoc_md8", null ],
+    [ "Performance", "index.html#autotoc_md9", null ],
+    [ "Requirements", "index.html#autotoc_md10", null ],
+    [ "Building and testing", "index.html#autotoc_md11", null ],
+    [ "Integration into a CMake project", "index.html#autotoc_md12", [
+      [ "Via FetchContent (as C++QED does)", "index.html#autotoc_md13", null ],
+      [ "Via <tt>find_package</tt> (after installation)", "index.html#autotoc_md14", null ]
     ] ],
-    [ "Repository structure", "index.html#autotoc_md14", null ],
-    [ "License", "index.html#autotoc_md15", null ],
-    [ "Authors", "index.html#autotoc_md16", null ],
+    [ "Repository structure", "index.html#autotoc_md15", null ],
+    [ "License", "index.html#autotoc_md16", null ],
+    [ "Authors", "index.html#autotoc_md17", null ],
     [ "Performance of MultiDiagonal: measurements and outlook", "md_benchmarks_2performance.html", [
-      [ "Setup", "md_benchmarks_2performance.html#autotoc_md18", null ],
-      [ "Complex multiplication", "md_benchmarks_2performance.html#autotoc_md19", null ],
-      [ "Instruction set", "md_benchmarks_2performance.html#autotoc_md20", null ],
-      [ "The library's two loop shapes", "md_benchmarks_2performance.html#autotoc_md21", [
-        [ "A short axis 0", "md_benchmarks_2performance.html#autotoc_md22", null ],
-        [ "Contiguous slices of a state larger than cache", "md_benchmarks_2performance.html#autotoc_md23", null ]
+      [ "Setup", "md_benchmarks_2performance.html#autotoc_md19", null ],
+      [ "Complex multiplication", "md_benchmarks_2performance.html#autotoc_md20", null ],
+      [ "Instruction set", "md_benchmarks_2performance.html#autotoc_md21", null ],
+      [ "The library's two loop shapes", "md_benchmarks_2performance.html#autotoc_md22", [
+        [ "A short axis 0", "md_benchmarks_2performance.html#autotoc_md23", null ],
+        [ "Contiguous slices of a state larger than cache", "md_benchmarks_2performance.html#autotoc_md24", null ]
       ] ],
-      [ "Placement of the arrays", "md_benchmarks_2performance.html#autotoc_md24", [
-        [ "Distance on huge pages", "md_benchmarks_2performance.html#autotoc_md25", null ]
+      [ "Placement of the arrays", "md_benchmarks_2performance.html#autotoc_md25", [
+        [ "Distance on huge pages", "md_benchmarks_2performance.html#autotoc_md26", null ]
       ] ],
-      [ "The bandwidth ceiling", "md_benchmarks_2performance.html#autotoc_md26", null ],
-      [ "Operators applied slice by slice: C++QED's setting", "md_benchmarks_2performance.html#autotoc_md27", null ],
-      [ "The interaction picture", "md_benchmarks_2performance.html#autotoc_md28", null ],
-      [ "Composition and construction", "md_benchmarks_2performance.html#autotoc_md29", null ],
-      [ "Assessment and next steps", "md_benchmarks_2performance.html#autotoc_md30", null ]
+      [ "The bandwidth ceiling", "md_benchmarks_2performance.html#autotoc_md27", null ],
+      [ "Operators applied slice by slice: C++QED's setting", "md_benchmarks_2performance.html#autotoc_md28", null ],
+      [ "The interaction picture", "md_benchmarks_2performance.html#autotoc_md29", null ],
+      [ "Composition and construction", "md_benchmarks_2performance.html#autotoc_md30", null ],
+      [ "Assessment and next steps", "md_benchmarks_2performance.html#autotoc_md31", null ]
     ] ],
     [ "Todo List", "todo.html", null ],
     [ "Namespaces", "namespaces.html", [
@@ -94,7 +95,7 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "MultiArrayComplex_8h.html",
-"structquantumoperator_1_1MultiDiagonal.html#a2b27266ea205abc40094928a4f98b293"
+"structquantumoperator_1_1MultiDiagonal.html#a1f4700b58845b984f93d13a1273935a0"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
