@@ -91,18 +91,23 @@ struct MultiDiagonal
   ///
   /// Chooses between two loop shapes, which give the same result up to rounding:
   /// - `applyByDiagonals`, one diagonal at a time, for an axis 0 of up to four elements (e.g. a qubit), and for views
-  ///   contiguous along axis 0 that are either small (up to 128 amplitudes, e.g. C++QED's slices of a single mode), or
-  ///   fit in a last-level cache (up to 2¹⁸ amplitudes) with an axis 0 shorter than 32;
+  ///   contiguous along axis 0 that are either small (up to 128 amplitudes, e.g. C++QED's slices of a single mode),
+  ///   or fit in a last-level cache (up to 2¹⁸ amplitudes) with an axis 0 shorter than 32, or are slices of up to 512
+  ///   amplitudes of a state that does not fit in cache (storage, `dataView`, of at least 2¹⁸ amplitudes);
   /// - `applyByRows`, the diagonals of a row summed before one store, otherwise: for long axes, for operands larger than
   ///   cache, and for views strided along axis 0.
   ///
   /// The row-oriented shape pays a fixed cost per row of axis 0 (the rows at either end); the other sweeps the view once
-  /// per diagonal. The bounds are where the two cross over on the reference machine.
+  /// per diagonal. On slices of a state larger than cache the row shape's speed also depends on where the arrays lie
+  /// within their pages, by up to 2.6×, which the other's doesn't (#27). The bounds are where the two cross over on the
+  /// reference machine, as medians over placements.
   /// @see @ref md_benchmarks_2performance "Performance of MultiDiagonal" for what the two shapes cost and why.
   void operator () (double, MultiArrayConstView<dcomp,RANK> psi, MultiArrayView<dcomp,RANK> dpsidt) const
   {
-    const size_t length0{dpsidt.extents[0]}, size{multiarray::calculateExtent(dpsidt.extents)};
-    if (length0<=4 || (psi.strides[0]==1 && dpsidt.strides[0]==1 && (size<=128 || (length0<32 && size<=(1uz<<18)))))
+    const size_t length0{dpsidt.extents[0]}, size{multiarray::calculateExtent(dpsidt.extents)},
+                 storage{std::max(psi.dataView.size(),dpsidt.dataView.size())};
+    if (length0<=4 || (psi.strides[0]==1 && dpsidt.strides[0]==1 &&
+                       (size<=128 || (length0<32 && size<=(1uz<<18)) || (size<=512 && storage>=(1uz<<18)))))
       applyByDiagonals(psi,dpsidt);
     else applyByRows(psi,dpsidt);
   }

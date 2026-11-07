@@ -57,6 +57,7 @@ cmake --build build-release --target cppqed-multidiagonal-benchmarks cppqed-mult
 | E | tridiagonal ⊗ tridiagonal on extents {n₀, 8192/n₀}, for an axis 0 of n₀ = 1 … 32 elements |
 | F | where the two loop shapes cross over: case D's operator on contiguous slices of length n; tridiagonal ⊗ tridiagonal on extents {n₀, T/n₀} for T = 8192, 65536, 2²⁰ |
 | G | placement: `psi` at every 16-byte offset of a page relative to `dpsidt`, both shapes; rank 1 at N = 64, 1024, 4096, and Jaynes–Cummings in both axis orders (state 4096). It takes a few minutes and runs only when named |
+| I | the crossover of the two shapes for contiguous slices over placements within a page: case F's operator on slices of length 128 … 1024, one slice per call, of states of 2¹² … 2²⁰ amplitudes, `psi` at 5 and `dpsidt` at 3 offsets in their pages, 4 KB pages; median and worst over the 15 placements. Runs only when named |
 | H | the distance between `psi` and `dpsidt` out of cache: case F's operator on contiguous slices of length 16, 24, 32, with `dpsidt` 2²⁴ + δ bytes after `psi` in one buffer, on huge pages and on 4 KB pages. Runs only when named |
 
 ## Complex multiplication
@@ -119,7 +120,7 @@ This is the "hoisted" loop of `kernels.cc`, generalized to strided views. It sto
 
 This stores the output once per element. Its cost is the rows at either end, a fixed cost per row of axis 0, which a short axis 0 doesn't amortize.
 
-**`operator()` chooses** one diagonal at a time for an axis 0 of up to four elements, and for views contiguous along axis 0 that are either small (up to 128 amplitudes) or fit in a last-level cache (up to 2¹⁸ amplitudes, 4 MB per array) with an axis 0 shorter than 32. Everything else goes by rows: long axes, operands larger than cache, and views strided along axis 0. The bounds are where the two shapes cross over (case F, below and in the section on slices).
+**`operator()` chooses** one diagonal at a time for an axis 0 of up to four elements, and for views contiguous along axis 0 that are either small (up to 128 amplitudes), or fit in a last-level cache (up to 2¹⁸ amplitudes, 4 MB per array) with an axis 0 shorter than 32, or, since 2026-11-07, are slices of up to 512 amplitudes of a state that doesn't fit in cache (storage, i.e. the view's `dataView`, of at least 2¹⁸ amplitudes; [#27](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/27)). Everything else goes by rows: long axes, operands larger than cache, and views strided along axis 0. The bounds are where the two shapes cross over (case F, below and in the section on slices; case I, below).
 
 | | v0.4.0 | before #23 | after #23 | now | one diagonal at a time | hand-written hoisted loop | Eigen sparse |
 |---|---|---|---|---|---|---|---|
@@ -196,6 +197,23 @@ Case F maps the crossover between the two shapes for contiguous views, which set
 - **One slice per call:** one diagonal at a time is faster up to n = 128 in cache, hence the bound of 128 amplitudes. Out of cache the powers of two from 16 on are slow because of where their arrays lie, not because of their length: case F allocates `psi` and `dpsidt` back to back, and for these lengths they lie 2²⁴ + 16 bytes apart (see "Distance on huge pages"). On 4 KB pages one diagonal at a time is faster up to n = 128 out of cache too.
 - **Short axis 0, whole operand:** one diagonal at a time is faster below 32 in L2 and L3 (at 24 in L3 they are equal), the row shape from 8 on out of cache, hence the bounds of 32 and 2¹⁸. At the margins `operator()` gives away a little: 3% at 32 in L2, and up to 8% between 48 and 128 in L3. On 4 KB pages, where the distance between the arrays doesn't matter, the crossovers are the same, and between 48 and 128 in L3 the row shape gives away 4–14%.
 - For an axis 0 of 5 and 8 in L3, one diagonal at a time took 2.1–2.2 here and 1.4–1.5 in an earlier run of the same code, and takes 1.42–1.53 on 4 KB pages: the slower figures came from the distance between the arrays.
+
+### Contiguous slices of a state larger than cache
+
+On contiguous slices of a few hundred amplitudes, one slice per call, the row shape's speed depends on where `psi` and `dpsidt` lie within their pages, by up to 2.6× and on either page size; one diagonal at a time doesn't ([#27](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/27)). In the slow placements the hardware prefetcher covers less of the stream: the same memory traffic, but 5× more loads wait for DRAM (`perf stat`). Case I measures the crossover over 15 placements per configuration (4 KB pages, medians of three processes). Median over the placements of the row shape's time divided by one diagonal at a time (below 1: by rows faster):
+
+| state, per array | n = 128 | 160 | 192 | 256 | 320 | 384 | 512 | 768 | 1024 |
+|---|---|---|---|---|---|---|---|---|---|
+| 64 KiB (2¹²) | 1.08 | 0.99 | 0.90 | 0.87 | 0.96 | 1.00 | 1.03 | 0.89 | 0.88 |
+| 1 MiB (2¹⁶) | 1.07 | 0.98 | 0.91 | 0.89 | 0.95 | 0.98 | 1.00 | 0.86 | 0.84 |
+| 4 MiB (2¹⁸) | 1.26 | 1.15 | 1.11 | 0.98 | 1.04 | 1.05 | 1.05 | 0.89 | 0.87 |
+| 16 MiB (2²⁰) | 1.99 | 2.05 | 2.13 | 1.98 | 1.52 | 1.45 | 1.52 | 1.19 | 1.08 |
+
+- **While the state fits in cache** (up to 1 MiB per array; 256 KiB behaves the same), the row shape is as fast or faster from n = 160 on, and the bound of 128 amplitudes stands.
+- **From 4 MiB per array**, one diagonal at a time is faster at the median up to n = 512, except 2% at n = 256 for 4 MiB, where its worst placement is still 1.38× better than the row shape's. Over all placements it takes 0.60–0.81 ns per nonzero there; the row shape 0.55–1.79.
+- **From n = 768** the row shape wins again at 4 MiB and loses at most 1.19× at 16 MiB.
+
+So `operator()` takes one diagonal at a time for contiguous slices of up to 512 amplitudes when the state behind the slice, the view's `dataView`, holds at least 2¹⁸ amplitudes, and keeps the row shape otherwise. A view's storage is what a slice of C++QED's state carries; for a view that is the whole array, the rule is unchanged. A small view into a large buffer that stays in cache would be applied one diagonal at a time too, at most 1.15× slower than by rows.
 
 ## Placement of the arrays
 
@@ -429,4 +447,4 @@ Next steps:
 
 In C++QED: done on 2026-11-04, the slices in memory order ([cppqed#90](https://github.com/WignerQuantumOptics/cppqed/issues/90)); still to do, benchmark the interaction picture end to end ([cppqed#91](https://github.com/WignerQuantumOptics/cppqed/issues/91)).
 
-**What to do next:** decide on [#27](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/27): its huge-page part is the 1 MiB window of #26, but the row shape on contiguous slices of a few hundred amplitudes also depends on the placement within a page by up to 2.6×, where one diagonal at a time doesn't. The proposal there is to raise `operator()`'s bound for contiguous views after a crossover measured over several placements. The benchmark defects of #5 are fixed. The remaining loop shape, for a qubit on axis 0 of a large state, is worth at most about 1.1×. The slow distance on huge pages is settled ([#26](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/26): jemalloc, no change to `StorageType`), and so are the re-measurement, the power-of-two investigation, cppqed#90 and the placement regression check.
+**What to do next:** the library's performance work is essentially done. [#27](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/27) is settled: its huge-page part was the 1 MiB window of #26, and for slices of a state larger than cache `operator()` now takes the placement-robust shape up to 512 amplitudes (case I). The benchmark defects of #5 are fixed. The remaining loop shape, for a qubit on axis 0 of a large state, is worth at most about 1.1×. The slow distance on huge pages is settled ([#26](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/26): jemalloc, no change to `StorageType`), and so are the re-measurement, the power-of-two investigation, cppqed#90 and the placement regression check.

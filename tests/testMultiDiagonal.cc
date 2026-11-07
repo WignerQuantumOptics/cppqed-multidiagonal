@@ -603,6 +603,29 @@ TEST_CASE("application by rows: rows at the edges, and more diagonals per row th
   }
 }
 
+TEST_CASE("operator() takes one diagonal at a time for slices of up to 512 amplitudes of a state larger than cache — #27", "[multidiagonal]")
+{
+  // Application accumulates. Onto a nonzero dpsidt the two shapes round differently, one diagonal at a time adding each
+  // diagonal's contribution in turn, by rows adding their sum once, so bitwise equality shows which one operator() took: by rows for a slice of 256 amplitudes of a state of 2^12 amplitudes, one diagonal at
+  // a time for the same slice of a state of 2^18; by rows for a slice of 768 in either.
+  for (size_t dim : {256uz,768uz}) for (size_t storage : {1uz<<12,1uz<<18}) {
+    CAPTURE(dim, storage);
+    const auto [A, dense] = band(dim,2);
+    std::vector<dcomp> psiStorage(storage), dpsidtStorage(storage);
+    for (size_t k=0; k<storage; ++k) psiStorage[k]=dcomp(std::cos(0.7*double(k)), std::sin(1.3*double(k)));
+    const size_t offset=storage/2;   // a slice in the middle of the state
+    const MultiArrayConstView<dcomp,1> psi{{dim},{1},offset,std::span<const dcomp>{psiStorage}};
+    const auto applied = [&] (Shape shape) {
+      for (size_t k=0; k<storage; ++k) dpsidtStorage[k]=dcomp(1e3+0.1*double(k), std::sin(0.3*double(k)));
+      apply(shape, A, psi, MultiArrayView<dcomp,1>{{dim},{1},offset,std::span<dcomp>{dpsidtStorage}});
+      return std::vector<dcomp>(dpsidtStorage.begin()+ptrdiff_t(offset), dpsidtStorage.begin()+ptrdiff_t(offset+dim));
+    };
+    const auto chosen = applied(Shape::chosen), byDiagonals = applied(Shape::byDiagonals), byRows = applied(Shape::byRows);
+    REQUIRE(byDiagonals != byRows);   // otherwise the test couldn't tell the shapes apart
+    CHECK(chosen == (dim<=512 && storage>=(1uz<<18) ? byDiagonals : byRows));
+  }
+}
+
 
 // ── serialization ────────────────────────────────────────────────────────────
 

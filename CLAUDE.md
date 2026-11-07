@@ -150,7 +150,9 @@ ctest --test-dir build --output-on-failure
   placement scan of #25 (psi at every 16-byte offset of a page relative to dpsidt, both
   shapes), takes minutes and runs only when named, or in `--smoke`. So does case H, the
   distance between psi and dpsidt in one buffer, on huge pages and on 4 KB pages (it
-  calls `madvise` under `__linux__` and reads `AnonHugePages` from `/proc`). It is built
+  calls `madvise` under `__linux__` and reads `AnonHugePages` from `/proc`), and case I, the
+  crossover of the two shapes for contiguous slices over 15 placements, in states of
+  2¹²…2²⁰ amplitudes on 4 KB pages (median and worst per configuration to stderr). It is built
   twice: `cppqed-multidiagonal-kernels` and `cppqed-multidiagonal-kernels-cxlr`
   (`-fcx-limited-range`; Clang 18 also needs `-Wno-overriding-option`). It validates
   before timing too.
@@ -187,9 +189,15 @@ ctest --test-dir build --output-on-failure
       store (eight spill registers). The rows at either end of axis 0 are summed one by
       one, a fixed cost per row of axis 0.
     - `operator()` takes `applyByDiagonals` for an axis 0 of up to four, and for views
-      contiguous along axis 0 that are small (≤ 128 amplitudes) or fit in the last-level
-      cache (≤ 2¹⁸) with an axis 0 shorter than 32; `applyByRows` otherwise. The bounds are
-      the measured crossovers (case F); re-measure before changing them.
+      contiguous along axis 0 that are small (≤ 128 amplitudes), or fit in the last-level
+      cache (≤ 2¹⁸) with an axis 0 shorter than 32, or (since 2026-11-07, #27) are slices of
+      ≤ 512 amplitudes whose storage (`dataView`, the whole state) holds ≥ 2¹⁸ amplitudes;
+      `applyByRows` otherwise. The bounds are the measured crossovers (cases F and I, the
+      latter as medians over 15 placements within a page); re-measure before changing them.
+      Out of cache the row shape on contiguous slices of a few hundred amplitudes depends on
+      the placement within a page by up to 2.6× (prefetch coverage); one diagonal at a time
+      doesn't. A test (`#27`) checks the choice bitwise: onto a nonzero dpsidt the shapes round
+      differently.
   - In cache the library is 2.7–3.6× faster than Eigen at rank 1 and with the mode first
     (1.8–2.2× at dimension 16), 1.4–2.2× with the qubit first. In cache, ratios to Eigen move
     by up to 20% between builds, because Eigen's own speed depends on the code layout; the
@@ -238,19 +246,15 @@ ctest --test-dir build --output-on-failure
 
 ## Open items (roughly in priority order)
 
-Recommended next (2026-11-05): decide #27. Its huge-page part is the 1 MiB window of #26; the row
-shape on contiguous slices of a few hundred amplitudes also depends on the placement within a
-page by up to 2.6× (prefetch coverage), where one diagonal at a time doesn't; proposal: raise
-`operator()`'s bound for contiguous views after a crossover over several placements. Settled: the
-benchmark defects of #5, the slow distance on huge pages (#26: jemalloc, linked by
+Recommended next (2026-11-07): the performance work is essentially done; a release with the new
+`operator()` rule, and C++QED's pin bump, would bring it to C++QED. Settled: #27 (the 1 MiB window
+of #26, and the placement-dependent row shape, handled by the new rule), the benchmark defects of #5, the slow distance on huge pages (#26: jemalloc, linked by
 C++QED when installed; `StorageType` unchanged), the out-of-cache re-measurement (`--no-thp`), the
 power-of-two investigation (case H), cppqed#90 and the placement regression check (case G). Outside performance, the items
 below are unchanged: the `std::mdspan` decision, the README usage snippet (which waits on an API
 decision), and the deferred review of the install rules.
 
-1. Application performance (#1; see `benchmarks/performance.md`, next steps): the row shape on
-   contiguous slices of a few hundred amplitudes depends on the placement within a page (#27,
-   above; don't change `operator()`'s bounds before that decision). A short
+1. Application performance (#1; see `benchmarks/performance.md`, next steps): A short
    axis 0 of a state larger than cache (qubit first) is still applied one diagonal at a time, at
    0.9–1.1× of Eigen on 4 KB pages. The slow distance on huge pages is settled (#26): jemalloc
    avoids it, and `StorageType` stays a plain `std::vector`; don't add an allocator unasked. (The hoisted loop,

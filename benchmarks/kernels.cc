@@ -34,13 +34,18 @@
 //      one buffer, on huge pages and on 4 KiB pages; both shapes. Two arrays of exactly 16 MiB allocated back to back lie
 //      2^24 + 16 bytes apart. The case names the pages and D; stderr gives how much of the buffer the kernel put on huge
 //      pages, and case F reports its own psi-dpsidt (mod 4096). H runs only when named (and in --smoke).
+//   I  where the two shapes cross over for contiguous slices, over placements within a page (#27): case F's operator on
+//      contiguous slices of length n = 128…1024, one slice per call, of a state of 2^12, 2^14, 2^16, 2^18 or 2^20 amplitudes,
+//      with psi 0, 16, 1024, 2048 or 3072 bytes into its page and dpsidt 0, 16 or 2048 bytes into its own, on 4 KB pages
+//      and away from the slow distance of case H; both shapes. The case names the state length and the two offsets;
+//      the median and the worst over the placements go to stderr. I runs only when named (and in --smoke).
 //
 // Built twice: cppqed-multidiagonal-kernels (default complex multiplication, with the C99 Annex G
 // NaN checks) and cppqed-multidiagonal-kernels-cxlr (-fcx-limited-range). The library and the loops
 // here multiply with textbookProduct, which has no NaN check, so the flag changes only Eigen's figures.
 //
 // usage: cppqed-multidiagonal-kernels[-cxlr] [--smoke] [--no-thp] [case ...]
-//        case ∈ {A,B,C,D,E,F,G,H}; none = A–F. --smoke shrinks the sizes for CI; its timings are meaningless.
+//        case ∈ {A,B,C,D,E,F,G,H,I}; none = A–F. --smoke shrinks the sizes for CI; its timings are meaningless.
 //        --no-thp keeps the process off transparent huge pages (Linux), where out of cache the distance between input
 //        and output arrays can cost up to 3× (case H).
 #include <multidiagonal/MultiDiagonal.h>
@@ -579,6 +584,51 @@ void caseH(bool smoke)
   }
 }
 
+// ── I: where the two shapes cross over for contiguous slices, over placements within a page (#27) ────────────────────
+
+void caseI(bool smoke)
+{
+  // case F's five-diagonal operator on S contiguous slices of length n, one slice per call, of a state of about T
+  // amplitudes. psi and dpsidt lie in one page-aligned buffer on 4 KB pages, psi psiOffset bytes into its page and dpsidt
+  // yOffset bytes into its own, more than a page after psi's end (so for T = 2^20 the distance is 2^24 + 5…10 KiB).
+  const double batch=targetBatchNs; targetBatchNs=std::min(targetBatchNs,1e7); // 15 placements per configuration
+  constexpr size_t page=4096;
+  const std::vector<size_t> psiOffsets = smoke ? std::vector<size_t>{0,16} : std::vector<size_t>{0,16,1024,2048,3072},
+                            yOffsets   = smoke ? std::vector<size_t>{0} : std::vector<size_t>{0,16,2048};
+  for (size_t T : smoke ? std::vector<size_t>{1uz<<10} : std::vector<size_t>{1uz<<12,1uz<<14,1uz<<16,1uz<<18,1uz<<20})
+    for (size_t n : smoke ? std::vector<size_t>{128,256} : std::vector<size_t>{128,160,192,256,320,384,512,768,1024}) {
+      const size_t S=T/n, N=n*S; const Extents<2> ext{n,S};
+      auto A=penta(n); const auto psi0=randomState<2>(ext);
+      const auto Sp=toSparse(copy(A)*quantumoperator::multidiagonal::identity(S),ext); const CVector ref=Sp*toVec(psi0);
+      const double nnz=double(Sp.nonZeros());
+      const size_t span=(N*sizeof(dcomp)+page-1)/page*page+page, bytes=2*span+page;   // psi's pages and a spare; dpsidt's
+      const std::unique_ptr<dcomp,decltype(&std::free)> buffer{static_cast<dcomp*>(std::aligned_alloc(page,bytes)),&std::free};
+#ifdef __linux__
+      madvise(buffer.get(),bytes,MADV_NOHUGEPAGE);
+#endif
+      std::vector<double> tD, tR;
+      for (size_t po : psiOffsets) for (size_t yo : yOffsets) {
+        dcomp* const p=buffer.get()+po/sizeof(dcomp); std::copy_n(psi0.dataView.data(),N,p);
+        dcomp* const q=buffer.get()+(span+page+yo)/sizeof(dcomp);
+        const std::span<const dcomp> xs{p,N}; const std::span<dcomp> ys{q,N};
+        const auto slices=[&](auto apply){ for (size_t b=0; b<S; ++b)
+          apply(MultiArrayView<const dcomp,1>{{n},{1},b*n,xs},MultiArrayView<dcomp,1>{{n},{1},b*n,ys}); };
+        const auto byDiagonals=[&]{slices([&](auto x, auto y){A.applyByDiagonals(x,y);});};
+        const auto byRows=[&]{slices([&](auto x, auto y){A.applyByRows(x,y);});};
+        const auto validate=[&](const char* what, auto apply){
+          std::fill_n(q,N,dcomp{}); apply(); check(what,Eigen::Map<const CVector>(q,Eigen::Index(N)),ref); };
+        validate("I byDiagonals",byDiagonals); validate("I byRows",byRows);
+        char c[48]; std::snprintf(c,sizeof c,"I_%zu_psi%zu_y%zu",T,po,yo);
+        tD.push_back(perOp([&]{byDiagonals(); doNotOptimize(q);})/nnz); out(c,"library_byDiagonals",n,tD.back()*nnz,nnz);
+        tR.push_back(perOp([&]{byRows(); doNotOptimize(q);})/nnz);      out(c,"library_byRows",n,tR.back()*nnz,nnz);
+      }
+      const auto median=[](std::vector<double> v){ std::nth_element(v.begin(),v.begin()+v.size()/2,v.end()); return v[v.size()/2]; };
+      std::fprintf(stderr,"I T=%zu n=%zu: byDiagonals median %.3g worst %.3g, byRows median %.3g worst %.3g ns per nonzero\n",
+                   T,n,median(tD),*std::max_element(tD.begin(),tD.end()),median(tR),*std::max_element(tR.begin(),tR.end()));
+    }
+  targetBatchNs=batch;
+}
+
 /// --no-thp: keep this process off transparent huge pages, on which the distance between input and output matters out of
 /// cache (kernels.cc case H); on 4 KB pages it doesn't. Linux only.
 void disableHugePages()
@@ -603,11 +653,11 @@ int main(int argc, char** argv)
     if (a=="--smoke") smoke=true; else if (a=="--no-thp") disableHugePages(); else only.insert(a);
   }
 
-  static constexpr std::array<std::pair<std::string_view,void(*)(bool)>,8> cases{{{"A",caseA},{"B",caseB},{"C",caseC},{"D",caseD},{"E",caseE},{"F",caseF},{"G",caseG},{"H",caseH}}};
+  static constexpr std::array<std::pair<std::string_view,void(*)(bool)>,9> cases{{{"A",caseA},{"B",caseB},{"C",caseC},{"D",caseD},{"E",caseE},{"F",caseF},{"G",caseG},{"H",caseH},{"I",caseI}}};
 
   for (auto sel : only)
     if (std::none_of(cases.begin(),cases.end(),[=](const auto& c){return c.first==sel;})) {
-      std::fprintf(stderr,"unknown case '%.*s'; known: A B C D E F G H\n",int(sel.size()),sel.data());
+      std::fprintf(stderr,"unknown case '%.*s'; known: A B C D E F G H I\n",int(sel.size()),sel.data());
       return 2;
     }
 
@@ -618,5 +668,5 @@ int main(int argc, char** argv)
   if (smoke) targetBatchNs=2e6;
 
   std::printf("case,impl,N,ns_per_op,ns_per_nnz\n");
-  for (const auto& [name,fn] : cases) if (only.empty() ? (name!="G" && name!="H") || smoke : only.contains(name)) fn(smoke);
+  for (const auto& [name,fn] : cases) if (only.empty() ? (name!="G" && name!="H" && name!="I") || smoke : only.contains(name)) fn(smoke);
 }

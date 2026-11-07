@@ -36,7 +36,7 @@ The truncated algebra is represented *exactly*, including its physical deviation
 
 - **Arbitrary rank**: `MultiDiagonal<RANK>` for any compile-time arity $M$, including composition at arbitrary rank
 - **Closed algebra**: composition, direct product, addition, scalar multiplication, Hermitian conjugation — with exact signed-offset arithmetic
-- **Application**: accumulates $A\psi$ into a state vector, which may be a strided slice of a larger array. Loop nests generated at compile time with Boost.Hana run in memory order, axis 0 innermost, from addresses computed once. Small views and a short axis 0, such as a qubit (which is unrolled), are applied one diagonal at a time; otherwise the diagonals contributing to a row are summed before one store. It applies no factor $1/i$: C++QED's convention is to store $A = H/i$.
+- **Application**: accumulates $A\psi$ into a state vector, which may be a strided slice of a larger array. Loop nests generated at compile time with Boost.Hana run in memory order, axis 0 innermost, from addresses computed once. Small views, a short axis 0 such as a qubit (which is unrolled), and slices of up to 512 amplitudes of a state larger than cache are applied one diagonal at a time; otherwise the diagonals contributing to a row are summed before one store. It applies no factor $1/i$: C++QED's convention is to store $A = H/i$.
 - **Move-only semantics**: no accidental copies of large diagonal arrays; deep copies are explicit (`copy`)
 - **Deterministic results**: diagonals are stored in an ordered map keyed by signed offsets, so accumulation order in composition is well-defined and reproducible across platforms
 - **JSON serialization**: via Boost.JSON `tag_invoke`, useful for testing and debugging
