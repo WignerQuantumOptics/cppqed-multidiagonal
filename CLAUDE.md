@@ -57,8 +57,15 @@ ctest --test-dir build --output-on-failure
   to `ubuntu-24.04` and actions to commit SHAs.
 - C++23 is required (`0uz` literals, `std::ranges::fold_left`), which means roughly
   GCC ≥ 13 or Clang ≥ 17.
-- The configure step may download dependencies through FetchContent (Catch2, …).
-  See the working rules at the end of this file.
+- Catch2 (tests only) is pinned to a full commit SHA, and an installed Catch2 3 is used when found (#11).
+  Otherwise the configure step downloads it through FetchContent; see the working rules at the end of
+  this file. Offline: `FETCHCONTENT_FULLY_DISCONNECTED=ON` plus `FETCHCONTENT_SOURCE_DIR_CATCH2`.
+- Options: `MULTIDIAGONAL_BUILD_BENCHMARKS` (default ON), `MULTIDIAGONAL_BENCHMARK_NATIVE` (ON),
+  `MULTIDIAGONAL_INSTALL` (ON only in a top-level build). Tests and benchmarks are built only at top
+  level. The INTERFACE target carries `cxx_std_23`; minimum Boost 1.80 and Eigen 3.4 (Eigen found without
+  a version and checked afterwards, so that Eigen 5 is accepted), repeated in the package config (#9).
+- Clang 23 warns about Catch2's `__COUNTER__` under `-Wpedantic` (`-Wc2y-extensions`); the test target
+  turns that warning off where the compiler has it (#24). CI's Clang 18 doesn't, so CI doesn't cover it.
 
 ## Core representation (MultiDiagonal.h)
 
@@ -250,9 +257,10 @@ Recommended next (2026-11-07): the performance work is done and released as v0.4
 pins; what remains of it is the qubit-first loop shape (#1, worth at most about 1.1×). Settled: #27 (the 1 MiB window
 of #26, and the placement-dependent row shape, handled by the new rule), the benchmark defects of #5, the slow distance on huge pages (#26: jemalloc, linked by
 C++QED when installed; `StorageType` unchanged), the out-of-cache re-measurement (`--no-thp`), the
-power-of-two investigation (case H), cppqed#90 and the placement regression check (case G). Outside performance, the items
-below are unchanged: the `std::mdspan` decision, the README usage snippet (which waits on an API
-decision), and the deferred review of the install rules.
+power-of-two investigation (case H), cppqed#90 and the placement regression check (case G). Outside performance: the
+`std::mdspan` question is decided (#14, below); the README usage snippet waits on the construction API
+(#15); CMake packaging (#9), the Catch2 pin (#11), the Clang 23 warning (#24) and reading JSON back (#18)
+are done (2026-11-07).
 
 1. Application performance (#1; see `benchmarks/performance.md`, next steps): A short
    axis 0 of a state larger than cache (qubit first) is still applied one diagonal at a time, at
@@ -261,13 +269,17 @@ decision), and the deferred review of the install rules.
    the multiplication in real arithmetic, the short axis 0, the row shape for long operands and
    strided views, the placement scan, the power-of-two investigation and the out-of-cache
    re-measurement are done.)
-2. Decide on migrating to `std::mdspan`/`std::extents` (Kokkos reference implementation,
-   Apache-2.0, FetchContent-pinnable) versus writing the paper on the current
-   architecture. **The decision is open; do not start the migration unasked.**
+2. `std::mdspan`: decided (András, 2026-11-07, #14; C++QED side cppqed#74). The paper describes the
+   current `MultiArray`/`MultiArrayView` architecture, and `std::mdspan` is a prospect for its outlook.
+   The prototype (#19) and C++QED's epic (cppqed#20, #75–#78) stay open as prospects, unscheduled.
+   **Do not start a migration unasked.**
 3. README usage snippet. This waits on an API decision: whether test helpers like
    `singleDiag`/`fromStorage` are the blessed construction idiom, or a small factory
    namespace graduates into the library.
-4. Deferred: install/export rules review; Boost.Serialization as an optional dependency.
+4. Deferred: Boost.Serialization as an optional dependency (#16). The library uses only its headers
+   (`MultiArray`'s `save`/`load`); the compiled `Boost::serialization` is needed by whoever writes
+   archives (C++QED, which links it itself, and this test suite). The install rules got the
+   subproject guard in #9; the rest of #16's review is open.
 
 ## Style
 
@@ -292,6 +304,9 @@ decision), and the deferred review of the install rules.
 ## Versioning and releases
 
 - SemVer, with annotated tags that carry detailed messages.
+- The package version file is `SameMinorVersion` while the major version is 0 (#9): an installed
+  0.y.z satisfies only requests for 0.y. A minor release therefore means bumping consumers' requests,
+  such as C++QED's `FIND_PACKAGE_ARGS`, together with their pins. `tests/consumer` checks the rule.
 - Zenodo is not connected yet. A DOI per GitHub release (via Zenodo's GitHub integration)
   is a possible later step, e.g. before the paper submission.
 - Versioning is Claude's call (András, 2026-10-26): version numbers (0.x: a breaking change
