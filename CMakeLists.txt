@@ -7,7 +7,7 @@ if(POLICY CMP0167)
 endif()
 
 project(cppqed-multidiagonal
-  VERSION 0.4.2
+  VERSION 0.5.0
   DESCRIPTION "Multidiagonal sparse operator algebra for C++QED"
   HOMEPAGE_URL "https://github.com/WignerQuantumOptics/cppqed-multidiagonal"
   LANGUAGES CXX)

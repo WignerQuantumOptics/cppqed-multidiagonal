@@ -3,12 +3,12 @@
 Header-only C++23 library for operators on tensor-product Hilbert spaces that are
 **multidiagonal**: every nonzero matrix element moves a fixed number of quanta per axis.
 Extracted from C++QED v3 (github.com/WignerQuantumOptics/cppqed), which consumes it through
-FetchContent pinned to a commit SHA (or an installed version ≥ 0.3). A change here reaches
+FetchContent pinned to a commit SHA (or an installed 0.5.x). A change here reaches
 C++QED only when its pin is bumped; its jc_qjmc regression test must still pass then.
 It is being prepared for standalone publication, so API stability, honest documentation
 and test coverage matter more than feature growth.
 
-Released as v0.4.2. No DOI yet. License: BSL-1.0.
+Released as v0.5.0. No DOI yet. License: BSL-1.0.
 
 ## Layout
 
@@ -259,8 +259,8 @@ ctest --test-dir build --output-on-failure
 
 ## Open items (roughly in priority order)
 
-Recommended next (2026-11-07): the performance work is done and released as v0.4.2, which C++QED
-pins; what remains of it is the qubit-first loop shape (#1, worth at most about 1.1×). Settled: #27 (the 1 MiB window
+Recommended next (2026-11-07): the performance work is done and released as v0.4.2; v0.5.0 adds
+the packaging and API items for the paper (below). What remains of the performance work is the qubit-first loop shape (#1, worth at most about 1.1×). Settled: #27 (the 1 MiB window
 of #26, and the placement-dependent row shape, handled by the new rule), the benchmark defects of #5, the slow distance on huge pages (#26: jemalloc, linked by
 C++QED when installed; `StorageType` unchanged), the out-of-cache re-measurement (`--no-thp`), the
 power-of-two investigation (case H), cppqed#90 and the placement regression check (case G). Outside performance: the
