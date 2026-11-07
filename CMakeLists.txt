@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
 project(cppqed-multidiagonal
-  VERSION 0.4.1
+  VERSION 0.4.2
   DESCRIPTION "Multidiagonal sparse operator algebra for C++QED"
   HOMEPAGE_URL "https://github.com/WignerQuantumOptics/cppqed-multidiagonal"
   LANGUAGES CXX)
