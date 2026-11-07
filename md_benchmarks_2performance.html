@@ -165,6 +165,8 @@ Setup</h1>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">G   </td><td class="markdownTableBodyNone">placement: <code>psi</code> at every 16-byte offset of a page relative to <code>dpsidt</code>, both shapes; rank 1 at N = 64, 1024, 4096, and Jaynes–Cummings in both axis orders (state 4096). It takes a few minutes and runs only when named    </td></tr>
 <tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">I   </td><td class="markdownTableBodyNone">the crossover of the two shapes for contiguous slices over placements within a page: case F's operator on slices of length 128 … 1024, one slice per call, of states of 2¹² … 2²⁰ amplitudes, <code>psi</code> at 5 and <code>dpsidt</code> at 3 offsets in their pages, 4 KB pages; median and worst over the 15 placements. Runs only when named    </td></tr>
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">H   </td><td class="markdownTableBodyNone">the distance between <code>psi</code> and <code>dpsidt</code> out of cache: case F's operator on contiguous slices of length 16, 24, 32, with <code>dpsidt</code> 2²⁴ + δ bytes after <code>psi</code> in one buffer, on huge pages and on 4 KB pages. Runs only when named   </td></tr>
 </table>
 <h1><a class="anchor" id="autotoc_md19"></a>
@@ -228,7 +230,7 @@ The library's two loop shapes</h1>
 <li>The few rows at either end, where some diagonals have no entry, are summed one by one.</li>
 </ul>
 <p>This stores the output once per element. Its cost is the rows at either end, a fixed cost per row of axis 0, which a short axis 0 doesn't amortize.</p>
-<p>**<code>operator()</code> chooses** one diagonal at a time for an axis 0 of up to four elements, and for views contiguous along axis 0 that are either small (up to 128 amplitudes) or fit in a last-level cache (up to 2¹⁸ amplitudes, 4 MB per array) with an axis 0 shorter than 32. Everything else goes by rows: long axes, operands larger than cache, and views strided along axis 0. The bounds are where the two shapes cross over (case F, below and in the section on slices).</p>
+<p>**<code>operator()</code> chooses** one diagonal at a time for an axis 0 of up to four elements, and for views contiguous along axis 0 that are either small (up to 128 amplitudes), or fit in a last-level cache (up to 2¹⁸ amplitudes, 4 MB per array) with an axis 0 shorter than 32, or, since 2026-11-07, are slices of up to 512 amplitudes of a state that doesn't fit in cache (storage, i.e. the view's <code>dataView</code>, of at least 2¹⁸ amplitudes; <a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/27">#27</a>). Everything else goes by rows: long axes, operands larger than cache, and views strided along axis 0. The bounds are where the two shapes cross over (case F, below and in the section on slices; case I, below).</p>
 <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadNone"></th><th class="markdownTableHeadNone">v0.4.0   </th><th class="markdownTableHeadNone">before #23   </th><th class="markdownTableHeadNone">after #23   </th><th class="markdownTableHeadNone">now   </th><th class="markdownTableHeadNone">one diagonal at a time   </th><th class="markdownTableHeadNone">hand-written hoisted loop   </th><th class="markdownTableHeadNone">Eigen sparse    </th></tr>
@@ -329,7 +331,28 @@ A short axis 0</h2>
 <li><b>Short axis 0, whole operand:</b> one diagonal at a time is faster below 32 in L2 and L3 (at 24 in L3 they are equal), the row shape from 8 on out of cache, hence the bounds of 32 and 2¹⁸. At the margins <code>operator()</code> gives away a little: 3% at 32 in L2, and up to 8% between 48 and 128 in L3. On 4 KB pages, where the distance between the arrays doesn't matter, the crossovers are the same, and between 48 and 128 in L3 the row shape gives away 4–14%.</li>
 <li>For an axis 0 of 5 and 8 in L3, one diagonal at a time took 2.1–2.2 here and 1.4–1.5 in an earlier run of the same code, and takes 1.42–1.53 on 4 KB pages: the slower figures came from the distance between the arrays.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md23"></a>
+<h2><a class="anchor" id="autotoc_md23"></a>
+Contiguous slices of a state larger than cache</h2>
+<p>On contiguous slices of a few hundred amplitudes, one slice per call, the row shape's speed depends on where <code>psi</code> and <code>dpsidt</code> lie within their pages, by up to 2.6× and on either page size; one diagonal at a time doesn't (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/27">#27</a>). In the slow placements the hardware prefetcher covers less of the stream: the same memory traffic, but 5× more loads wait for DRAM (<code>perf stat</code>). Case I measures the crossover over 15 placements per configuration (4 KB pages, medians of three processes). Median over the placements of the row shape's time divided by one diagonal at a time (below 1: by rows faster):</p>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">state, per array   </th><th class="markdownTableHeadNone">n = 128   </th><th class="markdownTableHeadNone">160   </th><th class="markdownTableHeadNone">192   </th><th class="markdownTableHeadNone">256   </th><th class="markdownTableHeadNone">320   </th><th class="markdownTableHeadNone">384   </th><th class="markdownTableHeadNone">512   </th><th class="markdownTableHeadNone">768   </th><th class="markdownTableHeadNone">1024    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">64 KiB (2¹²)   </td><td class="markdownTableBodyNone">1.08   </td><td class="markdownTableBodyNone">0.99   </td><td class="markdownTableBodyNone">0.90   </td><td class="markdownTableBodyNone">0.87   </td><td class="markdownTableBodyNone">0.96   </td><td class="markdownTableBodyNone">1.00   </td><td class="markdownTableBodyNone">1.03   </td><td class="markdownTableBodyNone">0.89   </td><td class="markdownTableBodyNone">0.88    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">1 MiB (2¹⁶)   </td><td class="markdownTableBodyNone">1.07   </td><td class="markdownTableBodyNone">0.98   </td><td class="markdownTableBodyNone">0.91   </td><td class="markdownTableBodyNone">0.89   </td><td class="markdownTableBodyNone">0.95   </td><td class="markdownTableBodyNone">0.98   </td><td class="markdownTableBodyNone">1.00   </td><td class="markdownTableBodyNone">0.86   </td><td class="markdownTableBodyNone">0.84    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">4 MiB (2¹⁸)   </td><td class="markdownTableBodyNone">1.26   </td><td class="markdownTableBodyNone">1.15   </td><td class="markdownTableBodyNone">1.11   </td><td class="markdownTableBodyNone">0.98   </td><td class="markdownTableBodyNone">1.04   </td><td class="markdownTableBodyNone">1.05   </td><td class="markdownTableBodyNone">1.05   </td><td class="markdownTableBodyNone">0.89   </td><td class="markdownTableBodyNone">0.87    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">16 MiB (2²⁰)   </td><td class="markdownTableBodyNone">1.99   </td><td class="markdownTableBodyNone">2.05   </td><td class="markdownTableBodyNone">2.13   </td><td class="markdownTableBodyNone">1.98   </td><td class="markdownTableBodyNone">1.52   </td><td class="markdownTableBodyNone">1.45   </td><td class="markdownTableBodyNone">1.52   </td><td class="markdownTableBodyNone">1.19   </td><td class="markdownTableBodyNone">1.08   </td></tr>
+</table>
+<ul>
+<li><b>While the state fits in cache</b> (up to 1 MiB per array; 256 KiB behaves the same), the row shape is as fast or faster from n = 160 on, and the bound of 128 amplitudes stands.</li>
+<li><b>From 4 MiB per array</b>, one diagonal at a time is faster at the median up to n = 512, except 2% at n = 256 for 4 MiB, where its worst placement is still 1.38× better than the row shape's. Over all placements it takes 0.60–0.81 ns per nonzero there; the row shape 0.55–1.79.</li>
+<li><b>From n = 768</b> the row shape wins again at 4 MiB and loses at most 1.19× at 16 MiB.</li>
+</ul>
+<p>So <code>operator()</code> takes one diagonal at a time for contiguous slices of up to 512 amplitudes when the state behind the slice, the view's <code>dataView</code>, holds at least 2¹⁸ amplitudes, and keeps the row shape otherwise. A view's storage is what a slice of C++QED's state carries; for a view that is the whole array, the rule is unchanged. A small view into a large buffer that stays in cache would be applied one diagonal at a time too, at most 1.15× slower than by rows.</p>
+<h1><a class="anchor" id="autotoc_md24"></a>
 Placement of the arrays</h1>
 <p>The shape that applies one diagonal at a time writes <code>dpsidt</code> once per diagonal and element. So its speed depends on where <code>psi</code> lies relative to <code>dpsidt</code> within a 4 KB page (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25">#25</a>). The processor compares only the low 12 address bits of a load with the stores still in flight. For some placements it then holds loads from <code>psi</code> back behind stores to <code>dpsidt</code> that they don't depend on ("4K aliasing"). The row shape writes <code>dpsidt</code> once per element.</p>
 <p>Case G of <code>kernels.cc</code> places <code>psi</code> at every 16-byte offset of a page relative to <code>dpsidt</code>, for both shapes (ns per application; the first of two runs):</p>
@@ -366,7 +389,7 @@ Placement of the arrays</h1>
 <li><b>Out of cache, the distance between the arrays matters as well</b> (next section). At N = 1048576 an isolated process took 2.2 ns per nonzero for <code>apply1</code> one diagonal at a time, but 3.4 ns inside the main suite, with the same in-page offsets, and case B out of cache varies by up to 30% between processes, for both shapes. On 4 KB pages, where the distance doesn't matter, out-of-cache figures vary by at most 7% between processes.</li>
 </ul>
 <p>This is why every figure on this page is a median over separate processes.</p>
-<h2><a class="anchor" id="autotoc_md24"></a>
+<h2><a class="anchor" id="autotoc_md25"></a>
 Distance on huge pages</h2>
 <p>Case F's contiguous slices of power-of-two length were 2.4–2.8× slower out of cache, one diagonal at a time, than those of other lengths. The cause is where the arrays lie. Case F allocates <code>psi</code> and <code>dpsidt</code> back to back; for a power of two both hold exactly 2²⁰ amplitudes (16 MiB), so <code>dpsidt</code> starts 2²⁴ + 16 bytes after <code>psi</code>. Every slow point has this distance. The fast ones don't: n = 8 got separate mappings, and n = 24, 48 and 96 have the arrays 240 or 1008 bytes short of 2²⁴ apart. A first version of case H (not kept, it set only the offset within a page) placed the arrays explicitly and showed that neither the slice length nor the array size matters: at a given placement the powers of two fall between their neighbours, and one slice fewer changes nothing.</p>
 <p>Case H puts both arrays in one buffer, with <code>dpsidt</code> D bytes after <code>psi</code>, and takes the buffer once on transparent huge pages and once on 4 KB pages (<code>madvise</code>; the kernel reported all of it, and none of it, on huge pages). One diagonal at a time, ns per nonzero for n = 16 / 24 / 32, medians of five processes:</p>
@@ -418,7 +441,7 @@ Distance on huge pages</h2>
 </ul>
 </li>
 </ul>
-<h1><a class="anchor" id="autotoc_md25"></a>
+<h1><a class="anchor" id="autotoc_md26"></a>
 The bandwidth ceiling</h1>
 <p>When the operator is as large as the state, all variants stream their data from main memory. Case A at N = 262144 (29 MB):</p>
 <table class="markdownTable">
@@ -449,7 +472,7 @@ The bandwidth ceiling</h1>
 <p>Summing the diagonals of a row before the store brings the traffic down to the value plus a share of x and y, as does the hand-written row-blocked loop, which applies all diagonals while a block of y is in cache. <b>Once both sides are limited by bandwidth, the best possible gain of the format over CSR is therefore about 20%.</b></p>
 <p>On the reference machine a single thread does not reach that limit with Eigen's product. The library's row shape moves about as many bytes per nonzero in 0.43 of the time, so out of cache it is 2.4× faster than Eigen in case A and 2.1× in case B, on 4 KB pages. In the main suite at N = 1048576 it is 2.0–2.3× faster on 4 KB pages and 1.4–1.6× on huge pages, where one diagonal at a time was 1.2–1.45× slower.</p>
 <p>With several threads, or a machine with less bandwidth per core, the 20% bound applies. Doing better would require not storing the values at all, e.g. generating √n on the fly, and that is outside the library's scope.</p>
-<h1><a class="anchor" id="autotoc_md26"></a>
+<h1><a class="anchor" id="autotoc_md27"></a>
 Operators applied slice by slice: C++QED's setting</h1>
 <p>In C++QED, a term of the Hamiltonian is a MultiDiagonal over its own few axes, e.g. one mode with dimension 32. C++QED's <code>Broadcaster</code> applies it to every slice of the full state along the remaining ("dummy") axes. The MultiDiagonal never sees the larger array; that is a design decision of C++QED. In this setting:</p>
 <ul>
@@ -496,7 +519,7 @@ Operators applied slice by slice: C++QED's setting</h1>
 <li><b>What the design boundary costs.</b> Applying the operator to many adjacent slices at once (case C, "blocked") gives 1.28 for n = 32 on axis 2, 1.8× better than the best slice-by-slice method at the same n. Getting this inside C++QED's design would mean <code>Broadcaster</code> handing a term blocks of adjacent slices. This is noted here, not proposed.</li>
 </ol>
 <p>Not measured, but relevant: a slice of rank ≥ 2 whose axes are not adjacent in memory, e.g. a coupling on axes 0 and 2 of a rank-3 system, is not uniformly strided. A flattened CSR matrix then has to translate each column index into a memory address, from the multi-index or from a precomputed table, or it has to copy the slice into a contiguous buffer and back. A MultiDiagonal applies per-axis strides directly.</p>
-<h1><a class="anchor" id="autotoc_md27"></a>
+<h1><a class="anchor" id="autotoc_md28"></a>
 The interaction picture</h1>
 <p>In C++QED's hot loop, the interaction picture is applied by updating the operator with its frequencies and then applying it. No transformation of the state takes place around the application. The physics layer keeps a pair (coefficients \(\alpha\), frequencies \(\delta\)) with the same diagonals, and before each right-hand-side evaluation writes \(\alpha\,e^{\delta\tau}\) into the operator to be applied. The library itself carries no frequencies.</p>
 <p>Structural facts:</p>
@@ -557,7 +580,7 @@ The interaction picture</h1>
 <ul>
 <li>the end-to-end question: how many fewer and longer ODE steps the interaction picture buys, by integrating the fast free evolution exactly. That gain is independent of the storage format and is probably the larger one. It can only be measured in C++QED once its exact propagators work (<a href="https://github.com/WignerQuantumOptics/cppqed/issues/91">cppqed#91</a>, blocked by <a href="https://github.com/WignerQuantumOptics/cppqed/issues/57">cppqed#57</a>).</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md28"></a>
+<h1><a class="anchor" id="autotoc_md29"></a>
 Composition and construction</h1>
 <p>From <code>cppqed-multidiagonal-benchmarks</code>, time of Eigen sparse divided by time of MultiDiagonal (above 1 means MultiDiagonal is faster):</p>
 <table class="markdownTable">
@@ -573,7 +596,7 @@ Composition and construction</h1>
 <td class="markdownTableBodyNone"><code>constructJC</code>: Jaynes–Cummings via ⊗, + and scalars   </td><td class="markdownTableBodyNone">0.61   </td><td class="markdownTableBodyNone">1.1   </td><td class="markdownTableBodyNone">1.1   </td></tr>
 </table>
 <p>Composition never meets the symbolic pass and sorting of a sparse product: the offsets of the result are known from the offsets of the factors. In C++QED, however, composition and construction happen when the system is set up, e.g. assembling \(H_\text{eff}=H-\tfrac{i}{2}\sum_k J_k^\dagger J_k\), not in the time-stepping loop. They matter little for run time.</p>
-<h1><a class="anchor" id="autotoc_md29"></a>
+<h1><a class="anchor" id="autotoc_md30"></a>
 Assessment and next steps</h1>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -624,7 +647,7 @@ Assessment and next steps</h1>
 </li>
 </ol>
 <p>In C++QED: done on 2026-11-04, the slices in memory order (<a href="https://github.com/WignerQuantumOptics/cppqed/issues/90">cppqed#90</a>); still to do, benchmark the interaction picture end to end (<a href="https://github.com/WignerQuantumOptics/cppqed/issues/91">cppqed#91</a>).</p>
-<p><b>What to do next:</b> decide on <a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/27">#27</a>: its huge-page part is the 1 MiB window of #26, but the row shape on contiguous slices of a few hundred amplitudes also depends on the placement within a page by up to 2.6×, where one diagonal at a time doesn't. The proposal there is to raise <code>operator()</code>'s bound for contiguous views after a crossover measured over several placements. The benchmark defects of #5 are fixed. The remaining loop shape, for a qubit on axis 0 of a large state, is worth at most about 1.1×. The slow distance on huge pages is settled (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/26">#26</a>: jemalloc, no change to <code>StorageType</code>), and so are the re-measurement, the power-of-two investigation, cppqed#90 and the placement regression check. </p>
+<p><b>What to do next:</b> the library's performance work is essentially done. <a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/27">#27</a> is settled: its huge-page part was the 1 MiB window of #26, and for slices of a state larger than cache <code>operator()</code> now takes the placement-robust shape up to 512 amplitudes (case I). The benchmark defects of #5 are fixed. The remaining loop shape, for a qubit on axis 0 of a large state, is worth at most about 1.1×. The slow distance on huge pages is settled (<a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/26">#26</a>: jemalloc, no change to <code>StorageType</code>), and so are the re-measurement, the power-of-two investigation, cppqed#90 and the placement regression check. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->

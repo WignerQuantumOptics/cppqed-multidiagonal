@@ -1,5 +1,6 @@
 var NAVTREEINDEX1 =
 {
+"structquantumoperator_1_1MultiDiagonal.html#a2b27266ea205abc40094928a4f98b293":[15,0,1,0,14],
 "structquantumoperator_1_1MultiDiagonal.html#a2b27266ea205abc40094928a4f98b293":[13,0,2,1,14],
 "structquantumoperator_1_1MultiDiagonal.html#a3a71231d0a020e838124fb5dcb36d257":[15,0,1,0,28],
 "structquantumoperator_1_1MultiDiagonal.html#a3a71231d0a020e838124fb5dcb36d257":[13,0,2,1,28],
