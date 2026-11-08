@@ -280,6 +280,9 @@ back (#18) are done (2026-11-07).
    current `MultiArray`/`MultiArrayView` architecture, and `std::mdspan` is a prospect for its outlook.
    The prototype (#19) and C++QED's epic (cppqed#20, #75–#78) stay open as prospects, unscheduled.
    **Do not start a migration unasked.**
+   GPUs: a prospect too (András, 2026-11-08, #29; the paper's outlook). It would need application over a
+   batch of slices in one call (also the CPU's "blocked" gain) and device storage and kernels (Kokkos, or
+   offloaded standard parallel algorithms, prepared by `std::mdspan` views). **Don't start it unasked.**
 3. For the paper, outside the code: a DOI (Zenodo's GitHub integration, a repository setting, so
    András's action; the first DOI comes with the next release, cite the concept DOI), the venue, and
    the draft. `CITATION.cff` has András's ORCID (2026-11-07). Cosmetic: #17 (finding
