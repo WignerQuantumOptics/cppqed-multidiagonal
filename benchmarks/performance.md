@@ -6,10 +6,10 @@ This page records what the benchmarks show about applying a `MultiDiagonal` to a
 
 - **In cache**, the library is 2.7–3.6× faster than Eigen's sparse product at rank 1 and with the mode on axis 0 (1.8–2.2× for the smallest operators, of dimension 16), and 1.4–2.2× faster with a qubit on axis 0. Contiguous diagonals without column indices vectorize, while a CSR product gathers through column indices. In cache these ratios move by up to 20% between builds, because Eigen's own speed depends on the layout of the code around it (see "Setup"). They also depend on the processor: on a 2022 laptop core they were 1.5–2.4× and 1.0–1.6×, before the last change of the loop.
 - **Out of cache**, where the operator is as large as the state, the library is 2.0–2.4× faster than Eigen at rank 1 and with the mode on axis 0, and 0.9–1.1× as fast with a qubit on axis 0. These figures are on 4 KB pages. On transparent huge pages, input and output allocated back to back can make the library up to about 3× slower (see "Distance on huge pages"). Once both sides are limited by memory bandwidth, no storage format gains much: MultiDiagonal stores 16 bytes per nonzero against 20 for a compressed sparse row (CSR) matrix. A single thread on the reference machine doesn't reach that limit with Eigen's product.
-- **In C++QED's actual setting**, a small operator applied slice by slice across a large state, the library is 1.7–2.6× faster than a CSR matrix of the same term (1.4–1.9× against its build with `-fcx-limited-range`), also on strided slices of power-of-two length. Contiguous slices of power-of-two length looked like an exception, at parity, but that came from where their arrays lay in memory, not from their length: on 4 KB pages the library is 2.5× faster there as well.
+- **In C++QED's actual setting**, a small operator applied slice by slice across a large state, the library is 2.5–2.6× faster than a CSR matrix of the same term on contiguous slices and 1.5–1.6× on strided ones, and 1.9–2.0× and 1.3–1.4× against term CSR built with `-fcx-limited-range` (case D: n⁴ states, n = 30 and 32, 4 KB pages). The main suite's `slices3` (n³ states, n = 16 … 100, 4 KB pages) gives 1.6–2.9× for n ≥ 30, and 1.09× on a strided axis at n = 16 (see "The interaction picture"). On huge pages, with the arrays allocated back to back, case D gave 1.7–2.6×, except for contiguous slices of length 32, at parity; that came from where the arrays lay in memory, not from their length (see "Distance on huge pages").
 - **The loop has two shapes** since 2026-11-04: one diagonal at a time, and the diagonals contributing to a row summed before one store ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1), [#25](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25)). `operator()` chooses from the view's strides and extents. The row shape sweeps a large state once instead of once per diagonal, and makes the speed nearly independent of where input and output lie relative to each other within a page. The other is faster where axis 0 is short, and for small views.
 - **History.** Up to v0.4.0, the multi-axis loop recomputed every address per element, which made it 3.4–4.5× slower than Eigen at rank 2 and 18× slower at rank 4; fixed on 2026-11-01 ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1)). Complex multiplication with the C99 Annex G NaN checks halved the speed of the default build; fixed on 2026-11-02, together with a compile-time unrolled short axis 0 ([#23](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23)). Up to 2026-11-03 the loop stored the output once per diagonal, which made it up to 1.45× slower than Eigen out of cache and its speed depend on placement by up to 1.2–2×.
-- **These figures need AVX2** (`-march=native` or `-march=x86-64-v3`). On the x86-64 baseline, which C++QED builds by default, the library is typically 1.4–1.7× slower and its advantage over Eigen in cache 1.5–2.0× instead of 2.6–3.4× (see "Instruction set").
+- **These figures need AVX2** (`-march=native` or `-march=x86-64-v3`). On the x86-64 baseline the library is typically 1.4–1.7× slower and its advantage over Eigen in cache 1.5–2.0× instead of 2.6–3.4× (see "Instruction set").
 - **What remains.** A qubit on axis 0 of a state larger than cache is still applied one diagonal at a time, and at N = 2²⁰ it is 0.89× as fast as Eigen. On transparent huge pages, input and output that lie nearly a multiple of 1 MiB apart, as arrays of a power-of-two size allocated back to back do, make application up to about 3× slower one diagonal at a time and up to 1.7× by rows. jemalloc, which starts large allocations at varying offsets within a page, avoids that; C++QED links it when installed ([#26](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/26)). Small views are applied one diagonal at a time, and there placement still costs up to 23%, though that shape stays faster than the other at any placement.
 - **The interaction picture** costs almost nothing in C++QED's setting, a small term updated and applied slice by slice: at most 2% over the plain application (at most 10% for a CSR matrix updated per nonzero). For an operator as large as the state, updating it costs 2.5–4× the application with one exponential per diagonal, and 15–38× with one per element (see the section on it below).
 
@@ -75,7 +75,7 @@ Since 2026-11-02 ([#23](https://github.com/WignerQuantumOptics/cppqed-multidiago
 With the flag, before and after agree; in the default build, the library became 1.9–2.3× faster. Both loop shapes of today multiply the same way, and the flag still leaves them unchanged (case A now: 0.58 / 0.71 with and without). The flag also speeds up Eigen:
 
 - by 10–17% in cases A to C;
-- by 1.1–1.4× for term CSR on slices (case D).
+- by 1.13–1.35× for term CSR on slices (case D, 4 KB pages).
 
 Eigen's sparse product gathers through column indices, so it doesn't vectorize, but the check still costs it. The hand-written loops in `kernels.cc` use `textbookProduct` too, so the flag now changes only Eigen's figures.
 
@@ -85,7 +85,7 @@ All further figures are from the default build. With the flag, Eigen's would be 
 
 ## Instruction set
 
-The figures on this page are for `-march=native`, which on the reference machine means AVX2 and FMA. Without `-march`, GCC targets the x86-64 baseline: SSE2, two doubles per vector, no FMA. That is what C++QED builds by default ([cppqed#93](https://github.com/WignerQuantumOptics/cppqed/issues/93)). Measured on 2026-11-05: five interleaved rounds of `kernels` A, B, E and of the main suite's `apply1` and `applyJC`, on 4 KB pages, built three ways. Speed-up over the baseline build:
+The figures on this page are for `-march=native`, which on the reference machine means AVX2 and FMA. Without `-march`, GCC targets the x86-64 baseline: SSE2, two doubles per vector, no FMA. C++QED builds for `x86-64-v3` by default since these measurements, and its executables stop with a message on processors without that level ([cppqed#93](https://github.com/WignerQuantumOptics/cppqed/issues/93)). Measured on 2026-11-05: five interleaved rounds of `kernels` A, B, E and of the main suite's `apply1` and `applyJC`, on 4 KB pages, built three ways. Speed-up over the baseline build:
 
 | | `-march=x86-64-v3` (AVX2, FMA) | `-march=native` |
 |---|---|---|
@@ -330,10 +330,11 @@ Case D, n⁴ state, operator on axis 0 (contiguous slices) or axis 2 (stride n²
 | hand-written, all diagonals per output row (scalar) | 2.60 | 2.63 | 3.96 | 2.91 |
 | term CSR | 2.64 (2.49) | 2.38 (1.73) | 4.07 (3.71) | 2.67 (2.16) |
 | CSR of the whole system | 2.57 (2.29) | 2.58 (2.30) | 2.61 (2.39) | 2.57 (2.33) |
-| library `operator()`, 4 KB pages | **0.89** | **0.91** | **2.45** | **1.64** |
-| term CSR, 4 KB pages | 2.26 | 2.29 | 4.24 | 2.69 |
+| library `operator()`, 4 KB pages | **0.92** | **0.89** | **2.42** | **1.66** |
+| term CSR, 4 KB pages | 2.30 (1.70) | 2.33 (1.75) | 3.59 (3.19) | 2.73 (2.33) |
+| CSR of the whole system, 4 KB pages | 2.55 (2.29) | 2.57 (2.34) | 2.54 (2.38) | 2.58 (2.39) |
 
-The rows above the last two were measured on huge pages; there the library's 2.64 for n = 32 on axis 0 is the slow distance between the arrays.
+The rows above the last three were measured on huge pages; there the library's 2.64 for n = 32 on axis 0 is the slow distance between the arrays. The last three were measured on 2026-11-08 with `--no-thp` (e90ea79, five interleaved rounds of the default and the `-fcx-limited-range` build; every median within 2% of its five processes). The library and term CSR agree with an earlier measurement on 4 KB pages (2026-11-04) within 3%, except term CSR for n = 32 on axis 2, which came out 15% faster now (3.59 against 4.24); the cause is not established, but Eigen's speed moves with the code layout of a build (see "Setup").
 
 `operator()` applies the contiguous slices one diagonal at a time, since they are small, and the strided ones by rows.
 
@@ -343,7 +344,7 @@ Three findings:
 2. **The best loop shape depends on the slice length and the stride**, and `operator()` now takes it from the view.
    - On strided slices the row shape wins: 1.7× faster than term CSR for n = 30 (1.4× against its flagged build) and 1.7× (1.6×) for n = 32. A sweep per diagonal put all elements of a strided slice of power-of-two length (stride 1024 amplitudes, 16 KB) into the same L1 cache set and thrashed it: 6.00, against 2.36 now, and 1.5× slower than term CSR before.
    - On contiguous slices of length 30, one diagonal at a time is the fastest: 2.6× faster than term CSR (1.9× against its flagged build). The row shape would take 1.24, because of its fixed cost per row of axis 0.
-   - On contiguous slices of length 32 the library came out at parity with term CSR, and case F showed both shapes slow out of cache at every power of two from 16 to 256 (one diagonal at a time 2.4–2.8 ns against 0.75–0.95 in between). That came from where the arrays lay, not from the length: cases D and F allocate `psi` and `dpsidt` back to back, 2²⁴ + 16 bytes apart for these states (see "Distance on huge pages"). On 4 KB pages the library takes 0.89 for n = 32 on axis 0, against 2.26 for term CSR: 2.5× faster, as for n = 30.
+   - On contiguous slices of length 32 the library came out at parity with term CSR, and case F showed both shapes slow out of cache at every power of two from 16 to 256 (one diagonal at a time 2.4–2.8 ns against 0.75–0.95 in between). That came from where the arrays lay, not from the length: cases D and F allocate `psi` and `dpsidt` back to back, 2²⁴ + 16 bytes apart for these states (see "Distance on huge pages"). On 4 KB pages the library takes 0.92 for n = 32 on axis 0, against 2.30 for term CSR: 2.5× faster, as for n = 30.
    - For contiguous slices of length 30, the build of 7725d79 measured 0.78 here, against 0.89–0.90 now for the same loop. A separate probe gives 0.88 for both, and neither loop alignment nor the assembler's mitigation of the jump erratum changes it. That figure was a property of that binary, not of the loop (see "Setup").
 3. **What the design boundary costs.** Applying the operator to many adjacent slices at once (case C, "blocked") gives 1.28 for n = 32 on axis 2, 1.8× better than the best slice-by-slice method at the same n. Getting this inside C++QED's design would mean `Broadcaster` handing a term blocks of adjacent slices. This is noted here, not proposed.
 
@@ -418,8 +419,8 @@ Composition never meets the symbolic pass and sorting of a sparse product: the o
 | several axes, in cache, short axis 0 (qubit first) | 1.4–2.2× faster (v0.4.0: 3.6–4.5× slower) | same |
 | operator as large as the state, out of cache, rank 1 or mode first | 2.0–2.4× faster (4 KB pages) | same |
 | operator as large as the state, out of cache, qubit first | 0.9–1.1× (4 KB pages; 0.6–0.8× on huge pages) | not yet known |
-| slice by slice, n = 30, contiguous / strided | 2.5× / 1.6× faster than term CSR (4 KB pages) | same |
-| slice by slice, n = 32, contiguous / strided | 2.5× / 1.7× faster (4 KB pages; contiguous at parity on huge pages) | same |
+| slice by slice, n = 30, contiguous / strided | 2.6× / 1.6× faster than term CSR (4 KB pages) | same |
+| slice by slice, n = 32, contiguous / strided | 2.5× / 1.5× faster (4 KB pages; contiguous at parity on huge pages) | same |
 | interaction picture, slice by slice: (update + application) ÷ application | 0.99–1.02 (term CSR, one exponential per nonzero: 0.98–1.10) | same |
 
 - **"Today"** is the library as it is, in the default build, with both sides taking the slices in the same order. Ranges in cache span two builds of today's library (c346b8a, and one that differed only in `operator()`'s bounds), between which Eigen's speed moved by up to 20%.

@@ -184,8 +184,8 @@ ctest --test-dir build --output-on-failure
   - Instruction set (2026-11-05, performance.md "Instruction set"): all figures are for
     `-march=native` (AVX2 + FMA on bench). On the x86-64 baseline (no `-march`) the library is
     typically 1.4–1.7× slower, Eigen 1.25–1.3×, so the in-cache advantage over Eigen drops from
-    2.6–3.4× to 1.5–2.0×. `x86-64-v3` equals `native` on bench. C++QED builds at the baseline by
-    default; `jc_qjmc` gains 1.12–1.38× per derivative call from `x86-64-v3` (cppqed#93).
+    2.6–3.4× to 1.5–2.0×. `x86-64-v3` equals `native` on bench. C++QED builds for `x86-64-v3` by
+    default (cppqed#93); `jc_qjmc` gains 1.12–1.38× per derivative call from it over the baseline.
   - Default `std::complex` multiplication (Annex G NaN checks, `__muldc3`) used to halve the
     library's speed. Since #23 the kernel multiplies with `textbookProduct`, so the default
     build is as fast as `-fcx-limited-range`. That flag makes Eigen 10–17% faster (term CSR
@@ -240,9 +240,10 @@ ctest --test-dir build --output-on-failure
     0.6–0.8×. Once both are bandwidth bound, a format gains at most about 20%; single-threaded
     on the reference machine Eigen isn't.
   - In C++QED's slice-by-slice setting, the honest competitor is a CSR matrix of the term's
-    own space on the same slices. On 4 KB pages MultiDiagonal is 2.5× faster on contiguous
-    slices (n = 30 and 32) and 1.6–1.7× on strided ones (the row shape avoids the L1 set
-    conflicts of power-of-two strides). The earlier parity at n = 32 contiguous was the slow
+    own space on the same slices. On 4 KB pages MultiDiagonal is 2.5–2.6× faster on contiguous
+    slices (n = 30 and 32) and 1.5–1.6× on strided ones (the row shape avoids the L1 set
+    conflicts of power-of-two strides); 1.3–2.0× against term CSR with `-fcx-limited-range`
+    (re-measured 2026-11-08). The earlier parity at n = 32 contiguous was the slow
     distance. C++QED's `SliceIterator` used to produce the slices last
     dummy axis fastest, which cost every method 1.1–2.3× more; it takes them in memory order
     since 2026-11-04 (cppqed#90).
