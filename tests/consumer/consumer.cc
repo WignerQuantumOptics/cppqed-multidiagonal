@@ -17,8 +17,8 @@ int main()
   auto a {md::diagonal(+1,std::move(ladder))};   // ⟨n|a|n+1⟩ = √(n+1): the diagonal at offset +1
   auto sm{md::diagonal(+1,{1.})};                // σ⁻ = |0⟩⟨1|
 
-  auto n {hermitianConjugateOf(a) | a};                                  // composition: the offsets add up to 0
-  auto jc{hermitianConjugateOf(sm) * a + sm * hermitianConjugateOf(a)};  // direct product: qubit on axis 0, mode on axis 1
+  auto n {hermitianConjugateOf(a) * a};                                  // composition: the offsets add up to 0
+  auto jc{hermitianConjugateOf(sm) % a + sm % hermitianConjugateOf(a)};  // direct product: qubit on axis 0, mode on axis 1
 
   MultiArray<dcomp,2> psi{{2,N},multiarray::zeroInit<dcomp>}, dpsi{{2,N},multiarray::zeroInit<dcomp>};
   psi(0,1)=1.;                                   // |0⟩|1⟩

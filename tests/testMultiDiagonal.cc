@@ -164,7 +164,7 @@ TEST_CASE("a zero-extent diagonal on a non-leading axis is skipped in applicatio
   using quantumoperator::multidiagonal::identity;
   auto a1 = destroy(1);                               // cutoff 1: |o| = D, no entries
   REQUIRE(a1.diagonals.begin()->second.extents == Extents<1>{0});
-  auto op = identity(3)*identity(1) + identity(3)*a1; // the zero-extent diagonal sits on axis 1
+  auto op = identity(3)%identity(1) + identity(3)%a1; // the zero-extent diagonal sits on axis 1
   REQUIRE(op.diagonals.size() == 2);
   CHECK(approxEqual(densify(op), CMatrix::Identity(3,3)));
 
@@ -217,7 +217,7 @@ TEST_CASE("Hermitian conjugation conjugates complex diagonal values — #4", "[m
   REQUIRE(da.imag().norm() > 1.);                   // a real operator cannot detect a missing conj
   CHECK(approxEqual(densify(hermitianConjugateOf(a)), da.adjoint()));
 
-  auto x = complexTridiag(3,0.3) * complexTridiag(2,-1.2) * complexTridiag(4,2.1);
+  auto x = complexTridiag(3,0.3) % complexTridiag(2,-1.2) % complexTridiag(4,2.1);
   CHECK(approxEqual(densify(hermitianConjugateOf(x)), densify(x).adjoint()));
 }
 
@@ -272,22 +272,22 @@ TEST_CASE("composition: like directions (upper·upper, lower·lower)", "[multidi
 {
   auto a = destroy(6); auto ad = hermitianConjugateOf(a);
   const CMatrix da = denseDestroy(6);
-  CHECK(approxEqual(densify(a | a),   (da*da).eval()));
-  CHECK(approxEqual(densify(ad | ad), (da.adjoint()*da.adjoint()).eval()));
+  CHECK(approxEqual(densify(a * a),   (da*da).eval()));
+  CHECK(approxEqual(densify(ad * ad), (da.adjoint()*da.adjoint()).eval()));
 }
 
 
-TEST_CASE("composition: number operator a†|a", "[multidiagonal][composition]")
+TEST_CASE("composition: number operator a†*a", "[multidiagonal][composition]")
 {
   auto a = destroy(6);
-  CHECK(approxEqual(densify(hermitianConjugateOf(a) | a), (denseDestroy(6).adjoint()*denseDestroy(6)).eval()));
+  CHECK(approxEqual(densify(hermitianConjugateOf(a) * a), (denseDestroy(6).adjoint()*denseDestroy(6)).eval()));
 }
 
 
-TEST_CASE("composition: a|a† keeps the full Hilbert dimension — finding F1", "[multidiagonal][composition]")
+TEST_CASE("composition: a*a† keeps the full Hilbert dimension — finding F1", "[multidiagonal][composition]")
 {
   auto a = destroy(4);
-  auto aad = a | hermitianConjugateOf(a);
+  auto aad = a * hermitianConjugateOf(a);
   CHECK((calculateAndCheckDimensions(aad) == Extents<1>{4}));   // trailing structural zero stored explicitly
   CHECK(approxEqual(densify(aad), (denseDestroy(4)*denseDestroy(4).adjoint()).eval()));
 }
@@ -300,18 +300,18 @@ TEST_CASE("truncated commutator [a,a†]: identity except the top level", "[mult
   const CMatrix da = denseDestroy(dim);
   // = diag(1,…,1,1−dim): truncation necessarily breaks the CCR at the top level,
   // and the library represents the truncated algebra exactly, deviations included.
-  CHECK(approxEqual(densify((a|ad)-(ad|a)), (da*da.adjoint()-da.adjoint()*da).eval()));
+  CHECK(approxEqual(densify((a*ad)-(ad*a)), (da*da.adjoint()-da.adjoint()*da).eval()));
 }
 
 
 TEST_CASE("composition accumulates contributions across diagonal pairs — finding F1b", "[multidiagonal][composition]")
 {
   auto sx = md::diagonal(+1,{1.}) + md::diagonal(-1,{1.});
-  CHECK(approxEqual(densify(sx|sx), CMatrix::Identity(2,2)));   // two pairs merge on s=0
+  CHECK(approxEqual(densify(sx*sx), CMatrix::Identity(2,2)));   // two pairs merge on s=0
 
   auto x = destroy(5) + hermitianConjugateOf(destroy(5));
   const CMatrix dx = denseDestroy(5) + denseDestroy(5).adjoint();
-  CHECK(approxEqual(densify(x|x), (dx*dx).eval()));             // 4 pairs, 2 merging on s=0
+  CHECK(approxEqual(densify(x*x), (dx*dx).eval()));             // 4 pairs, 2 merging on s=0
 }
 
 
@@ -320,18 +320,18 @@ TEST_CASE("composition: identity is two-sided neutral on all branches", "[multid
   auto a = destroy(5); auto ad = hermitianConjugateOf(a);
   auto id = md::identity(5);
   const CMatrix da = denseDestroy(5);
-  CHECK(approxEqual(densify(id | a),  da));
-  CHECK(approxEqual(densify(a | id),  da));
-  CHECK(approxEqual(densify(id | ad), da.adjoint()));
-  CHECK(approxEqual(densify(ad | id), da.adjoint()));
+  CHECK(approxEqual(densify(id * a),  da));
+  CHECK(approxEqual(densify(a * id),  da));
+  CHECK(approxEqual(densify(id * ad), da.adjoint()));
+  CHECK(approxEqual(densify(ad * id), da.adjoint()));
 }
 
 
 TEST_CASE("composition associativity", "[multidiagonal][composition]")
 {
   auto a = destroy(6); auto ad = hermitianConjugateOf(a);
-  CHECK(approxEqual(densify((ad|a)|a), densify(ad|(a|a))));
-  CHECK(approxEqual(densify((a|ad)|a), densify(a|(ad|a))));     // exercises the mixed-direction branches
+  CHECK(approxEqual(densify((ad*a)*a), densify(ad*(a*a))));
+  CHECK(approxEqual(densify((a*ad)*a), densify(a*(ad*a))));     // exercises the mixed-direction branches
 }
 
 
@@ -340,26 +340,26 @@ TEST_CASE("composition distributes over addition", "[multidiagonal][composition]
   auto a = destroy(4);
   auto ad = hermitianConjugateOf(destroy(4));
   auto id = md::identity(4);
-  CHECK(approxEqual(densify(a|(ad+id)), densify((a|ad)+(a|id))));
-  CHECK(approxEqual(densify((ad+id)|a), densify((ad|a)+(id|a))));
+  CHECK(approxEqual(densify(a*(ad+id)), densify((a*ad)+(a*id))));
+  CHECK(approxEqual(densify((ad+id)*a), densify((ad*a)+(id*a))));
 }
 
 
-TEST_CASE("(A|B)† == B†|A† on a non-Hermitian witness", "[multidiagonal][composition]")
+TEST_CASE("(A*B)† == B†*A† on a non-Hermitian witness", "[multidiagonal][composition]")
 {
   auto a = destroy(5);
   auto K = destroy(5) + (1.+2i)*md::identity(5);
-  CHECK(approxEqual(densify(hermitianConjugateOf(a|K)),
-                    densify(hermitianConjugateOf(K)|hermitianConjugateOf(a))));
+  CHECK(approxEqual(densify(hermitianConjugateOf(a*K)),
+                    densify(hermitianConjugateOf(K)*hermitianConjugateOf(a))));
 }
 
 
 TEST_CASE("composition beyond the truncation is the zero operator", "[multidiagonal][composition]")
 {
   auto a = destroy(3);
-  CHECK((a|a).diagonals.size() == 1);        // a²: offset 2 < 3
-  CHECK(((a|a)|a).diagonals.empty());        // a³: offset 3 ≥ 3 — structurally zero
-  CHECK((MultiDiagonal<1>{} | a).diagonals.empty());
+  CHECK((a*a).diagonals.size() == 1);        // a²: offset 2 < 3
+  CHECK(((a*a)*a).diagonals.empty());        // a³: offset 3 ≥ 3 — structurally zero
+  CHECK((MultiDiagonal<1>{} * a).diagonals.empty());
 }
 
 
@@ -369,14 +369,14 @@ TEST_CASE("direct product densifies to a Kronecker product (axis 0 fastest)", "[
 {
   auto a  = destroy(3);
   auto id = md::identity(2);
-  CHECK(approxEqual(densify(a * id), kron(CMatrix::Identity(2,2), denseDestroy(3))));  // a on axis 0 (fast)
-  CHECK(approxEqual(densify(id * a), kron(denseDestroy(3), CMatrix::Identity(2,2))));  // a on axis 1 (slow)
+  CHECK(approxEqual(densify(a % id), kron(CMatrix::Identity(2,2), denseDestroy(3))));  // a on axis 0 (fast)
+  CHECK(approxEqual(densify(id % a), kron(denseDestroy(3), CMatrix::Identity(2,2))));  // a on axis 1 (slow)
 }
 
 
 TEST_CASE("direct product concatenates the offset arrays", "[multidiagonal][directproduct]")
 {
-  auto p = destroy(3) * hermitianConjugateOf(destroy(4));
+  auto p = destroy(3) % hermitianConjugateOf(destroy(4));
   REQUIRE(p.diagonals.size() == 1);
   CHECK((p.diagonals.begin()->first == MultiDiagonal<2>::Offsets{+1,-1}));
 }
@@ -387,7 +387,7 @@ TEST_CASE("Jaynes–Cummings coupling σ⁺⊗a + σ⁻⊗a† is Hermitian and 
   const size_t dim=4;
   auto sminus = sigmaMinus();
   auto a      = destroy(dim);
-  auto jc = hermitianConjugateOf(sigmaMinus())*a + sminus*hermitianConjugateOf(destroy(dim));
+  auto jc = hermitianConjugateOf(sigmaMinus())%a + sminus%hermitianConjugateOf(destroy(dim));
 
   const CMatrix ds = denseSigmaMinus(), da = denseDestroy(dim);
   const CMatrix ref = kron(da, ds.adjoint()) + kron(da.adjoint(), ds);  // qubit fast (axis 0), mode slow (axis 1)
@@ -398,7 +398,7 @@ TEST_CASE("Jaynes–Cummings coupling σ⁺⊗a + σ⁻⊗a† is Hermitian and 
 }
 
 
-TEST_CASE("mixed-product law (A*B)|(C*D) == (A|C)*(B|D)", "[multidiagonal][composition][directproduct]")
+TEST_CASE("mixed-product law (A%B)*(C%D) == (A*C)%(B*D)", "[multidiagonal][composition][directproduct]")
 {
   const size_t dim=4;
   auto A = destroy(dim);                                  // mode, axis 0 (fast)
@@ -406,9 +406,9 @@ TEST_CASE("mixed-product law (A*B)|(C*D) == (A|C)*(B|D)", "[multidiagonal][compo
   auto Sm = sigmaMinus();                                 // qubit, axis 1 (slow)
   auto Sp = hermitianConjugateOf(sigmaMinus());
 
-  auto lhs = (A*Sm)|(C*Sp);
-  CHECK(approxEqual(densify(lhs), densify((destroy(dim)|hermitianConjugateOf(destroy(dim)))
-                                          * (sigmaMinus()|hermitianConjugateOf(sigmaMinus())))));
+  auto lhs = (A%Sm)*(C%Sp);
+  CHECK(approxEqual(densify(lhs), densify((destroy(dim)*hermitianConjugateOf(destroy(dim)))
+                                          % (sigmaMinus()*hermitianConjugateOf(sigmaMinus())))));
 
   const CMatrix ds = denseSigmaMinus(), da = denseDestroy(dim);
   CHECK(approxEqual(densify(lhs), kron((ds*ds.adjoint()).eval(), (da*da.adjoint()).eval())));
@@ -417,8 +417,8 @@ TEST_CASE("mixed-product law (A*B)|(C*D) == (A|C)*(B|D)", "[multidiagonal][compo
 
 TEST_CASE("rank-2 composition is genuinely rank-general", "[multidiagonal][composition]")
 {
-  // (a ⊗ σ⁻)|(a ⊗ σ⁺) on a 3×2 space: offsets add per axis to (+2, 0)
-  auto lhs = (destroy(3)*sigmaMinus()) | (destroy(3)*hermitianConjugateOf(sigmaMinus()));
+  // (a ⊗ σ⁻)(a ⊗ σ⁺) on a 3×2 space: offsets add per axis to (+2, 0)
+  auto lhs = (destroy(3)%sigmaMinus()) * (destroy(3)%hermitianConjugateOf(sigmaMinus()));
   const CMatrix da = denseDestroy(3), ds = denseSigmaMinus();
   CHECK(approxEqual(densify(lhs), kron((ds*ds.adjoint()).eval(), (da*da).eval())));
   REQUIRE(lhs.diagonals.size() == 1);
@@ -435,16 +435,16 @@ TEST_CASE("rank-3 application and composition with colliding offsets — #4", "[
   const CMatrix dA = kron(densify(A2), kron(densify(A1), densify(A0)));
   const CMatrix dB = kron(densify(B2), kron(densify(B1), densify(B0)));
 
-  auto A = A0 * A1 * A2;
-  auto X = A + B0 * B1 * B2;                        // not a product operator
+  auto A = A0 % A1 % A2;
+  auto X = A + B0 % B1 % B2;                        // not a product operator
   REQUIRE(A.diagonals.size() == 27);
   CHECK(approxEqual(densify(A), dA));
   CHECK(approxEqual(densify(X), (dA+dB).eval()));
 
-  auto XX = X | X;                                  // 27×27 pairs onto 5·3·5 offsets (|±2| exceeds axis 1)
+  auto XX = X * X;                                  // 27×27 pairs onto 5·3·5 offsets (|±2| exceeds axis 1)
   CHECK(XX.diagonals.size() == 75);
   CHECK(relApproxEqual(densify(XX), ((dA+dB)*(dA+dB)).eval()));
-  CHECK(relApproxEqual(densify(X | hermitianConjugateOf(X)), ((dA+dB)*(dA+dB).adjoint()).eval()));
+  CHECK(relApproxEqual(densify(X * hermitianConjugateOf(X)), ((dA+dB)*(dA+dB).adjoint()).eval()));
 }
 
 
@@ -499,7 +499,7 @@ TEST_CASE("application through strided, offset views of larger arrays — #1", "
   auto A0 = complexTridiag(3,0.3), A1 = complexTridiag(2,-1.2), A2 = complexTridiag(4,2.1);
   auto B0 = complexTridiag(3,1.7), B1 = complexTridiag(2,0.4),  B2 = complexTridiag(4,-0.8);
   const CMatrix dense = kron(densify(A2), kron(densify(A1), densify(A0))) + kron(densify(B2), kron(densify(B1), densify(B0)));
-  auto X = A0 * A1 * A2 + B0 * B1 * B2;
+  auto X = A0 % A1 % A2 + B0 % B1 % B2;
 
   CVector psi(24);
   for (Eigen::Index k=0; k<psi.size(); ++k) psi(k)=dcomp(std::cos(0.7*double(k)), std::sin(1.3*double(k)));
@@ -507,8 +507,8 @@ TEST_CASE("application through strided, offset views of larger arrays — #1", "
 
   const auto agrees = [&] (const CVector& v) {return (v-ref).norm() < tol*ref.norm();};
 
-  // X|X has 75 diagonals, more than applyByRows lists per sweep, and up to 24 (3·2·4) contributing to one row
-  auto XX = X | X;
+  // X*X has 75 diagonals, more than applyByRows lists per sweep, and up to 24 (3·2·4) contributing to one row
+  auto XX = X * X;
   const CVector refXX = dense*ref;
   const auto agreesXX = [&] (const CVector& v) {return (v-refXX).norm() < tol*refXX.norm();};
 
@@ -538,7 +538,7 @@ TEST_CASE("application with axis 0 of every length, unrolled up to four elements
     CAPTURE(n0);
     auto A0 = complexTridiag(n0,0.3), A1 = complexTridiag(3,-1.2);
     const CMatrix dense = kron(densify(A1), densify(A0));
-    auto X = A0 * A1;
+    auto X = A0 % A1;
     CHECK(approxEqual(densify(X), dense));          // contiguous
 
     CVector psi(Eigen::Index(3*n0));
@@ -599,7 +599,7 @@ TEST_CASE("application by rows: rows at the edges, and more diagonals per row th
     const CMatrix dB = densify(B);
     for (bool first : {true,false}) {
       CAPTURE(first);
-      auto X = first ? copy(md)*B : B*copy(md);
+      auto X = first ? copy(md)%B : B%copy(md);
       const CMatrix dX = first ? kron(dB,dense) : kron(dense,dB);
       CVector psi2(dX.cols());
       for (Eigen::Index k=0; k<psi2.size(); ++k) psi2(k)=dcomp(std::cos(0.7*double(k)), std::sin(1.3*double(k)));
@@ -654,7 +654,7 @@ TEST_CASE("JSON serialization of MultiDiagonal — finding F2", "[multidiagonal]
 TEST_CASE("JSON round trip of MultiDiagonal — #18", "[multidiagonal][json]")
 {
   // rank 2, genuinely complex, diagonals at signed offsets on both axes
-  auto md = complexTridiag(4,0.3) * complexTridiag(3,-1.2) + destroy(4) * hermitianConjugateOf(destroy(3));
+  auto md = complexTridiag(4,0.3) % complexTridiag(3,-1.2) + destroy(4) % hermitianConjugateOf(destroy(3));
 
   auto back = json::value_to<MultiDiagonal<2>>(json::value_from(md));
   REQUIRE(back.diagonals.size() == md.diagonals.size());

@@ -77,12 +77,15 @@ ctest --test-dir build --output-on-failure
   - A diagonal at offset d on an axis of dimension N has length N−|d| along that axis.
 - The map is ordered deliberately, because it makes accumulation order deterministic and
   results reproducible. Do not switch it to `unordered_map`.
-- Composition `A | B` follows the rule that offsets add.
+- Composition `A * B` (AB) follows the rule that offsets add.
   - It runs over all pairs of diagonals, with per-axis window arithmetic.
   - Colliding offset pairs must accumulate into the same output diagonal (finding F1b).
   - Composition is rank-general.
-- Direct product `A * B` concatenates the offset arrays and takes the `directProduct` of
-  the diagonals.
+- Direct product `A % B` (A⊗B) concatenates the offset arrays and takes the `directProduct` of
+  the diagonals. The spelling is #30 (decided 2026-11-10, v0.6.0), replacing `|` for composition and `*`
+  for the direct product: `*` and `%` share multiplicative precedence, so neither binds silently around
+  a `+` (`|` binds more loosely than `+`); a misparse of a mixed expression typically fails to compile
+  for mismatched ranks. Scalar multiplication stays `c * A`.
 - Hermitian conjugation negates the key **and** conjugates the values. (Not to be confused
   with F4, which concerned the dense `hermitianConjugateSelf`.) The value conjugation is
   covered by complex-valued tests against the dense adjoint (#4); keep at least one
@@ -95,7 +98,7 @@ ctest --test-dir build --output-on-failure
   repo.
 - Construction (#15, decided 2026-11-07): `multidiagonal::diagonal(offset, values)` gives the rank-1
   operator with one diagonal (dimension `values.size()+|offset|`), and operators are built from these
-  with `+`, `|` and `*`. Only a diagonal whose coefficients don't factorize over the axes is emplaced
+  with `+`, `*` and `%` (spelling #30). Only a diagonal whose coefficients don't factorize over the axes is emplaced
   into `diagonals` directly. The README's usage example is the first part of
   `tests/consumer/consumer.cc`; keep the two in sync.
 - Rank-1 construction from raw storage goes through `multiarray::fromStorage`. The vector
@@ -123,8 +126,8 @@ ctest --test-dir build --output-on-failure
 - Catch2 v3. Every behavioral change or new feature gets a test.
 - **Dense oracle:** `densify()` probes an operator with unit vectors to build a dense
   matrix. Algebraic identities are checked against it, for example:
-  - `(A|B)|C == A|(B|C)`
-  - `(A*B)† == A†*B†`
+  - `(A*B)*C == A*(B*C)`
+  - `(A%B)† == A†%B†`
   - distributivity
 - **Truncation:** operators are truncated, so `[a, a†] == 1` is *false*. Compare against
   the dense truncated oracle, never against untruncated textbook identities.
@@ -285,7 +288,8 @@ back (#18) are done (2026-11-07).
    offloaded standard parallel algorithms, prepared by `std::mdspan` views). **Don't start it unasked.**
 3. For the paper, outside the code: a DOI (Zenodo's GitHub integration, a repository setting, so
    András's action; the first DOI comes with the next release, cite the concept DOI), the venue, and
-   the draft. `CITATION.cff` has András's ORCID (2026-11-07). Cosmetic: #17 (finding
+   the draft. `CITATION.cff` has András's ORCID (2026-11-07). The paper's listings and the table of Sec. 3
+   still spell the operators `|` and `*`; #30 stays open until they read `*` and `%`. Cosmetic: #17 (finding
    test names, `[contract]` tags), #20 (the Doxygen theme).
 4. Boost.Serialization (#16, done): the library uses only its headers (`MultiArray`'s `save`/`load`)
    and doesn't link the compiled library; whoever writes archives does (C++QED, and this test

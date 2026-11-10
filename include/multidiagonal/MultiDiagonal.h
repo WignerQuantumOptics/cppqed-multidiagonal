@@ -20,14 +20,14 @@ using namespace cppqedutils;
 /// **not closed under composition**: the product of two tridiagonal operators is in general
 /// pentadiagonal, and with different offsets not tridiagonal at all. `MultiDiagonal` lifts all these restrictions:
 /// - Any number of diagonals at arbitrary offsets per axis.
-/// - `operator|` (composition) produces new diagonals at all pairwise offset sums — the algebra is closed.
-/// - `operator*` (direct product) concatenates offset arrays, reflecting tensor product structure exactly.
+/// - `operator*` (composition) produces new diagonals at all pairwise offset sums — the algebra is closed.
+/// - `operator%` (direct product) concatenates offset arrays, reflecting tensor product structure exactly.
 ///
 /// ### Representation
 /// Each diagonal is keyed by a **signed offset** per axis: positive = upper, negative = lower,
 /// zero = main. The offset counts the quanta a diagonal moves along each axis, and the algebra reduces
 /// to arithmetic on these counts:
-/// - composition: \f$\text{offset}_{A|B} = \text{offset}_A + \text{offset}_B\f$ (per axis)
+/// - composition: \f$\text{offset}_{AB} = \text{offset}_A + \text{offset}_B\f$ (per axis)
 /// - Hermitian conjugation: negation of all offsets
 /// - direct product: concatenation of offset arrays
 ///
@@ -287,10 +287,13 @@ private:
 public:
 
 
-  /// @brief Tensor (direct) product: concatenates the signed offset arrays, reflecting the tensor
-  /// product structure exactly. Axes of @p md1 come first.
+  /// @brief Tensor (direct) product \f$A\otimes B\f$, spelled `A % B`: concatenates the signed offset arrays,
+  /// reflecting the tensor product structure exactly. Axes of @p md1 come first.
+  ///
+  /// C++ has no ⊗, and `%` shares the precedence and left-to-right associativity of `*` (composition), so neither
+  /// binds silently around a `+`. (In Armadillo, `%` is the element-wise product instead.)
   template <size_t RANK2>
-  friend auto operator* (const MultiDiagonal<RANK>& md1, const MultiDiagonal<RANK2>& md2)
+  friend auto operator% (const MultiDiagonal<RANK>& md1, const MultiDiagonal<RANK2>& md2)
   {
     MultiDiagonal<RANK+RANK2> res;
     for (const auto& [offsets1,diag1] : md1.diagonals) for (const auto& [offsets2,diag2] : md2.diagonals)
@@ -418,8 +421,8 @@ public:
 };
 
 
-/// @brief Composition (matrix product) of two `MultiDiagonal` operators of arbitrary rank:
-/// \f$(A|B)_{rc} = \sum_m A_{rm} B_{mc}\f$.
+/// @brief Composition (matrix product) \f$AB\f$ of two `MultiDiagonal` operators of the same, arbitrary rank,
+/// spelled `A * B`: \f$(AB)_{rc} = \sum_m A_{rm} B_{mc}\f$.
 ///
 /// For each pair of diagonals — \f$A\f$ at signed offsets \f$p\f$, \f$B\f$ at \f$q\f$ (per axis,
 /// dimension \f$D\f$) — the contribution lands on the result diagonal at
@@ -432,13 +435,16 @@ public:
 /// the invariant \f$\text{extent}+|s|=D\f$ holds. Pairs with \f$|s_i|\ge D_i\f$ or an empty window
 /// on any axis are structurally zero and skipped. **Contributions from different \f$(p,q)\f$ pairs
 /// to the same \f$s\f$ accumulate** — this is essential for correctness, not an optimization
-/// (e.g. \f$\sigma_x|\sigma_x\f$ assembles its main diagonal from two complementary pairs).
+/// (e.g. \f$\sigma_x\sigma_x\f$ assembles its main diagonal from two complementary pairs).
 ///
 /// Complexity: \f$O(d_A\, d_B)\f$ diagonal pairs, each linear in the window volume.
 ///
-/// @note `operator*` has higher precedence than `operator|` in C++; use parentheses in mixed expressions.
+/// @note `*` (composition) and `%` (direct product) share multiplicative precedence and associate from left to right,
+/// and both bind more tightly than `+` and `-`. Mixed expressions group from the left: `A % B * C % D` is
+/// `((A % B) * C) % D`, which typically fails to compile, because the ranks don't match. The mixed-product law reads
+/// `(A % B) * (C % D) == (A * C) % (B * D)`.
 template <size_t RANK>
-MultiDiagonal<RANK> operator|(const MultiDiagonal<RANK>& a, const MultiDiagonal<RANK>& b)
+MultiDiagonal<RANK> operator*(const MultiDiagonal<RANK>& a, const MultiDiagonal<RANK>& b)
 {
   using MD = MultiDiagonal<RANK>;
 
@@ -496,8 +502,8 @@ namespace multidiagonal {
 
 /// @brief The rank-1 operator with the single diagonal @p values at the signed offset @p offset: the building block of operators.
 ///
-/// Operators with several diagonals, or on several axes, are built from these with `operator+`, `operator|`
-/// (composition) and `operator*` (direct product, the left operand's axes first). Only a diagonal whose coefficients
+/// Operators with several diagonals, or on several axes, are built from these with `operator+`, `operator*`
+/// (composition) and `operator%` (direct product, the left operand's axes first). Only a diagonal whose coefficients
 /// don't factorize over the axes needs to be put into `MultiDiagonal::diagonals` directly.
 ///
 /// Following the storage convention of `MultiDiagonal`, `values[k]` is the matrix element \f$A_{k+o^-,\,k+o^+}\f$,
@@ -507,7 +513,8 @@ namespace multidiagonal {
 /// ```
 /// auto a {multidiagonal::diagonal(+1,{1.,std::sqrt(2.),std::sqrt(3.)})};   // a for a cutoff of 4
 /// auto sm{multidiagonal::diagonal(+1,{1.})};                              // σ⁻ = |0⟩⟨1|
-/// auto jc{hermitianConjugateOf(sm) * a + sm * hermitianConjugateOf(a)};   // qubit on axis 0, mode on axis 1
+/// auto n {hermitianConjugateOf(a) * a};                                    // composition: the number operator
+/// auto jc{hermitianConjugateOf(sm) % a + sm % hermitianConjugateOf(a)};   // qubit on axis 0, mode on axis 1
 /// ```
 MultiDiagonal<1> diagonal(ptrdiff_t offset, std::vector<dcomp> values);
 

@@ -14,13 +14,13 @@ For a composite system of $R$ subsystems, `MultiDiagonal<RANK>` stores an operat
 
 $$A = \sum_{\mathbf{o} \in \mathbb{K}} \sum_{\mathbf{n}} \alpha^{\mathbf{o}}_{\mathbf{n}} \left|\mathbf{n}\right\rangle\left\langle \mathbf{n}+\mathbf{o}\right|$$
 
-with $\mathbb{K} \subset \mathbb{Z}^R$ an **arbitrary** set of *signed* offset vectors, one entry per subsystem axis, and $\mathbf{n}$ running over the multi-indices for which both $\mathbf{n}$ and $\mathbf{n}+\mathbf{o}$ lie in the truncated Hilbert space. A positive entry thus means an upper diagonal on that axis. The coefficients need not factorize over the subsystems; direct products, built with `operator*`, are the special case where they do.
+with $\mathbb{K} \subset \mathbb{Z}^R$ an **arbitrary** set of *signed* offset vectors, one entry per subsystem axis, and $\mathbf{n}$ running over the multi-indices for which both $\mathbf{n}$ and $\mathbf{n}+\mathbf{o}$ lie in the truncated Hilbert space. A positive entry thus means an upper diagonal on that axis. The coefficients need not factorize over the subsystems; direct products, built with `operator%`, are the special case where they do.
 
 ## The signed-offset representation
 
 Each diagonal is keyed by a signed offset per axis — positive = upper, negative = lower, zero = main diagonal. The offset counts the quanta a diagonal moves along each axis, and the algebra reduces to arithmetic on these counts:
 
-- **composition**: $\text{offset}_{A|B} = \text{offset}_A + \text{offset}_B$ per axis, for arbitrary rank
+- **composition**: $\text{offset}_{AB} = \text{offset}_A + \text{offset}_B$ per axis, for arbitrary rank
 - **Hermitian conjugation**: negation of all offsets (plus conjugation of the stored values)
 - **direct product**: concatenation of the offset arrays, reflecting the tensor product structure exactly
 
@@ -28,13 +28,13 @@ The diagonal at signed offset $o$ (per axis, dimension $D$) has extent $D-|o|$, 
 
 ## Why not `Tridiagonal`?
 
-The predecessor class `Tridiagonal<RANK>` in C++QED v2 stored exactly three diagonals per axis — at positions $-K$, $0$, $+K$ for a single shared offset $K$ — and was **not closed under composition**: the product of two tridiagonal operators is in general pentadiagonal, and with different offsets is not tridiagonal at all. `MultiDiagonal` lifts all these restrictions — any number of diagonals at independent arbitrary offsets, and the operator algebra is closed under composition (`operator|`), direct product (`operator*`), addition, and Hermitian conjugation.
+The predecessor class `Tridiagonal<RANK>` in C++QED v2 stored exactly three diagonals per axis — at positions $-K$, $0$, $+K$ for a single shared offset $K$ — and was **not closed under composition**: the product of two tridiagonal operators is in general pentadiagonal, and with different offsets is not tridiagonal at all. `MultiDiagonal` lifts all these restrictions — any number of diagonals at independent arbitrary offsets, and the operator algebra is closed under composition (`operator*`), direct product (`operator%`), addition, and Hermitian conjugation.
 
 The truncated algebra is represented *exactly*, including its physical deviations from the untruncated one: e.g. $[a,a^\dagger]$ at cutoff $D$ is $\mathrm{diag}(1,\ldots,1,1-D)$, not $\mathbb{1}$ — as it must be for any finite-dimensional representation.
 
 ## Usage
 
-Operators are built from single diagonals with `multidiagonal::diagonal(offset, values)`, and combined with `+`, `|` (composition, the offsets add up) and `*` (direct product, the left operand's axes first). A Jaynes–Cummings coupling between a qubit and a mode with cutoff 5, applied to the state $|0\rangle|1\rangle$:
+Operators are built from single diagonals with `multidiagonal::diagonal(offset, values)`, and combined with `+`, `*` (composition $AB$, the offsets add up) and `%` (direct product $A\otimes B$, the left operand's axes first). `*` and `%` share the multiplicative precedence, group from the left, and bind more tightly than `+`; `%` is not the element-wise product it is in Armadillo. A Jaynes–Cummings coupling between a qubit and a mode with cutoff 5, applied to the state $|0\rangle|1\rangle$:
 
 ```cpp
 #include <multidiagonal/MultiDiagonal.h>
@@ -53,8 +53,8 @@ int main()
   auto a {md::diagonal(+1,std::move(ladder))};   // ⟨n|a|n+1⟩ = √(n+1): the diagonal at offset +1
   auto sm{md::diagonal(+1,{1.})};                // σ⁻ = |0⟩⟨1|
 
-  auto n {hermitianConjugateOf(a) | a};                                  // composition: the offsets add up to 0
-  auto jc{hermitianConjugateOf(sm) * a + sm * hermitianConjugateOf(a)};  // direct product: qubit on axis 0, mode on axis 1
+  auto n {hermitianConjugateOf(a) * a};                                  // composition: the offsets add up to 0
+  auto jc{hermitianConjugateOf(sm) % a + sm % hermitianConjugateOf(a)};  // direct product: qubit on axis 0, mode on axis 1
 
   MultiArray<dcomp,2> psi{{2,N},multiarray::zeroInit<dcomp>}, dpsi{{2,N},multiarray::zeroInit<dcomp>};
   psi(0,1)=1.;                                   // |0⟩|1⟩
@@ -73,7 +73,7 @@ Application accumulates into its last argument and applies no factor $1/i$ (C++Q
 - **Deterministic results**: diagonals are stored in an ordered map keyed by signed offsets, so accumulation order in composition is well-defined and reproducible across platforms
 - **JSON serialization**: written and read back via Boost.JSON `tag_invoke`, useful for testing and debugging
 - **No time dependence**: operators carry no frequencies. Interaction-picture time dependence ($\alpha_{m,n} e^{\delta_{m,n} t}$) belongs to the consumer; in C++QED the trajectory owns the interaction picture
-- **Property-tested**: the algebraic identities — associativity, $(A|B)^\dagger = B^\dagger|A^\dagger$, distributivity, the mixed-product law $(A{\otimes}B)|(C{\otimes}D) = (A|C){\otimes}(B|D)$ — are verified against dense-matrix oracles in CI
+- **Property-tested**: the algebraic identities — associativity, $(AB)^\dagger = B^\dagger A^\dagger$, distributivity, the mixed-product law $(A{\otimes}B)(C{\otimes}D) = (AC){\otimes}(BD)$ — are verified against dense-matrix oracles in CI
 
 ## Performance
 

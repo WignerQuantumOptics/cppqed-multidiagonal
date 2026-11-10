@@ -321,8 +321,8 @@ MultiDiagonal<2> jaynesCummings(size_t N, bool qubitFirst)
   std::vector<dcomp> nv(N); for (size_t k=0; k<N; ++k) nv[k]=double(k);
   auto mode=0.7*single(0,nv) + dcomp(0.3,0.2)*hermitianConjugateOf(ladder()) + dcomp(0.3,-0.2)*ladder();
   using quantumoperator::multidiagonal::identity;
-  if (qubitFirst) return 1.1*(single(-1,{1.})*ladder()) + 1.1*(single(+1,{1.})*hermitianConjugateOf(ladder())) + identity(2)*mode;
-  return 1.1*(ladder()*single(-1,{1.})) + 1.1*(hermitianConjugateOf(ladder())*single(+1,{1.})) + mode*identity(2);
+  if (qubitFirst) return 1.1*(single(-1,{1.})%ladder()) + 1.1*(single(+1,{1.})%hermitianConjugateOf(ladder())) + identity(2)%mode;
+  return 1.1*(ladder()%single(-1,{1.})) + 1.1*(hermitianConjugateOf(ladder())%single(+1,{1.})) + mode%identity(2);
 }
 
 void caseB(bool smoke)
@@ -353,7 +353,7 @@ void caseC(bool smoke)
   const CVector x=toVec(psi); CVector ye=CVector::Zero(x.size()); const size_t N=size_t(x.size());
   for (size_t j : {0uz,2uz}) {
     auto id=[&]{return quantumoperator::multidiagonal::identity(n);};
-    MultiDiagonal<4> full = j==0 ? A*id()*id()*id() : id()*id()*A*id();
+    MultiDiagonal<4> full = j==0 ? A%id()%id()%id() : id()%id()%A%id();
     const auto S=toSparse(full,ext); const double nnz=double(S.nonZeros());
     const CVector ref=S*x;
     zero(y); broadcast(A,j,psi,y); check("C broadcast",toVec(y),ref);
@@ -383,7 +383,7 @@ void caseD(bool smoke)
     const auto ts=taps(A);
     for (size_t j : {0uz,2uz}) {
       auto id=[&]{return quantumoperator::multidiagonal::identity(n);};
-      MultiDiagonal<4> full = j==0 ? A*id()*id()*id() : id()*id()*A*id();
+      MultiDiagonal<4> full = j==0 ? A%id()%id()%id() : id()%id()%A%id();
       const auto S=toSparse(full,ext); const double nnz=double(S.nonZeros()); const CVector ref=S*x;
       const size_t s=psi.strides[j];
 
@@ -437,7 +437,7 @@ void caseE(bool smoke)
 {
   for (size_t n0 : smoke ? std::vector<size_t>{1,2,5} : std::vector<size_t>{1,2,3,4,5,6,8,16,32}) {
     const size_t M=(smoke ? 256 : 8192)/n0; const Extents<2> ext{n0,M};
-    auto op=tri(n0)*tri(M); auto psi=randomState<2>(ext); MultiArray<dcomp,2> y{ext,multiarray::zeroInit<dcomp>};
+    auto op=tri(n0)%tri(M); auto psi=randomState<2>(ext); MultiArray<dcomp,2> y{ext,multiarray::zeroInit<dcomp>};
     const auto S=toSparse(op,ext); const CVector x=toVec(psi); CVector ye=CVector::Zero(x.size());
     const double nnz=double(S.nonZeros());
     op(0.,psi,y); const CVector ref=S*x; check("E library",toVec(y),ref);
@@ -462,7 +462,7 @@ void caseF(bool smoke)
     for (size_t n : smoke ? std::vector<size_t>{8,30} : std::vector<size_t>{8,16,24,32,48,64,96,128,256}) {
       const size_t S=std::max(total/n,1uz); const Extents<2> ext{n,S};
       auto A=penta(n); auto psi=randomState<2>(ext); MultiArray<dcomp,2> y{ext,multiarray::zeroInit<dcomp>};
-      const auto full=copy(A)*quantumoperator::multidiagonal::identity(S);
+      const auto full=copy(A)%quantumoperator::multidiagonal::identity(S);
       const auto Sp=toSparse(full,ext); const CVector ref=Sp*toVec(psi); const double nnz=double(Sp.nonZeros());
       const std::span<const dcomp> xs=psi.dataView; const std::span<dcomp> ys{y.dataStorage()};
       const auto slices=[&](auto apply){ for (size_t b=0; b<S; ++b)
@@ -480,7 +480,7 @@ void caseF(bool smoke)
   for (size_t total : smoke ? std::vector<size_t>{1024} : std::vector<size_t>{8192,65536,1uz<<20})
     for (size_t n0 : smoke ? std::vector<size_t>{5,32} : std::vector<size_t>{5,8,12,16,24,32,48,64,128,256}) {
       const size_t M=total/n0; const Extents<2> ext{n0,M};
-      auto op=tri(n0)*tri(M); auto psi=randomState<2>(ext); MultiArray<dcomp,2> y{ext,multiarray::zeroInit<dcomp>};
+      auto op=tri(n0)%tri(M); auto psi=randomState<2>(ext); MultiArray<dcomp,2> y{ext,multiarray::zeroInit<dcomp>};
       const auto Sp=toSparse(op,ext); const CVector ref=Sp*toVec(psi); const double nnz=double(Sp.nonZeros());
       zero(y); op.applyByDiagonals(psi,y); check("F grid byDiagonals",toVec(y),ref);
       zero(y); op.applyByRows(psi,y); check("F grid byRows",toVec(y),ref);
@@ -564,7 +564,7 @@ void caseH(bool smoke)
     for (size_t n : smoke ? std::vector<size_t>{16} : std::vector<size_t>{16,24,32}) {
       const size_t S=T/n, N=n*S; const Extents<2> ext{n,S};
       auto A=penta(n); const auto psi0=randomState<2>(ext);
-      const auto full=copy(A)*quantumoperator::multidiagonal::identity(S);
+      const auto full=copy(A)%quantumoperator::multidiagonal::identity(S);
       const auto Sp=toSparse(full,ext); const CVector ref=Sp*toVec(psi0); const double nnz=double(Sp.nonZeros());
       std::copy_n(psi0.dataView.data(),N,buffer.get()); const std::span<const dcomp> xs{buffer.get(),N};
       for (ptrdiff_t delta : deltas) {
@@ -599,7 +599,7 @@ void caseI(bool smoke)
     for (size_t n : smoke ? std::vector<size_t>{128,256} : std::vector<size_t>{128,160,192,256,320,384,512,768,1024}) {
       const size_t S=T/n, N=n*S; const Extents<2> ext{n,S};
       auto A=penta(n); const auto psi0=randomState<2>(ext);
-      const auto Sp=toSparse(copy(A)*quantumoperator::multidiagonal::identity(S),ext); const CVector ref=Sp*toVec(psi0);
+      const auto Sp=toSparse(copy(A)%quantumoperator::multidiagonal::identity(S),ext); const CVector ref=Sp*toVec(psi0);
       const double nnz=double(Sp.nonZeros());
       const size_t span=(N*sizeof(dcomp)+page-1)/page*page+page, bytes=2*span+page;   // psi's pages and a spare; dpsidt's
       const std::unique_ptr<dcomp,decltype(&std::free)> buffer{static_cast<dcomp*>(std::aligned_alloc(page,bytes)),&std::free};

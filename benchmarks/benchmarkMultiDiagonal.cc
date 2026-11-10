@@ -4,7 +4,7 @@
 //
 // Benchmarks:
 //   apply1            rank-1 application, pentadiagonal, vs Eigen sparse/dense
-//   compose1          rank-1 composition (operator|) vs sparse-sparse / dense-dense product
+//   compose1          rank-1 composition (operator*) vs sparse-sparse / dense-dense product
 //   construct1        rank-1 construction from scratch vs triplets + makeCompressed
 //   applyJC           rank-2 Jaynes–Cummings application, BOTH axis orders:
 //                       _qbitfast : qubit = axis 0 → inner loops of length 2
@@ -210,13 +210,13 @@ MultiDiagonal<2> makeJCmd(size_t N, bool qubitFast)
 {
   auto mode = jcDelta*number(N) + jcEta*hermitianConjugateOf(ladder(N)) + conj(jcEta)*ladder(N);
   if (qubitFast)
-    return jcG*( single(-1,{1.}) * ladder(N) )                          // σ⁺ ⊗ a
-         + jcG*( single(+1,{1.}) * hermitianConjugateOf(ladder(N)) )    // σ⁻ ⊗ a†
-         + quantumoperator::multidiagonal::identity(2) * mode;
+    return jcG*( single(-1,{1.}) % ladder(N) )                          // σ⁺ ⊗ a
+         + jcG*( single(+1,{1.}) % hermitianConjugateOf(ladder(N)) )    // σ⁻ ⊗ a†
+         + quantumoperator::multidiagonal::identity(2) % mode;
   else
-    return jcG*( ladder(N) * single(-1,{1.}) )                          // a ⊗ σ⁺
-         + jcG*( hermitianConjugateOf(ladder(N)) * single(+1,{1.}) )    // a† ⊗ σ⁻
-         + mode * quantumoperator::multidiagonal::identity(2);
+    return jcG*( ladder(N) % single(-1,{1.}) )                          // a ⊗ σ⁺
+         + jcG*( hermitianConjugateOf(ladder(N)) % single(+1,{1.}) )    // a† ⊗ σ⁻
+         + mode % quantumoperator::multidiagonal::identity(2);
 }
 
 template <int Options>
@@ -293,8 +293,8 @@ void compositionBench(bool smoke)
     auto psi = randomState(N,23456u);
     const CVector x = vectorize(psi);
 
-    { // validate (A|B)ψ against A·(B·ψ)
-      auto c = a|b;
+    { // validate (AB)ψ against A·(B·ψ)
+      auto c = a*b;
       MultiArray<dcomp,1> dpsidt{{N},multiarray::zeroInit<dcomp>};
       c(0.,psi,dpsidt);
       const CVector ref = SA*(SB*x).eval();
@@ -302,7 +302,7 @@ void compositionBench(bool smoke)
     }
 
     emit("compose1","multidiagonal",N,offsets.size(),
-         medianPerOpNs([&]{ auto c = a|b; doNotOptimize(c.diagonals.size()); },target,reps));
+         medianPerOpNs([&]{ auto c = a*b; doNotOptimize(c.diagonals.size()); },target,reps));
     emit("compose1","eigen_sparse",N,offsets.size(),
          medianPerOpNs([&]{ Eigen::SparseMatrix<dcomp> C = SA*SB; doNotOptimize(C.nonZeros()); },target,reps));
 
@@ -376,9 +376,9 @@ void jaynesCummingsBench(bool smoke)
 }
 
 // ── benchmark: composition, rank 2 ──────────────────────────────────────────
-// The rank-2 counterpart of compose1: JC|JC has 5×5 pairwise offset sums, i.e. the
+// The rank-2 counterpart of compose1: JC·JC has 5×5 pairwise offset sums, i.e. the
 // algebraic work grows multiplicatively with d while sparse pays the symbolic pattern
-// discovery + sort on every product. Also a contract check of rank-general operator|.
+// discovery + sort on every product. Also a contract check of rank-general operator*.
 
 void jaynesCummingsCompositionBench(bool smoke)
 {
@@ -390,8 +390,8 @@ void jaynesCummingsCompositionBench(bool smoke)
     auto psi = randomState({N,2},45678u);
     const CVector x = vectorize(psi);
 
-    { // validate (JC|JC)ψ against S·(S·ψ)
-      auto c = jc|jc;
+    { // validate (JC·JC)ψ against S·(S·ψ)
+      auto c = jc*jc;
       MultiArray<dcomp,2> dpsidt{{N,2},multiarray::zeroInit<dcomp>};
       c(0.,psi,dpsidt);
       const CVector ref = S*(S*x).eval();
@@ -399,7 +399,7 @@ void jaynesCummingsCompositionBench(bool smoke)
     }
 
     emit("composeJC","multidiagonal",N,jc.diagonals.size(),
-         medianPerOpNs([&]{ auto c = jc|jc; doNotOptimize(c.diagonals.size()); },target,reps));
+         medianPerOpNs([&]{ auto c = jc*jc; doNotOptimize(c.diagonals.size()); },target,reps));
     emit("composeJC","eigen_sparse",N,jc.diagonals.size(),
          medianPerOpNs([&]{ Eigen::SparseMatrix<dcomp> C = S*S; doNotOptimize(C.nonZeros()); },target,reps));
   }
