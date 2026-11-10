@@ -124,7 +124,7 @@ include(FetchContent)
 FetchContent_Declare(cppqed-multidiagonal
   GIT_REPOSITORY    https://github.com/WignerQuantumOptics/cppqed-multidiagonal.git
   GIT_TAG           <full commit SHA of a release>
-  FIND_PACKAGE_ARGS 0.5)   # an installed 0.5.x is used when found
+  FIND_PACKAGE_ARGS 0.6)   # an installed 0.6.x is used when found
 FetchContent_MakeAvailable(cppqed-multidiagonal)
 target_link_libraries(MyTarget PUBLIC cppqed::multidiagonal)
 ```
@@ -138,11 +138,11 @@ cmake --install build
 ```
 
 ```cmake
-find_package(cppqed-multidiagonal 0.5 REQUIRED)
+find_package(cppqed-multidiagonal 0.6 REQUIRED)
 target_link_libraries(MyTarget PUBLIC cppqed::multidiagonal)
 ```
 
-While the major version is 0, a new minor version may change the API, so a request for 0.5 accepts 0.5.x but not 0.4 or 0.6. The library sets C++23 for its consumers, and needs Boost ≥ 1.80 and Eigen ≥ 3.4 (Eigen 5 included).
+While the major version is 0, a new minor version may change the API, so a request for 0.6 accepts 0.6.x but not 0.5 or 0.7. The library sets C++23 for its consumers, and needs Boost ≥ 1.80 and Eigen ≥ 3.4 (Eigen 5 included).
 
 Either way, the headers are included with their directory prefix, e.g. `#include <multidiagonal/MultiDiagonal.h>`.
 

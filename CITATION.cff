@@ -10,8 +10,8 @@ authors:
     given-names: András
     affiliation: "HUN-REN Wigner Research Centre for Physics"
     orcid: "https://orcid.org/0000-0001-8916-4033"
-version: 0.5.0
-date-released: 2026-11-07
+version: 0.6.0
+date-released: 2026-11-10
 license: BSL-1.0
 repository-code: "https://github.com/WignerQuantumOptics/cppqed-multidiagonal"
 url: "https://wignerquantumoptics.github.io/cppqed-multidiagonal/"
