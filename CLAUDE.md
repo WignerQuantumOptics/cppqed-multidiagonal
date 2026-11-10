@@ -290,7 +290,7 @@ back (#18) are done (2026-11-07).
 3. For the paper, outside the code: a DOI (Zenodo's GitHub integration, a repository setting, so
    András's action; the first DOI comes with the next release, cite the concept DOI), the venue, and
    the draft. `CITATION.cff` has András's ORCID (2026-11-07). The paper's listings and the table of Sec. 3
-   still spell the operators `|` and `*`; #30 stays open until they read `*` and `%`. Cosmetic: #17 (finding
+   are being respelled to `*` and `%` (#30, András, 2026-11-10). Cosmetic: #17 (finding
    test names, `[contract]` tags), #20 (the Doxygen theme).
 4. Boost.Serialization (#16, done): the library uses only its headers (`MultiArray`'s `save`/`load`)
    and doesn't link the compiled library; whoever writes archives does (C++QED, and this test
