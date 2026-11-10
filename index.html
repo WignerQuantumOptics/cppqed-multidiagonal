@@ -154,7 +154,7 @@ Usage</h1>
 <div class="ttc" id="aMultiDiagonal_8h_html"><div class="ttname"><a href="MultiDiagonal_8h.html">MultiDiagonal.h</a></div></div>
 <div class="ttc" id="aclasscppqedutils_1_1MultiArrayView_html"><div class="ttname"><a href="classcppqedutils_1_1MultiArrayView.html">cppqedutils::MultiArrayView</a></div><div class="ttdoc">A non-owning, strided view over a contiguous buffer. Should be passed by value.</div><div class="ttdef"><b>Definition</b> MultiArray.h:106</div></div>
 <div class="ttc" id="anamespacecppqedutils_html"><div class="ttname"><a href="namespacecppqedutils.html">cppqedutils</a></div><div class="ttdoc">Namespace alias for Boost.Hana, used for compile-time sequences and heterogeneous containers.</div><div class="ttdef"><b>Definition</b> MultiArray.h:17</div></div>
-<div class="ttc" id="anamespacequantumoperator_1_1multidiagonal_html"><div class="ttname"><a href="namespacequantumoperator_1_1multidiagonal.html">quantumoperator::multidiagonal</a></div><div class="ttdef"><b>Definition</b> MultiDiagonal.h:501</div></div>
+<div class="ttc" id="anamespacequantumoperator_1_1multidiagonal_html"><div class="ttname"><a href="namespacequantumoperator_1_1multidiagonal.html">quantumoperator::multidiagonal</a></div><div class="ttdef"><b>Definition</b> MultiDiagonal.h:506</div></div>
 </div><!-- fragment --><p>Application accumulates into its last argument and applies no factor \(1/i\) (C++QED stores \(H/i\)). A diagonal whose coefficients don't factorize over the axes goes into the operator's <code>diagonals</code> map directly. CI compiles and runs this example against the installed library: it is the first part of <a href="tests/consumer/consumer.cc"><code>tests/consumer/consumer.cc</code></a>.</p>
 <h1><a class="anchor" id="autotoc_md8"></a>
 Features</h1>
@@ -195,7 +195,7 @@ Building and testing</h1>
 <div class="fragment"><div class="line">cmake -B build -DCMAKE_BUILD_TYPE=Debug</div>
 <div class="line">cmake --build build</div>
 <div class="line">ctest --test-dir build --output-on-failure</div>
-</div><!-- fragment --><p>(Debug enables the library's bounds and dimension checks, which the test suite exercises; CI runs the Debug×Release matrix on GCC and Clang.)</p>
+</div><!-- fragment --><p>(Debug enables the checks of the time-stepping loop, which the test suite exercises: element access against the bounds, and the dimensions of a state against those of the operator applied to it. The algebra — addition and composition — checks the dimensions of its operands in every build. CI runs the Debug×Release matrix on GCC and Clang.)</p>
 <p>Options:</p><ul>
 <li><code>BUILD_TESTING=OFF</code> skips the tests, <code>MULTIDIAGONAL_BUILD_BENCHMARKS=OFF</code> the benchmarks, and <code>MULTIDIAGONAL_BENCHMARK_NATIVE=OFF</code> compiles the benchmarks without <code>-march=native</code>. Tests and benchmarks are built only when the library is the top-level project.</li>
 <li><code>MULTIDIAGONAL_INSTALL</code> generates the install rules: on by default in a top-level build, off when the library is a subproject.</li>

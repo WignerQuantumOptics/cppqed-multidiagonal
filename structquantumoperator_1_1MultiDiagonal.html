@@ -674,6 +674,12 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
 </div><div class="memdoc">
 
 <p>In-place addition. New diagonals are inserted; existing ones accumulate element-wise. </p>
+<p>The operands must have the same dimensions. This is checked in every build, as in composition (#31): the algebra runs when a system is set up, where the check costs nothing, and a sum of operators of different dimensions would otherwise be wrong without a sign, or write out of bounds when applied. (Application and element access, which run in the time-stepping loop, are checked in Debug only.) The empty operator has no dimensions and adds to any. </p><dl class="exception"><dt>Exceptions</dt><dd>
+  <table class="exception">
+    <tr><td class="paramname">std::runtime_error</td><td>if the dimensions differ. Subtraction, the binary <code>+</code> and <code>-</code>, <code>twoTimesRealPartOf</code> and <code>twoITimesImagPartOf</code> go through here. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
