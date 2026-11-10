@@ -244,6 +244,31 @@ TEST_CASE("addition, subtraction, scalar algebra, real/imag parts", "[multidiago
 }
 
 
+// Not under NDEBUG: the algebra checks dimensions in Release too
+TEST_CASE("addition of operators of different dimensions throws in every build — #31", "[multidiagonal][contract]")
+{
+  // the same offset: the coefficients would otherwise be summed up to the shorter diagonal
+  CHECK_THROWS_AS(destroy(5) + destroy(4), std::runtime_error);
+  // different offsets: the result would hold diagonals that imply different dimensions
+  CHECK_THROWS_AS(destroy(4) + hermitianConjugateOf(destroy(6)), std::runtime_error);
+  CHECK_THROWS_AS(destroy(4) - destroy(6), std::runtime_error);
+
+  auto a = destroy(5);
+  CHECK_THROWS_AS(a += md::identity(4), std::runtime_error);
+  CHECK_THROWS_AS(a -= md::identity(6), std::runtime_error);
+  CHECK(approxEqual(densify(a), denseDestroy(5)));                 // a failed addition leaves the operand as it was
+
+  // rank 2: one axis differing is enough
+  CHECK_THROWS_AS(md::identity(2)%destroy(5) + sigmaMinus()%md::identity(4), std::runtime_error);
+
+  // the empty operator has no dimensions, and adds to any
+  MultiDiagonal<1> sum;
+  CHECK_NOTHROW(sum += destroy(5));
+  CHECK_NOTHROW(sum += MultiDiagonal<1>{});
+  CHECK(approxEqual(densify(sum), denseDestroy(5)));
+}
+
+
 TEST_CASE("twoTimesRealPartOf is Hermitian, twoITimesImagPartOf anti-Hermitian, on a complex operator — #22", "[multidiagonal][contract]")
 {
   auto c = complexTridiag(4, 0.3);

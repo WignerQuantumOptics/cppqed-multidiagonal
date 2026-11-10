@@ -342,13 +342,18 @@ public:
   MultiDiagonal operator+() const {return copy(*this);}
 
   /// @brief In-place addition. New diagonals are inserted; existing ones accumulate element-wise.
+  ///
+  /// The operands must have the same dimensions. This is checked in every build, as in composition (#31): the algebra
+  /// runs when a system is set up, where the check costs nothing, and a sum of operators of different dimensions would
+  /// otherwise be wrong without a sign, or write out of bounds when applied. (Application and element access, which run
+  /// in the time-stepping loop, are checked in Debug only.) The empty operator has no dimensions and adds to any.
+  /// @throws std::runtime_error if the dimensions differ. Subtraction, the binary `+` and `-`, `twoTimesRealPartOf`
+  /// and `twoITimesImagPartOf` go through here.
   MultiDiagonal& operator+=(const MultiDiagonal& md)
   {
-#ifndef NDEBUG
     if (auto dim{calculateAndCheckDimensions(*this)}, mdDim{calculateAndCheckDimensions(md)};
       dim!=Dimensions{} && mdDim!=Dimensions{} && dim!=mdDim)
         throw std::runtime_error("Dimension mismatch in addition of MultiDiagonals");
-#endif // NDEBUG
     for (const auto& [offsets,diag] : md.diagonals)
       if (auto it=diagonals.find(offsets); it!=diagonals.end())
         for (auto&& [to,from] : std::views::zip(it->second.dataStorage(),diag.dataStorage())) to+=from;

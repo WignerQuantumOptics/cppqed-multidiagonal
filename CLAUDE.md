@@ -47,7 +47,9 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-- A Debug build enables the bounds and dimension checks, and the tests exercise them.
+- A Debug build enables the bounds checks and the dimension checks of application, and the tests exercise them.
+  The algebra (`+=` and what goes through it, `*`, reading JSON) checks dimensions in every build (#31): it runs
+  at setup time, so don't put such a check under `NDEBUG`.
   CI runs Debug×Release × GCC/Clang with `CMAKE_COMPILE_WARNING_AS_ERROR=ON`, so code
   must compile warning-free under `-Wall -Wextra -Wpedantic` on both compilers. CI builds
   the benchmarks with `MULTIDIAGONAL_BENCHMARK_NATIVE=OFF`: the runners' processors vary, and

@@ -108,7 +108,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-(Debug enables the library's bounds and dimension checks, which the test suite exercises; CI runs the Debug×Release matrix on GCC and Clang.)
+(Debug enables the checks of the time-stepping loop, which the test suite exercises: element access against the bounds, and the dimensions of a state against those of the operator applied to it. The algebra — addition and composition — checks the dimensions of its operands in every build. CI runs the Debug×Release matrix on GCC and Clang.)
 
 Options:
 - `BUILD_TESTING=OFF` skips the tests, `MULTIDIAGONAL_BUILD_BENCHMARKS=OFF` the benchmarks, and `MULTIDIAGONAL_BENCHMARK_NATIVE=OFF` compiles the benchmarks without `-march=native`. Tests and benchmarks are built only when the library is the top-level project.
