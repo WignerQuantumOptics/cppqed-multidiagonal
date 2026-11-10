@@ -23,7 +23,7 @@ var structquantumoperator_1_1MultiDiagonal =
     [ "calculateAndCheckDimensions", "structquantumoperator_1_1MultiDiagonal.html#a6944e78b47a4742b1c5f52ac8e376410", null ],
     [ "copy", "structquantumoperator_1_1MultiDiagonal.html#ae106344eac3d23cc6b24bca7a6a18961", null ],
     [ "hermitianConjugateOf", "structquantumoperator_1_1MultiDiagonal.html#ab32de4ad2aab3d28f0120882d6b1a2aa", null ],
-    [ "operator*", "structquantumoperator_1_1MultiDiagonal.html#ab34be9f0524f803d7852b3c3765ad99f", null ],
+    [ "operator%", "structquantumoperator_1_1MultiDiagonal.html#a9a200416d4bd315552c5b80497e105bd", null ],
     [ "operator*", "structquantumoperator_1_1MultiDiagonal.html#a802ad935ea29488736c3260b9fb82469", null ],
     [ "operator+", "structquantumoperator_1_1MultiDiagonal.html#a6fd5e860c5b84b3868b8f345ae024e65", null ],
     [ "operator-", "structquantumoperator_1_1MultiDiagonal.html#a65f765098920962aceabbc04642a28e5", null ],

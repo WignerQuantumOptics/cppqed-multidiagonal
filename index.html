@@ -34,7 +34,7 @@ window.MathJax = {
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.5.0</span>
+   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.6.0</span>
    </div>
    <div id="projectbrief">Multidiagonal sparse operator algebra for C++QED</div>
   </td>
@@ -111,23 +111,23 @@ What is a multidiagonal operator?</h1>
 <p class="formulaDsp">
 \[A = \sum_{\mathbf{o} \in \mathbb{K}} \sum_{\mathbf{n}} \alpha^{\mathbf{o}}_{\mathbf{n}} \left|\mathbf{n}\right\rangle\left\langle \mathbf{n}+\mathbf{o}\right|\]
 </p>
-<p>with \(\mathbb{K} \subset \mathbb{Z}^R\) an <b>arbitrary</b> set of <em>signed</em> offset vectors, one entry per subsystem axis, and \(\mathbf{n}\) running over the multi-indices for which both \(\mathbf{n}\) and \(\mathbf{n}+\mathbf{o}\) lie in the truncated Hilbert space. A positive entry thus means an upper diagonal on that axis. The coefficients need not factorize over the subsystems; direct products, built with <code>operator*</code>, are the special case where they do.</p>
+<p>with \(\mathbb{K} \subset \mathbb{Z}^R\) an <b>arbitrary</b> set of <em>signed</em> offset vectors, one entry per subsystem axis, and \(\mathbf{n}\) running over the multi-indices for which both \(\mathbf{n}\) and \(\mathbf{n}+\mathbf{o}\) lie in the truncated Hilbert space. A positive entry thus means an upper diagonal on that axis. The coefficients need not factorize over the subsystems; direct products, built with <code>operator%</code>, are the special case where they do.</p>
 <h1><a class="anchor" id="autotoc_md5"></a>
 The signed-offset representation</h1>
 <p>Each diagonal is keyed by a signed offset per axis — positive = upper, negative = lower, zero = main diagonal. The offset counts the quanta a diagonal moves along each axis, and the algebra reduces to arithmetic on these counts:</p>
 <ul>
-<li><b>composition</b>: \(\text{offset}_{A|B} = \text{offset}_A + \text{offset}_B\) per axis, for arbitrary rank</li>
+<li><b>composition</b>: \(\text{offset}_{AB} = \text{offset}_A + \text{offset}_B\) per axis, for arbitrary rank</li>
 <li><b>Hermitian conjugation</b>: negation of all offsets (plus conjugation of the stored values)</li>
 <li><b>direct product</b>: concatenation of the offset arrays, reflecting the tensor product structure exactly</li>
 </ul>
 <p>The diagonal at signed offset \(o\) (per axis, dimension \(D\)) has extent \(D-|o|\), and entry \(k\) holds the matrix element \(A_{k+o^-,\,k+o^+}\) with \(o^\pm=\max(\pm o,0)\). This min(row,col)-anchored storage is symmetric under transposition, which is what makes conjugation a pure key negation. Application to a state vector costs \(O(N \cdot d)\) for \(d\) diagonals; composition runs over the \(d_A \cdot d_B\) diagonal pairs, each in one pass over the window where the two diagonals overlap.</p>
 <h1><a class="anchor" id="autotoc_md6"></a>
 Why not &lt;tt&gt;Tridiagonal&lt;/tt&gt;?</h1>
-<p>The predecessor class <code>Tridiagonal&lt;RANK&gt;</code> in C++QED v2 stored exactly three diagonals per axis — at positions \(-K\), \(0\), \(+K\) for a single shared offset \(K\) — and was <b>not closed under composition</b>: the product of two tridiagonal operators is in general pentadiagonal, and with different offsets is not tridiagonal at all. <code>MultiDiagonal</code> lifts all these restrictions — any number of diagonals at independent arbitrary offsets, and the operator algebra is closed under composition (<code>operator|</code>), direct product (<code>operator*</code>), addition, and Hermitian conjugation.</p>
+<p>The predecessor class <code>Tridiagonal&lt;RANK&gt;</code> in C++QED v2 stored exactly three diagonals per axis — at positions \(-K\), \(0\), \(+K\) for a single shared offset \(K\) — and was <b>not closed under composition</b>: the product of two tridiagonal operators is in general pentadiagonal, and with different offsets is not tridiagonal at all. <code>MultiDiagonal</code> lifts all these restrictions — any number of diagonals at independent arbitrary offsets, and the operator algebra is closed under composition (<code>operator*</code>), direct product (<code>operator%</code>), addition, and Hermitian conjugation.</p>
 <p>The truncated algebra is represented <em>exactly</em>, including its physical deviations from the untruncated one: e.g. \([a,a^\dagger]\) at cutoff \(D\) is \(\mathrm{diag}(1,\ldots,1,1-D)\), not \(\mathbb{1}\) — as it must be for any finite-dimensional representation.</p>
 <h1><a class="anchor" id="autotoc_md7"></a>
 Usage</h1>
-<p>Operators are built from single diagonals with <code>multidiagonal::diagonal(offset, values)</code>, and combined with <code>+</code>, <code>|</code> (composition, the offsets add up) and <code>*</code> (direct product, the left operand's axes first). A Jaynes–Cummings coupling between a qubit and a mode with cutoff 5, applied to the state \(|0\rangle|1\rangle\):</p>
+<p>Operators are built from single diagonals with <code>multidiagonal::diagonal(offset, values)</code>, and combined with <code>+</code>, <code>*</code> (composition \(AB\), the offsets add up) and <code>%</code> (direct product \(A\otimes B\), the left operand's axes first). <code>*</code> and <code>%</code> share the multiplicative precedence, group from the left, and bind more tightly than <code>+</code>; <code>%</code> is not the element-wise product it is in Armadillo. A Jaynes–Cummings coupling between a qubit and a mode with cutoff 5, applied to the state \(|0\rangle|1\rangle\):</p>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="MultiDiagonal_8h.html">multidiagonal/MultiDiagonal.h</a>&gt;</span></div>
 <div class="line"> </div>
 <div class="line"><span class="preprocessor">#include &lt;cmath&gt;</span></div>
@@ -144,8 +144,8 @@ Usage</h1>
 <div class="line">  <span class="keyword">auto</span> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">a</a> {md::diagonal(+1,std::move(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">ladder</a>))};   <span class="comment">// ⟨n|a|n+1⟩ = √(n+1): the diagonal at offset +1</span></div>
 <div class="line">  <span class="keyword">auto</span> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">sm</a>{md::diagonal(+1,{1.})};                <span class="comment">// σ⁻ = |0⟩⟨1|</span></div>
 <div class="line"> </div>
-<div class="line">  <span class="keyword">auto</span> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">n</a> {hermitianConjugateOf(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">a</a>) | <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">a</a>};                                  <span class="comment">// composition: the offsets add up to 0</span></div>
-<div class="line">  <span class="keyword">auto</span> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">jc</a>{hermitianConjugateOf(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">sm</a>) * <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">a</a> + <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">sm</a> * hermitianConjugateOf(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">a</a>)};  <span class="comment">// direct product: qubit on axis 0, mode on axis 1</span></div>
+<div class="line">  <span class="keyword">auto</span> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">n</a> {hermitianConjugateOf(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">a</a>) * <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">a</a>};                                  <span class="comment">// composition: the offsets add up to 0</span></div>
+<div class="line">  <span class="keyword">auto</span> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">jc</a>{hermitianConjugateOf(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">sm</a>) % <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">a</a> + <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">sm</a> % hermitianConjugateOf(<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">a</a>)};  <span class="comment">// direct product: qubit on axis 0, mode on axis 1</span></div>
 <div class="line"> </div>
 <div class="line">  <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">MultiArray&lt;dcomp,2&gt;</a> <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">psi</a>{{2,<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">N</a>},multiarray::zeroInit&lt;dcomp&gt;}, <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">dpsi</a>{{2,<a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">N</a>},multiarray::zeroInit&lt;dcomp&gt;};</div>
 <div class="line">  <a class="code hl_class" href="classcppqedutils_1_1MultiArrayView.html">psi</a>(0,1)=1.;                                   <span class="comment">// |0⟩|1⟩</span></div>
@@ -154,7 +154,7 @@ Usage</h1>
 <div class="ttc" id="aMultiDiagonal_8h_html"><div class="ttname"><a href="MultiDiagonal_8h.html">MultiDiagonal.h</a></div></div>
 <div class="ttc" id="aclasscppqedutils_1_1MultiArrayView_html"><div class="ttname"><a href="classcppqedutils_1_1MultiArrayView.html">cppqedutils::MultiArrayView</a></div><div class="ttdoc">A non-owning, strided view over a contiguous buffer. Should be passed by value.</div><div class="ttdef"><b>Definition</b> MultiArray.h:106</div></div>
 <div class="ttc" id="anamespacecppqedutils_html"><div class="ttname"><a href="namespacecppqedutils.html">cppqedutils</a></div><div class="ttdoc">Namespace alias for Boost.Hana, used for compile-time sequences and heterogeneous containers.</div><div class="ttdef"><b>Definition</b> MultiArray.h:17</div></div>
-<div class="ttc" id="anamespacequantumoperator_1_1multidiagonal_html"><div class="ttname"><a href="namespacequantumoperator_1_1multidiagonal.html">quantumoperator::multidiagonal</a></div><div class="ttdef"><b>Definition</b> MultiDiagonal.h:495</div></div>
+<div class="ttc" id="anamespacequantumoperator_1_1multidiagonal_html"><div class="ttname"><a href="namespacequantumoperator_1_1multidiagonal.html">quantumoperator::multidiagonal</a></div><div class="ttdef"><b>Definition</b> MultiDiagonal.h:501</div></div>
 </div><!-- fragment --><p>Application accumulates into its last argument and applies no factor \(1/i\) (C++QED stores \(H/i\)). A diagonal whose coefficients don't factorize over the axes goes into the operator's <code>diagonals</code> map directly. CI compiles and runs this example against the installed library: it is the first part of <a href="tests/consumer/consumer.cc"><code>tests/consumer/consumer.cc</code></a>.</p>
 <h1><a class="anchor" id="autotoc_md8"></a>
 Features</h1>
@@ -166,7 +166,7 @@ Features</h1>
 <li><b>Deterministic results</b>: diagonals are stored in an ordered map keyed by signed offsets, so accumulation order in composition is well-defined and reproducible across platforms</li>
 <li><b>JSON serialization</b>: written and read back via Boost.JSON <code>tag_invoke</code>, useful for testing and debugging</li>
 <li><b>No time dependence</b>: operators carry no frequencies. Interaction-picture time dependence ( \(\alpha_{m,n} e^{\delta_{m,n} t}\)) belongs to the consumer; in C++QED the trajectory owns the interaction picture</li>
-<li><b>Property-tested</b>: the algebraic identities — associativity, \((A|B)^\dagger = B^\dagger|A^\dagger\), distributivity, the mixed-product law \((A{\otimes}B)|(C{\otimes}D) = (A|C){\otimes}(B|D)\) — are verified against dense-matrix oracles in CI</li>
+<li><b>Property-tested</b>: the algebraic identities — associativity, \((AB)^\dagger = B^\dagger A^\dagger\), distributivity, the mixed-product law \((A{\otimes}B)(C{\otimes}D) = (AC){\otimes}(BD)\) — are verified against dense-matrix oracles in CI</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md9"></a>
 Performance</h1>
@@ -209,16 +209,16 @@ Via FetchContent (as C++QED does)</h2>
 <div class="line">FetchContent_Declare(cppqed-multidiagonal</div>
 <div class="line">  GIT_REPOSITORY    https://github.com/WignerQuantumOptics/cppqed-multidiagonal.git</div>
 <div class="line">  GIT_TAG           &lt;full commit SHA of a release&gt;</div>
-<div class="line">  FIND_PACKAGE_ARGS 0.5)   # an installed 0.5.x is used when found</div>
+<div class="line">  FIND_PACKAGE_ARGS 0.6)   # an installed 0.6.x is used when found</div>
 <div class="line">FetchContent_MakeAvailable(cppqed-multidiagonal)</div>
 <div class="line">target_link_libraries(MyTarget PUBLIC cppqed::multidiagonal)</div>
 </div><!-- fragment --><p>A copy of the source tree in your project works too, via <code>add_subdirectory</code>.</p>
 <h2><a class="anchor" id="autotoc_md14"></a>
 Via &lt;tt&gt;find_package&lt;/tt&gt; (after installation)</h2>
 <div class="fragment"><div class="line">cmake --install build</div>
-</div><!-- fragment --><div class="fragment"><div class="line">find_package(cppqed-multidiagonal 0.5 REQUIRED)</div>
+</div><!-- fragment --><div class="fragment"><div class="line">find_package(cppqed-multidiagonal 0.6 REQUIRED)</div>
 <div class="line">target_link_libraries(MyTarget PUBLIC cppqed::multidiagonal)</div>
-</div><!-- fragment --><p>While the major version is 0, a new minor version may change the API, so a request for 0.5 accepts 0.5.x but not 0.4 or 0.6. The library sets C++23 for its consumers, and needs Boost ≥ 1.80 and Eigen ≥ 3.4 (Eigen 5 included).</p>
+</div><!-- fragment --><p>While the major version is 0, a new minor version may change the API, so a request for 0.6 accepts 0.6.x but not 0.5 or 0.7. The library sets C++23 for its consumers, and needs Boost ≥ 1.80 and Eigen ≥ 3.4 (Eigen 5 included).</p>
 <p>Either way, the headers are included with their directory prefix, e.g. <code>#include &lt;<a class="el" href="MultiDiagonal_8h.html">multidiagonal/MultiDiagonal.h</a>&gt;</code>.</p>
 <h1><a class="anchor" id="autotoc_md15"></a>
 Repository structure</h1>

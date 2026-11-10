@@ -34,7 +34,7 @@ window.MathJax = {
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.5.0</span>
+   <div id="projectname">cppqed-multidiagonal<span id="projectnumber">&#160;0.6.0</span>
    </div>
    <div id="projectbrief">Multidiagonal sparse operator algebra for C++QED</div>
   </td>
@@ -123,16 +123,16 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a5f6340e0b9d3a0152812683481ba81b0" id="r_a5f6340e0b9d3a0152812683481ba81b0"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> RANK&gt; </td></tr>
-<tr class="memitem:a5f6340e0b9d3a0152812683481ba81b0"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacequantumoperator.html#a5f6340e0b9d3a0152812683481ba81b0">operator|</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">a</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">b</a>)</td></tr>
-<tr class="memdesc:a5f6340e0b9d3a0152812683481ba81b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Composition (matrix product) of two <code><a class="el" href="structquantumoperator_1_1MultiDiagonal.html" title="A sparse matrix storing an arbitrary set of diagonals, closed under composition, direct product,...">MultiDiagonal</a></code> operators of arbitrary rank: \((A|B)_{rc} = \sum_m A_{rm} B_{mc}\).  <br /></td></tr>
-<tr class="separator:a5f6340e0b9d3a0152812683481ba81b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a60fc22b74cc1b9bfb555367412005949" id="r_a60fc22b74cc1b9bfb555367412005949"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> RANK&gt; </td></tr>
+<tr class="memitem:a60fc22b74cc1b9bfb555367412005949"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacequantumoperator.html#a60fc22b74cc1b9bfb555367412005949">operator*</a> (<a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">a</a>, <a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; &amp;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">b</a>)</td></tr>
+<tr class="memdesc:a60fc22b74cc1b9bfb555367412005949"><td class="mdescLeft">&#160;</td><td class="mdescRight">Composition (matrix product) \(AB\) of two <code><a class="el" href="structquantumoperator_1_1MultiDiagonal.html" title="A sparse matrix storing an arbitrary set of diagonals, closed under composition, direct product,...">MultiDiagonal</a></code> operators of the same, arbitrary rank, spelled <code>A * B</code>: \((AB)_{rc} = \sum_m A_{rm} B_{mc}\).  <br /></td></tr>
+<tr class="separator:a60fc22b74cc1b9bfb555367412005949"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Comprises modules representing operators of special structure (multidiagonal, sparse) over Hilbert spaces of arbitrary arity. </p>
 </div><h2 class="groupheader">Function Documentation</h2>
-<a id="a5f6340e0b9d3a0152812683481ba81b0" name="a5f6340e0b9d3a0152812683481ba81b0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5f6340e0b9d3a0152812683481ba81b0">&#9670;&#160;</a></span>operator|()</h2>
+<a id="a60fc22b74cc1b9bfb555367412005949" name="a60fc22b74cc1b9bfb555367412005949"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a60fc22b74cc1b9bfb555367412005949">&#9670;&#160;</a></span>operator*()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -140,7 +140,7 @@ Functions</h2></td></tr>
 template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t</a> RANK&gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; quantumoperator::operator| </td>
+          <td class="memname"><a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; quantumoperator::operator* </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcppqedutils_1_1MultiArrayView.html">const</a> <a class="el" href="structquantumoperator_1_1MultiDiagonal.html">MultiDiagonal</a>&lt; <a class="el" href="classcppqedutils_1_1MultiArrayView.html">RANK</a> &gt; &amp;&#160;</td>
           <td class="paramname"><em>a</em>, </td>
@@ -159,7 +159,7 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
       </table>
 </div><div class="memdoc">
 
-<p>Composition (matrix product) of two <code><a class="el" href="structquantumoperator_1_1MultiDiagonal.html" title="A sparse matrix storing an arbitrary set of diagonals, closed under composition, direct product,...">MultiDiagonal</a></code> operators of arbitrary rank: \((A|B)_{rc} = \sum_m A_{rm} B_{mc}\). </p>
+<p>Composition (matrix product) \(AB\) of two <code><a class="el" href="structquantumoperator_1_1MultiDiagonal.html" title="A sparse matrix storing an arbitrary set of diagonals, closed under composition, direct product,...">MultiDiagonal</a></code> operators of the same, arbitrary rank, spelled <code>A * B</code>: \((AB)_{rc} = \sum_m A_{rm} B_{mc}\). </p>
 <p>For each pair of diagonals — \(A\) at signed offsets \(p\), \(B\) at \(q\) (per axis, dimension \(D\)) — the contribution lands on the result diagonal at </p><p class="formulaDsp">
 \[ s = p + q \qquad\text{(the quanta moved add up).} \]
 </p>
@@ -169,9 +169,9 @@ template&lt;<a class="el" href="classcppqedutils_1_1MultiArrayView.html">size_t<
 <p> valid on the window </p><p class="formulaDsp">
 \[ k \in \bigl[\, \max(0,-i_A,-i_B),\ \min(D-|s|,\,D-|p|-i_A,\,D-|q|-i_B) \,\bigr). \]
 </p>
-<p> Entries of the result diagonal outside the window are structural zeros, stored explicitly so that the invariant \(\text{extent}+|s|=D\) holds. Pairs with \(|s_i|\ge D_i\) or an empty window on any axis are structurally zero and skipped. **Contributions from different \((p,q)\) pairs to the same \(s\) accumulate** — this is essential for correctness, not an optimization (e.g. \(\sigma_x|\sigma_x\) assembles its main diagonal from two complementary pairs).</p>
+<p> Entries of the result diagonal outside the window are structural zeros, stored explicitly so that the invariant \(\text{extent}+|s|=D\) holds. Pairs with \(|s_i|\ge D_i\) or an empty window on any axis are structurally zero and skipped. **Contributions from different \((p,q)\) pairs to the same \(s\) accumulate** — this is essential for correctness, not an optimization (e.g. \(\sigma_x\sigma_x\) assembles its main diagonal from two complementary pairs).</p>
 <p>Complexity: \(O(d_A\, d_B)\) diagonal pairs, each linear in the window volume.</p>
-<dl class="section note"><dt>Note</dt><dd><code>operator*</code> has higher precedence than <code>operator|</code> in C++; use parentheses in mixed expressions. </dd></dl>
+<dl class="section note"><dt>Note</dt><dd><code>*</code> (composition) and <code>%</code> (direct product) share multiplicative precedence and associate from left to right, and both bind more tightly than <code>+</code> and <code>-</code>. Mixed expressions group from the left: <code>A % B * C % D</code> is <code>((A % B) * C) % D</code>, which typically fails to compile, because the ranks don't match. The mixed-product law reads <code>(A % B) * (C % D) == (A * C) % (B * D)</code>. </dd></dl>
 
 </div>
 </div>
