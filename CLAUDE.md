@@ -294,6 +294,18 @@ back (#18) are done (2026-11-07).
    the draft. `CITATION.cff` has András's ORCID (2026-11-07). The paper's listings and the table of Sec. 3
    are being respelled to `*` and `%` (#30, András, 2026-11-10). Cosmetic: #17 (finding
    test names, `[contract]` tags), #20 (the Doxygen theme).
+   From the review of 2026-11-10, before the paper is submitted:
+   - #36: a hand-written CSR baseline that multiplies with `textbookProduct`. A laptop probe had
+     Eigen 1.2–1.7× slower than such a loop, and the library only 1.06–1.15× faster than it on
+     strided slices (about 2× on contiguous ones and on whole states). Until it is measured on the
+     reference machine, don't call a ratio to Eigen a comparison of formats.
+   - #37: the raw results and the driver that produced them belong in the repository; today a quoted
+     range can't be checked per size.
+   - #38: three figures quoted under other conditions than stated (slice order and the 1.8× for
+     adjacent slices: huge pages; out of cache starts at N = 65536 for Jaynes–Cummings).
+   - #33: names in the global namespace (`dcomp`, `sqr`, `operator""i`, `FWD`, …): decide before
+     publication, it breaks the API.
+   - #32: JSON text is bit-exact only when parsed with `number_precision::precise`. #34, #35: small.
 4. Boost.Serialization (#16, done): the library uses only its headers (`MultiArray`'s `save`/`load`)
    and doesn't link the compiled library; whoever writes archives does (C++QED, and this test
    suite). CI's consumer job builds without it. HDF5 is a separate, later C++QED question.
