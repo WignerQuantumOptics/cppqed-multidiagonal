@@ -126,14 +126,14 @@ def draw_slices(ax):
 
 PANELS = [
     (lambda: have('apply1'),      lambda ax: draw_simple(ax, 'apply1',
-        'application  $y += (H/i)\\,\\psi$\n(rank 1, pentadiagonal)')),
+        'application  $y \\leftarrow y + A\\,\\psi$\n(rank 1, pentadiagonal)')),
     (lambda: have('compose1'),    lambda ax: draw_simple(ax, 'compose1',
-        'composition  $A\\,|\\,B$\n(rank 1, tridiagonal $\\times$ tridiagonal)')),
+        'composition  $AB$\n(rank 1, tridiagonal $\\times$ tridiagonal)')),
     (lambda: have('construct1'),  lambda ax: draw_simple(ax, 'construct1',
         'construction from coefficients\n(rank 1, pentadiagonal)')),
     (lambda: have('applyJC_modefast', 'applyJC_qbitfast'), draw_jc_apply),
     (lambda: have('composeJC'),   lambda ax: draw_simple(ax, 'composeJC',
-        'composition  $H_\\mathrm{JC}\\,|\\,H_\\mathrm{JC}$\n(rank 2, mode-fast)')),
+        'composition  $H_\\mathrm{JC}H_\\mathrm{JC}$\n(rank 2, mode-fast)')),
     (lambda: have('constructJC'), lambda ax: draw_simple(ax, 'constructJC',
         'assembly of $H_\\mathrm{JC}$\n(rank 2, mode-fast)')),
     (lambda: have('slices3_axis0', 'slices3_axis2'), draw_slices),
