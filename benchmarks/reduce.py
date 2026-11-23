@@ -124,6 +124,11 @@ def table(header, rows):
     out += ['| ' + ' | '.join(row) + ' |' for row in rows]
     return '\n'.join(out) + '\n'
 
+def oriented(header, rows, widest=16):
+    """The table of an implementation per row, turned on its side where it has too many columns (a scan)."""
+    if len(header) - 1 <= widest: return table(header, rows)
+    return table([header[0]] + [row[0] for row in rows], [[header[j]] + [row[j] for row in rows] for j in range(1, len(header))])
+
 def percent(x):
     return f'{100 * x:.1f}%'
 
@@ -150,7 +155,7 @@ def valueTable(c, names, columns, cell, first):
             key = (name, impl, N)
             cells.append(star(cell(c.median(key)), c.wide(key)) if key in c.values else '')
         rows.append([f'`{impl}`'] + cells)
-    return table(first, rows)
+    return oriented(first, rows)
 
 
 def relativeTable(c, names, columns, baseline, first):
@@ -162,7 +167,7 @@ def relativeTable(c, names, columns, baseline, first):
             a, b = c.median((name, impl, N)), c.median((name, baseline, N))
             cells.append(star(ratio(a / b), c.wide((name, impl, N)) or c.wide((name, baseline, N))) if a and b else '')
         if any(cells): rows.append([f'`{impl}`'] + cells)
-    return table(first, rows) if rows else ''
+    return oriented(first, rows) if rows else ''
 
 
 def baselineOf(c, names):

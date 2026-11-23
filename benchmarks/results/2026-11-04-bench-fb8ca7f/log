@@ -1,0 +1,30 @@
+start 2026-11-04T08:43:26+01:00  smt off  no_turbo 1  gov performance
+08:44:10 step3.kdef.1
+08:44:54 step3.kcx.1
+08:45:24 prev.kdef.1
+08:46:20 step3.bench.1
+08:46:34 prev.bench.1
+08:47:18 step3.kdef.2
+08:48:01 step3.kcx.2
+08:48:32 prev.kdef.2
+08:49:27 step3.bench.2
+08:49:41 prev.bench.2
+08:50:25 step3.kdef.3
+08:51:08 step3.kcx.3
+08:51:38 prev.kdef.3
+08:52:34 step3.bench.3
+08:52:48 prev.bench.3
+08:53:32 step3.kdef.4
+08:54:15 step3.kcx.4
+08:54:46 prev.kdef.4
+08:55:41 step3.bench.4
+08:55:55 prev.bench.4
+08:56:39 step3.kdef.5
+08:57:22 step3.kcx.5
+08:57:53 prev.kdef.5
+08:58:48 step3.bench.5
+08:59:02 prev.bench.5
+done 2026-11-04T08:59:02+01:00  smt off  no_turbo 1
+08:59:30 scan 1
+08:59:49 scan 2
+scans done 2026-11-04T08:59:49+01:00

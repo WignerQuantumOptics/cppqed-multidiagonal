@@ -317,10 +317,11 @@ back (#18) are done (2026-11-07).
    - #37: the raw results and the driver that produced them belong in the repository; today a quoted
      range can't be checked per size. The driver is there (`benchmarks/run.sh`), and the raw results of
      its sessions (`benchmarks/results/`, one directory per session; its README lists them), and the
-     reduction script (`benchmarks/reduce.py`). Three of the earlier sessions are in too (remeasure, b5,
-     caseD4k: renamed to the driver's layout, each with its one-off script and a README; they reproduce
-     the page's figures exactly). Open: the other earlier sessions (their scripts are on the reference
-     machine), the page's older tables regenerated from them, and `plot.py` reading the directories.
+     reduction script (`benchmarks/reduce.py`). Twelve of the earlier sessions are in too (ref, step3,
+     fb8ca7f, cases F to I, remeasure, b5, caseD4k: renamed to the driver's layout, each with its
+     one-off script and a README; they reproduce the page's figures). Open: the sessions that also ran
+     `jc_qjmc` (simd, the allocator sessions) and the `perf` sessions of #27, the page's older tables
+     regenerated from the files, and `plot.py` reading the directories.
    - #38: three figures quoted under other conditions than stated (slice order and the 1.8× for
      adjacent slices: huge pages; out of cache starts at N = 65536 for Jaynes–Cummings).
    - #33: names in the global namespace (`dcomp`, `sqr`, `operator""i`, `FWD`, …): decide before

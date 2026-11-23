@@ -1,0 +1,10 @@
+G_rank1_64 library_byDiagonals: best 161.33, median 162.66, worst 235 ns; 21 of 256 offsets more than 5% above the best
+G_rank1_64 library_byRows: best 215.46, median 217.69, worst 259.77 ns; 6 of 256 offsets more than 5% above the best
+G_rank1_1024 library_byDiagonals: best 2968.2, median 3135.6, worst 4645.7 ns; 142 of 256 offsets more than 5% above the best
+G_rank1_1024 library_byRows: best 2763.7, median 2792.3, worst 4276.9 ns; 1 of 256 offsets more than 5% above the best
+G_rank1_4096 library_byDiagonals: best 13657, median 14164, worst 15500 ns; 83 of 256 offsets more than 5% above the best
+G_rank1_4096 library_byRows: best 12197, median 12467, worst 12835 ns; 2 of 256 offsets more than 5% above the best
+G_JC_modefast library_byDiagonals: best 11142, median 11307, worst 14469 ns; 27 of 256 offsets more than 5% above the best
+G_JC_modefast library_byRows: best 8918, median 9364.7, worst 13533 ns; 128 of 256 offsets more than 5% above the best
+G_JC_qbitfast library_byDiagonals: best 17199, median 17545, worst 32017 ns; 14 of 256 offsets more than 5% above the best
+G_JC_qbitfast library_byRows: best 92112, median 93132, worst 1.4332e+05 ns; 1 of 256 offsets more than 5% above the best

@@ -20,8 +20,17 @@ Figures quoted from a session are medians over its processes (the `rROUND` files
 
 | directory | machine | revision | what |
 |---|---|---|---|
+| `2026-11-03-bench-ref` | the reference machine | 7725d79, 84cf7d4 and v0.4.0 | the three suites of the first, and what the two older builds had in common with it; huge pages, five rounds |
+| `2026-11-04-bench-step3` | the reference machine | the row shape before its commit, and 7725d79 | the three suites against `kernels`, `apply1` and `applyJC` of the older build; huge pages, five rounds |
+| `2026-11-04-bench-fb8ca7f` | the reference machine | c346b8a (as fb8ca7f) and 7725d79 | the same; and two placement scans |
+| `2026-11-04-bench-caseF` | the reference machine | c346b8a with case F | `kernels` case F, huge pages, five processes |
+| `2026-11-04-bench-caseG` | the reference machine | c346b8a with case G | `kernels` case G, two processes |
+| `2026-11-04-bench-caseH` | the reference machine | c346b8a with the first case H | `kernels` cases F and H in one process, five processes |
+| `2026-11-04-bench-caseH2` | the reference machine | c346b8a with case H | `kernels` case H, five processes |
 | `2026-11-04-bench-remeasure` | the reference machine | c346b8a with the benchmarks' `--no-thp` | `kernels` and the main suite's `apply1` and `applyJC`, on huge pages and on 4 KB pages, five rounds |
 | `2026-11-05-bench-b5` | the reference machine | the working tree committed as 4186b8e | the main suite's `picture1`, `constructJC` and `slices3`, on 4 KB pages, five rounds |
+| `2026-11-07-bench-caseI` | the reference machine | the working tree for #27 | `kernels` case I, first run with two state sizes, three processes |
+| `2026-11-07-bench-caseI2` | the reference machine | the working tree committed as 78785f0 | `kernels` case I, three processes |
 | `2026-11-08-bench-caseD4k` | the reference machine | e90ea79 | `kernels` case D, default and `-fcx-limited-range` builds, on 4 KB pages, five rounds |
 | `2026-11-23-bench` | the reference machine: Intel Core i7-7700 (Kaby Lake), GCC 16.2.1, Eigen 5.0.1 | 134ddcf | all three suites, on huge pages and on 4 KB pages, five rounds |
 | `2026-11-23-zen2-vm` | a virtual machine on an AMD EPYC (Zen 2) host, 16 vCPUs, KVM; GCC 16.2.0, Eigen 5.0.1 | 134ddcf | all three suites, on 4 KB pages, five rounds |
@@ -33,4 +42,4 @@ The sessions up to 2026-11-08 were run with one-off scripts. Each of them has, i
 - the script, as it was on the machine;
 - a `README.md` saying what was measured, from which source, where `performance.md` quotes it, and how the files were renamed to the layout above. The contents of the files are unchanged.
 
-The three above reproduce the figures that `performance.md` quotes from them. The other sessions behind the page are not here yet ([#37](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/37)).
+Recomputed from these files, the figures that `performance.md` quotes from them come out as on the page. Not here yet are the sessions on the instruction set and on allocators, which also ran C++QED's `jc_qjmc`, and the `perf` sessions of #27 ([#37](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/37)).
