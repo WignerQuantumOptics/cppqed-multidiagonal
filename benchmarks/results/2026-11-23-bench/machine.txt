@@ -1,0 +1,38 @@
+host:     bench
+kernel:   Linux 6.18.62-1-lts
+pinning:  core 1
+rounds:   5
+suites:   main kernels kernels-cxlr
+pages:    thp 4k
+smoke:    no
+
+Architecture:                            x86_64
+CPU(s):                                  8
+Model name:                              Intel(R) Core(TM) i7-7700 CPU @ 3.60GHz
+Thread(s) per core:                      1
+Core(s) per socket:                      4
+Socket(s):                               1
+CPU(s) scaling MHz:                      100%
+CPU max MHz:                             3600.0000
+L1d cache:                               128 KiB (4 instances)
+L2 cache:                                1 MiB (4 instances)
+L3 cache:                                8 MiB (1 instance)
+
+── state at the start
+time (UTC):                2026-11-23T09:52:38Z
+load average:              1.15 0.26 0.09
+SMT:                       off
+turbo off (intel_pstate):  1
+governor of cpu1:          performance
+transparent huge pages:    [always] madvise never
+steal ticks of cpu1:      0
+
+── state at the end
+time (UTC):                2026-11-23T10:34:55Z
+load average:              1.01 1.02 1.00
+SMT:                       off
+turbo off (intel_pstate):  1
+governor of cpu1:          performance
+transparent huge pages:    [always] madvise never
+steal ticks of cpu1:      0
+failed processes:          0

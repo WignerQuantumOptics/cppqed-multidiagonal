@@ -1,0 +1,38 @@
+host:     zen2-vm
+kernel:   Linux 5.15.0-204-generic
+pinning:  core 10
+rounds:   5
+suites:   main kernels kernels-cxlr
+pages:    4k
+smoke:    no
+
+Architecture:                            x86_64
+CPU(s):                                  16
+Model name:                              AMD EPYC-Rome Processor
+Thread(s) per core:                      1
+Core(s) per socket:                      1
+Socket(s):                               16
+Hypervisor vendor:                       KVM
+Virtualization type:                     full
+L1d cache:                               512 KiB (16 instances)
+L2 cache:                                8 MiB (16 instances)
+L3 cache:                                256 MiB (16 instances)
+
+── state at the start
+time (UTC):                2026-11-23T09:44:29Z
+load average:              0.03 0.01 0.00
+SMT:                       notsupported
+turbo off (intel_pstate):  not available
+governor of cpu10:          not available
+transparent huge pages:    always [madvise] never
+steal ticks of cpu10:      578
+
+── state at the end
+time (UTC):                2026-11-23T10:07:17Z
+load average:              1.00 1.00 0.81
+SMT:                       notsupported
+turbo off (intel_pstate):  not available
+governor of cpu10:          not available
+transparent huge pages:    always [madvise] never
+steal ticks of cpu10:      741
+failed processes:          0

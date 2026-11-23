@@ -1,0 +1,10 @@
+[134ddcf]
+build directory:  /home/claude/build-134ddcf
+source:           /home/claude/src/cppqed-multidiagonal-134ddcf
+revision:         not a git checkout
+build type:       Release
+compiler:         /usr/bin/c++: c++ (GCC) 16.2.1 20260810
+CMAKE_CXX_FLAGS:  
+-march=native:    ON
+Eigen:            5.0.1 (/usr/share/eigen3/cmake)
+

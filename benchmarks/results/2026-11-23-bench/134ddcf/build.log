@@ -1,0 +1,6 @@
+[1/6] Building CXX object benchmarks/CMakeFiles/cppqed-multidiagonal-kernels-cxlr.dir/kernels.cc.o
+[2/6] Building CXX object benchmarks/CMakeFiles/cppqed-multidiagonal-kernels.dir/kernels.cc.o
+[3/6] Linking CXX executable benchmarks/cppqed-multidiagonal-kernels-cxlr
+[4/6] Linking CXX executable benchmarks/cppqed-multidiagonal-kernels
+[5/6] Building CXX object benchmarks/CMakeFiles/cppqed-multidiagonal-benchmarks.dir/benchmarkMultiDiagonal.cc.o
+[6/6] Linking CXX executable benchmarks/cppqed-multidiagonal-benchmarks

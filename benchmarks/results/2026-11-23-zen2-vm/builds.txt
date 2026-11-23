@@ -1,0 +1,10 @@
+[134ddcf]
+build directory:  /home/ubuntu/build-release
+source:           /home/ubuntu/cppqed-multidiagonal
+revision:         134ddcf6893be0c3afac249b92c27bd0e95e42b9
+build type:       Release
+compiler:         /home/ubuntu/opt/toolchain/bin/g++: g++ (GCC) 16.2.0
+CMAKE_CXX_FLAGS:  
+-march=native:    ON
+Eigen:            5.0.1 (/home/ubuntu/opt/toolchain/share/eigen3/cmake)
+
