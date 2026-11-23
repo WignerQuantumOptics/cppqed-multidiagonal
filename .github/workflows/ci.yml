@@ -59,7 +59,7 @@ jobs:
       - name: Figures
         if: matrix.build_type == 'Release' && matrix.compiler == 'g++-14'
         run: |
-          sudo apt-get install -y python3-matplotlib
+          sudo apt-get install -y --no-install-recommends python3-matplotlib
           benchmarks/plot.py "$RUNNER_TEMP/session":4k "$RUNNER_TEMP/figures/smoke"
           benchmarks/plot.py benchmarks/results/2026-11-23-bench:4k "$RUNNER_TEMP/figures/2026-11-23-bench"
           benchmarks/plot.py benchmarks/results/2026-11-23-zen2-vm "$RUNNER_TEMP/figures/2026-11-23-zen2-vm"
