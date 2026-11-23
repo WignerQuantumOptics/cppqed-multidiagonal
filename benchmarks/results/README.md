@@ -14,7 +14,7 @@ One directory per measuring session, named by date and machine, exactly as [`ben
 
 The only change made to the files is the `host:` line of `machine.txt`, which carries the name the machine has in [`performance.md`](../performance.md) instead of its host name.
 
-Figures quoted from a session are medians over its processes (the `rROUND` files of one suite and page mode). Look them up in the session's `REPORT.md`; `benchmarks/reduce.py ratios` puts sessions side by side. `benchmarks/plot.py SESSION[:PAGES] OUTDIR` draws the main suite's figures.
+Figures quoted from a session are medians over its processes (the `rROUND` files of one suite and page mode). Look them up in the session's `REPORT.md`; `benchmarks/reduce.py ratios` puts sessions side by side. `benchmarks/plot.py SESSION[:PAGES] OUTDIR` draws the main suite's figures. The tables of `performance.md` are generated from these directories by `benchmarks/tables.py`.
 
 ## Sessions
 

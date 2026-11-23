@@ -54,6 +54,11 @@ jobs:
           benchmarks/reduce.py report "$RUNNER_TEMP/session" > /dev/null
           benchmarks/reduce.py ratios ci="$RUNNER_TEMP/session":4k > /dev/null
 
+      # the tables of benchmarks/performance.md against the raw results in benchmarks/results
+      - name: Tables of the performance page
+        if: matrix.build_type == 'Release' && matrix.compiler == 'g++-14'
+        run: benchmarks/tables.py --check
+
       # plot.py on the driver's smoke session (a test of the script) and on the two sessions of 2026-11-23
       # in the repository (figures worth looking at); the figures are kept with the run
       - name: Figures
