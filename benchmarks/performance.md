@@ -34,7 +34,16 @@ This page records what the benchmarks show about applying a `MultiDiagonal` to a
 
   Figures marked "laptop" below come from there. The Eigen version matters less than the processor: on the reference machine, Eigen 3.4.0 and 5.0.1 differ by 0.8–1.2× in Eigen's own speed, and leave the library unchanged.
 
-To reproduce (pin the runs to one core, e.g. with `taskset -c 1`):
+To reproduce a measuring session, use the driver [`benchmarks/run.sh`](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/blob/main/benchmarks/run.sh). It builds the executables, runs them in separate processes (five rounds, the builds interleaved, pinned to one core, on huge pages and on 4 KB pages), and keeps the CSV of every process together with a record of the machine and of the builds:
+
+```bash
+cmake -B build-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+benchmarks/run.sh --core 1 results build-release=build-release
+```
+
+The figures on this page predate the driver; they were measured with scripts that did the same by hand.
+
+The executables can also be run one by one (pin the runs to one core, e.g. with `taskset -c 1`):
 
 ```bash
 cmake -B build-release -DCMAKE_BUILD_TYPE=Release

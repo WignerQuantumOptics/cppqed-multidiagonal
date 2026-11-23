@@ -22,6 +22,7 @@ tests/                Catch2 v3 suites: testMultiArray, testMultiArrayComplex, t
   consumer/           downstream CMake project for the CI consumer job; consumer.cc starts with
                       the README's usage example
 benchmarks/           benchmarkMultiDiagonal.cc, plot.py; kernels.cc (loop experiments);
+                      run.sh (the driver of a measuring session);
                       performance.md (measurements and outlook, a Doxygen page)
 cmake/                package config template
 Doxyfile              API docs; README.md is the main page, read through doxygen-math.sed
@@ -179,6 +180,10 @@ ctest --test-dir build --output-on-failure
 - Use `doNotOptimize` to prevent elision.
 - `--smoke` (both executables) shrinks the sizes. It is a CI correctness check only, and
   its timings are meaningless. CI runs all three binaries with it.
+- Measure with `benchmarks/run.sh` (#37), not by hand: it builds the executables, runs them in
+  separate processes with the builds interleaved, pinned (`--core`), on huge and on 4 KB pages, and
+  keeps every process's CSV with `machine.txt`, `builds.txt` and a per-process `log` (duration,
+  steal time). Its header is the reference. It never overwrites a result directory.
 - **`benchmarks/performance.md` is the record of results and diagnosis**, and a page of the
   Doxygen site (linked from the README and from `operator()`). When numbers or the
   diagnosis change, update it rather than this file. In brief (2026-11-04):
@@ -300,7 +305,8 @@ back (#18) are done (2026-11-07).
      strided slices (about 2× on contiguous ones and on whole states). Until it is measured on the
      reference machine, don't call a ratio to Eigen a comparison of formats.
    - #37: the raw results and the driver that produced them belong in the repository; today a quoted
-     range can't be checked per size.
+     range can't be checked per size. The driver is there (`benchmarks/run.sh`); the raw results, the
+     reduction script and `plot.py` reading them are open.
    - #38: three figures quoted under other conditions than stated (slice order and the 1.8× for
      adjacent slices: huge pages; out of cache starts at N = 65536 for Jaynes–Cummings).
    - #33: names in the global namespace (`dcomp`, `sqr`, `operator""i`, `FWD`, …): decide before
