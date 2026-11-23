@@ -1,0 +1,5 @@
+start 2026-11-05T21:33:21+01:00  smt off  no_turbo 1  gov performance  thp [always] madvise never
+21:34:06 scan 1
+21:34:52 scan 2
+21:35:38 scan 3
+done 2026-11-05T21:35:51+01:00

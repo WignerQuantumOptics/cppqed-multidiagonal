@@ -1,0 +1,12 @@
+# started on Thu Nov  5 21:41:53 2026
+
+1699296692,,cycles:u,191857395,39.00,,
+3820125991,,instructions:u,242851436,50.00,,
+140755717,,l1d.replacement:u,243559928,50.00,,
+86221062,,l2_rqsts.miss:u,245119022,50.00,,
+73799732,,l2_rqsts.pf_miss:u,245124211,50.00,,
+55128858,,l2_lines_in.all:u,243678399,50.00,,
+55970447,,offcore_requests.all_data_rd:u,191969948,39.00,,
+24699865,,mem_load_retired.l2_miss:u,192003375,39.00,,
+11671136,,mem_load_retired.l3_miss:u,190416361,39.00,,
+149436408,,mem_load_retired.fb_hit:u,190410581,39.00,,

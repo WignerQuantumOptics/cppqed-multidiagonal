@@ -1,0 +1,13 @@
+start 2026-11-05T14:22:30+01:00  smt off  no_turbo 1  gov performance
+regression base: passed
+AVX (ymm) instructions in jc_qjmc base: 0
+regression v3: passed
+AVX (ymm) instructions in jc_qjmc v3: 2284
+regression native: passed
+AVX (ymm) instructions in jc_qjmc native: 1074
+14:24:37 round 1
+14:26:43 round 2
+14:28:50 round 3
+14:30:57 round 4
+14:33:03 round 5
+done 2026-11-05T14:33:03+01:00  smt off  no_turbo 1

@@ -1,0 +1,146 @@
+diff -ruN cppqed-multidiagonal-remeasure/include/multidiagonal/MultiArray.h cppqed-multidiagonal-proto2/include/multidiagonal/MultiArray.h
+--- cppqed-multidiagonal-remeasure/include/multidiagonal/MultiArray.h	2026-10-27 11:18:53.000000000 +0100
++++ cppqed-multidiagonal-proto2/include/multidiagonal/MultiArray.h	2026-11-04 23:12:11.000000000 +0100
+@@ -8,6 +8,11 @@
+ 
+ #include <array>
+ #include <concepts>
++#include <atomic>
++#include <cstdint>
++#include <cstring>
++#include <limits>
++#include <new>
+ #include <span>
+ #include <stdexcept>
+ #include <ranges>
+@@ -242,21 +247,81 @@
+   return std::ranges::fold_left(extents,1uz,std::multiplies{});
+ }
+ 
++/// @brief The allocator of `StorageType`: a large allocation starts at one of 16 positions within a page, in turn.
++/**
++ * Two large arrays that nearly coincide modulo 1 MiB, e.g. arrays of a multiple of 1 MiB allocated back to back, make
++ * application up to about 3× slower on transparent huge pages (benchmarks/performance.md, "Distance on huge pages", #26).
++ * An allocation of at least 64 KiB therefore gets 8 KiB more, and the array starts at the next page boundary plus
++ * 256 bytes times a position that advances by 5 (mod 16) with every such allocation. Arrays at different positions differ
++ * by at least 256 bytes modulo 4 KiB, hence modulo 1 MiB, whatever their sizes; consecutive allocations always differ.
++ * The address of the underlying block is stored just before the array. Stateless: all instances are equal.
++ */
++template <typename T>
++struct PaddedAllocator
++{
++  using value_type = T;
++
++  static constexpr size_t threshold = 1uz<<16, page = 1uz<<12, step = 256, positions = 16, advance = 5, extra = 2*page;
++
++  PaddedAllocator() = default;
++  template <typename U> constexpr PaddedAllocator(const PaddedAllocator<U>&) noexcept {}
++
++  [[nodiscard]] T* allocate(size_t n)
++  {
++    if (n > (std::numeric_limits<size_t>::max()-extra)/sizeof(T)) throw std::bad_array_new_length{};
++    const size_t b=n*sizeof(T);
++    if (b<threshold) return static_cast<T*>(newBlock(b));
++    char* const block=static_cast<char*>(newBlock(b+extra));
++    const uintptr_t start=(reinterpret_cast<uintptr_t>(block)+sizeof(char*)+page-1)/page*page
++                          + position.fetch_add(1,std::memory_order_relaxed)*advance%positions*step;
++    char* const res=reinterpret_cast<char*>(start);
++    std::memcpy(res-sizeof(char*),&block,sizeof(char*));
++    return reinterpret_cast<T*>(res);
++  }
++
++  void deallocate(T* p, size_t n) noexcept
++  {
++    if (n*sizeof(T)<threshold) {deleteBlock(p); return;}
++    char* block; std::memcpy(&block,reinterpret_cast<char*>(p)-sizeof(char*),sizeof(char*));
++    deleteBlock(block);
++  }
++
++  friend bool operator==(PaddedAllocator, PaddedAllocator) {return true;}
++
++private:
++  static_assert(alignof(T)<=step, "PaddedAllocator aligns large arrays to 256 bytes at most");
++
++  static inline std::atomic<size_t> position{0};
++
++  static void* newBlock(size_t b)
++  {
++    if constexpr (alignof(T) > __STDCPP_DEFAULT_NEW_ALIGNMENT__) return ::operator new(b,std::align_val_t{alignof(T)});
++    else return ::operator new(b);
++  }
++
++  static void deleteBlock(void* p) noexcept // unsized: Clang before 19 has no sized deallocation by default
++  {
++    if constexpr (alignof(T) > __STDCPP_DEFAULT_NEW_ALIGNMENT__) ::operator delete(p,std::align_val_t{alignof(T)});
++    else ::operator delete(p);
++  }
++};
++
++
++/// @brief Underlying storage type: `std::vector` with `PaddedAllocator`. May eventually be replaced by `kokkos::View` or `std::valarray`.
++template <typename T>
++using StorageType = std::vector<T,PaddedAllocator<T>>;
++
++
+ /// @brief Initializer for storage of size `e` whose contents the caller overwrites before reading them.
+-/// @note `std::vector<T>(e)` value-initializes, so the storage is currently zero-filled after all.
++/// @note `StorageType<T>(e)` value-initializes, so the storage is currently zero-filled after all.
+ /// Don't rely on that: truly uninitialized storage would need a default-initializing allocator.
+ template <typename T>
+-inline constexpr auto noInit = [] (size_t e) -> std::vector<T> {return std::vector<T>(e);};
++inline constexpr auto noInit = [] (size_t e) -> StorageType<T> {return StorageType<T>(e);};
+ 
+ /// @brief Initializer that allocates storage of size `e` and zero-initializes all elements via `T(0.)`.
+ /// @todo Use `T{}` instead of `T(0.)` for generality beyond numeric types.
+ template <typename T>
+-inline constexpr auto zeroInit = [] (size_t e) -> std::vector<T> {return std::vector<T>(e,T(0.));};
+-
+-
+-/// @brief Underlying storage type: `std::vector<T>`. May eventually be replaced by `kokkos::View` or `std::valarray`.
+-template <typename T>
+-using StorageType = std::vector<T>;
++inline constexpr auto zeroInit = [] (size_t e) -> StorageType<T> {return StorageType<T>(e,T(0.));};
+ 
+ 
+ /// @brief Initializer that copies from a sized range, checking that its size matches the requested extent.
+@@ -396,11 +461,13 @@
+ namespace multiarray {
+ 
+ /// @brief Move-in construction of a *copy* of the argument.
+-template <typename T>
+-MultiArray<T,1> fromStorage(std::vector<T> v)
++/// A `StorageType<T>` is moved in; any other `std::vector<T,A>` (e.g. a plain `std::vector<T>`) is copied into one.
++template <typename T, typename A>
++MultiArray<T,1> fromStorage(std::vector<T,A> v)
+ {
+   const size_t s = v.size();
+-  return MultiArray<T,1>{ {s}, [&] (size_t) {return std::move(v);} };
++  if constexpr (std::is_same_v<std::vector<T,A>,StorageType<T>>) return MultiArray<T,1>{ {s}, [&] (size_t) {return std::move(v);} };
++  else return MultiArray<T,1>{ {s}, copyInit<T>(v) };
+ }
+ 
+ } // multiarray
+diff -ruN cppqed-multidiagonal-remeasure/tests/testMultiArray.cc cppqed-multidiagonal-proto2/tests/testMultiArray.cc
+--- cppqed-multidiagonal-remeasure/tests/testMultiArray.cc	2026-10-24 17:17:02.000000000 +0200
++++ cppqed-multidiagonal-proto2/tests/testMultiArray.cc	2026-11-04 22:40:46.000000000 +0100
+@@ -17,7 +17,7 @@
+ MultiArray<double,RANK> iota(Extents<RANK> ext)
+ {
+   return MultiArray<double,RANK>{ext, [] (size_t e) {
+-    std::vector<double> v(e); std::iota(v.begin(),v.end(),0.); return v; }};
++    multiarray::StorageType<double> v(e); std::iota(v.begin(),v.end(),0.); return v; }};
+ }
+ 
+ } // anonymous
+diff -ruN cppqed-multidiagonal-remeasure/tests/testMultiArrayComplex.cc cppqed-multidiagonal-proto2/tests/testMultiArrayComplex.cc
+--- cppqed-multidiagonal-remeasure/tests/testMultiArrayComplex.cc	2026-11-02 17:10:40.000000000 +0100
++++ cppqed-multidiagonal-proto2/tests/testMultiArrayComplex.cc	2026-11-04 22:40:46.000000000 +0100
+@@ -10,7 +10,7 @@
+ MultiArray<dcomp,1> carray(std::vector<dcomp> v)
+ {
+   const size_t s = v.size();
+-  return MultiArray<dcomp,1>{{s}, [&] (size_t) {return std::move(v);}};
++  return MultiArray<dcomp,1>{{s}, multiarray::copyInit<dcomp>(v)};
+ }
+ }
+ 

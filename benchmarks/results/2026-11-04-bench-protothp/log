@@ -1,0 +1,7 @@
+start 2026-11-04T23:00:07+01:00  smt off  no_turbo 1  gov performance  thp [always] madvise never
+23:04:34 round 1
+23:08:59 round 2
+23:13:22 round 3
+23:17:48 round 4
+23:22:12 round 5
+done 2026-11-04T23:22:12+01:00  smt off  no_turbo 1

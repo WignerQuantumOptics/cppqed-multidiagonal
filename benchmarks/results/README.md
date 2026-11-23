@@ -28,6 +28,13 @@ Figures quoted from a session are medians over its processes (the `rROUND` files
 | `2026-11-04-bench-caseH` | the reference machine | c346b8a with the first case H | `kernels` cases F and H in one process, five processes |
 | `2026-11-04-bench-caseH2` | the reference machine | c346b8a with case H | `kernels` case H, five processes |
 | `2026-11-04-bench-remeasure` | the reference machine | c346b8a with the benchmarks' `--no-thp` | `kernels` and the main suite's `apply1` and `applyJC`, on huge pages and on 4 KB pages, five rounds |
+| `2026-11-04-bench-jcthp` | the reference machine | C++QED 0a0efb12 | `jc_qjmc` on huge pages and on 4 KB pages: times only |
+| `2026-11-04-bench-padthp` | the reference machine | 14254a1 | `kernels` B, C, D, F, `apply1`, `applyJC` and `jc_qjmc`: huge pages, 4 KB pages, padded allocations |
+| `2026-11-04-bench-protothp` | the reference machine | 14254a1 and a prototype | the same: a padding allocator in `StorageType` |
+| `2026-11-04-bench-protothp2` | the reference machine | 14254a1 and a prototype | the same: an allocator with 16 positions in `StorageType` |
+| `2026-11-05-bench-allocs` | the reference machine | 14254a1 and the prototype | the same: glibc, jemalloc, tcmalloc and the prototype |
+| `2026-11-05-bench-simd` | the reference machine | 14254a1 | `kernels` A, B, E, `apply1`, `applyJC` and `jc_qjmc`: baseline, `x86-64-v3` and native builds, 4 KB pages |
+| `2026-11-05-bench-p27`, `-p27b`, `-p27c` | the reference machine | a probe program against 14254a1 | timing scans and `perf stat` for #27; no benchmark files |
 | `2026-11-05-bench-b5` | the reference machine | the working tree committed as 4186b8e | the main suite's `picture1`, `constructJC` and `slices3`, on 4 KB pages, five rounds |
 | `2026-11-07-bench-caseI` | the reference machine | the working tree for #27 | `kernels` case I, first run with two state sizes, three processes |
 | `2026-11-07-bench-caseI2` | the reference machine | the working tree committed as 78785f0 | `kernels` case I, three processes |
@@ -42,4 +49,8 @@ The sessions up to 2026-11-08 were run with one-off scripts. Each of them has, i
 - the script, as it was on the machine;
 - a `README.md` saying what was measured, from which source, where `performance.md` quotes it, and how the files were renamed to the layout above. The contents of the files are unchanged.
 
-Recomputed from these files, the figures that `performance.md` quotes from them come out as on the page. Not here yet are the sessions on the instruction set and on allocators, which also ran C++QED's `jc_qjmc`, and the `perf` sessions of #27 ([#37](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/37)).
+Recomputed from these files, the figures that `performance.md` quotes from them come out as on the page.
+
+Some of these sessions also ran C++QED's `jc_qjmc`. Its run times are kept (`times`), its trajectories are not. Helper programs that a script builds, and the patches of the allocator prototypes, lie beside the script that first used them.
+
+Not here: two sessions of 2026-11-03 of which no script was kept (a check of the machine's noise, and Eigen 3.4.0 against 5.0.1), and the measurements on a laptop that the page mentions as history.

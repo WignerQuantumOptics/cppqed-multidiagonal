@@ -1,0 +1,12 @@
+# started on Thu Nov  5 21:35:40 2026
+
+3172497262,,cycles:u,352432370,39.00,,
+3210455226,,instructions:u,442415094,49.00,,
+77687761,,l1d.replacement:u,443820105,49.00,,
+66708195,,l2_rqsts.miss:u,446811898,50.00,,
+557572,,l2_rqsts.rfo_miss:u,449807660,50.00,,
+57527966,,l2_lines_in.all:u,449969288,50.00,,
+52440077,,l2_trans.l2_wb:u,358401547,40.00,,
+55873603,,offcore_requests.all_data_rd:u,357004717,40.00,,
+603,,dtlb_load_misses.walk_completed:u,354010791,39.00,,
+53,,dtlb_store_misses.walk_completed:u,351016376,39.00,,

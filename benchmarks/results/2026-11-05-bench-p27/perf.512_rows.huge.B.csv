@@ -1,0 +1,12 @@
+# started on Thu Nov  5 21:35:47 2026
+
+2331287227,,cycles:u,257456353,39.00,,
+118716153,,ld_blocks_partial.address_alias:u,257455106,39.00,,
+26249422,,resource_stalls.sb:u,259269519,39.00,,
+26545512,,exe_activity.bound_on_stores:u,262262695,40.00,,
+981815062,,cycle_activity.stalls_l1d_miss:u,263948551,40.00,,
+982228003,,cycle_activity.stalls_l2_miss:u,263948332,40.00,,
+979832111,,cycle_activity.stalls_l3_miss:u,263948512,40.00,,
+665,,l1d_pend_miss.fb_full:u,263956068,40.00,,
+9250,,machine_clears.memory_ordering:u,262187819,40.00,,
+123162249,,mem_load_retired.fb_hit:u,259188553,39.00,,
