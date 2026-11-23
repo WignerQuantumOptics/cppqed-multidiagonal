@@ -4,7 +4,7 @@ This page records what the benchmarks show about applying a `MultiDiagonal` to a
 
 **Short version** (reference machine, default build of both libraries):
 
-- **In cache**, the library is 2.7–3.6× faster than Eigen's sparse product at rank 1 and with the mode on axis 0 (1.8–2.2× for the smallest operators, of dimension 16), and 1.4–2.2× faster with a qubit on axis 0. Contiguous diagonals without column indices vectorize, while a CSR product gathers through column indices. In cache these ratios move by up to 20% between builds, because Eigen's own speed depends on the layout of the code around it (see "Setup"). They also depend on the processor: on a 2022 laptop core they were 1.5–2.4× and 1.0–1.6×, before the last change of the loop.
+- **In cache**, the library is 2.7–3.6× faster than Eigen's sparse product at rank 1 and with the mode on axis 0 (1.8–2.2× for the smallest operators, of dimension 16), and 1.4–2.2× faster with a qubit on axis 0. Contiguous diagonals without column indices vectorize, while a CSR product gathers through column indices. In cache these ratios move by up to 20% between builds, because Eigen's own speed depends on the layout of the code around it (see "Setup"). They also depend on the processor: on a 2022 laptop core they were 1.5–2.4× and 1.0–1.6×, before the last change of the loop. On a Zen 2 core they are 2.9–4.0× and 1.5–1.7×, and one case goes against the library there (see "A second machine").
 - **Out of cache**, where the operator is as large as the state, the library is 2.0–2.4× faster than Eigen at rank 1 and with the mode on axis 0, and 0.9–1.1× as fast with a qubit on axis 0. These figures are on 4 KB pages. On transparent huge pages, input and output allocated back to back can make the library up to about 3× slower (see "Distance on huge pages"). Once both sides are limited by memory bandwidth, no storage format gains much: MultiDiagonal stores 16 bytes per nonzero against 20 for a compressed sparse row (CSR) matrix. A single thread on the reference machine doesn't reach that limit with Eigen's product.
 - **In C++QED's actual setting**, a small operator applied slice by slice across a large state, the library is 2.5–2.6× faster than a CSR matrix of the same term on contiguous slices and 1.5–1.6× on strided ones, and 1.9–2.0× and 1.3–1.4× against term CSR built with `-fcx-limited-range` (case D: n⁴ states, n = 30 and 32, 4 KB pages). The main suite's `slices3` (n³ states, n = 16 … 100, 4 KB pages) gives 1.6–2.9× for n ≥ 30, and 1.09× on a strided axis at n = 16 (see "The interaction picture"). On huge pages, with the arrays allocated back to back, case D gave 1.7–2.6×, except for contiguous slices of length 32, at parity; that came from where the arrays lay in memory, not from their length (see "Distance on huge pages").
 - **The loop has two shapes** since 2026-11-04: one diagonal at a time, and the diagonals contributing to a row summed before one store ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1), [#25](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25)). `operator()` chooses from the view's strides and extents. The row shape sweeps a large state once instead of once per diagonal, and makes the speed nearly independent of where input and output lie relative to each other within a page. The other is faster where axis 0 is short, and for small views.
@@ -108,6 +108,38 @@ The figures on this page are for `-march=native`, which on the reference machine
 - **Nothing in the library got slower.** Only the hand-written comparison loop of case E with an axis 0 of 1–4 elements did (0.65–0.95×). The library unrolls that axis and gains 1.2–1.7× there.
 - **`-march=native` adds nothing over `x86-64-v3`** on this machine, which has no AVX-512. `x86-64-v4` has not been measured.
 - **C++QED gains less than the kernels** (1.12–1.38× per derivative call), because the rest of a QJMC step gains less. The `jc_qjmc` regression passes at all three levels: FMA changes the rounding, but every reference line agrees.
+
+## A second machine
+
+The figures elsewhere on this page are from the reference machine. On 2026-11-23 the three suites were run on a second machine as well, and on the reference machine again, both with the driver [`benchmarks/run.sh`](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/blob/main/benchmarks/run.sh) at the same revision (134ddcf) and with five processes per configuration. The raw results of both sessions are in [`benchmarks/results`](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/tree/main/benchmarks/results).
+
+- **The machine:** a virtual machine on an AMD EPYC (Zen 2) host, 16 vCPUs, KVM. Ubuntu 22.04 with GCC 16.2.0 and Eigen 5.0.1 built from source, `-O3 -march=native` (AVX2 and FMA), single thread, pinned to one vCPU.
+- **Caches:** L1d 32 KB and L2 512 KB per core, the latter twice the reference machine's. The L3 is 16 MB, which on the host four cores share, possibly with other guests. "In L2" and "in L3" therefore begin and end at other sizes than on the reference machine, and the table below goes by N.
+- **What a guest does not control:** the host's frequency and SMT settings, and which physical core a vCPU runs on. The hypervisor took 0.1% of the pinned vCPU's time throughout the session.
+- **Pages:** transparent huge pages are given there only on request (`madvise`), so every run is on 4 KB pages. The reference machine's column is its 4 KB run of the same session.
+- **Steadiness:** 90% of the values of a process lie within 1.1% of the median over the five processes in the main suite and within 2.1–2.6% in `kernels`, as on the reference machine in its session (1.1% and 2.5–2.9%). Over a session, the averages of the rounds stayed within 0.8% of each other on the second machine and within 2.8% on the reference machine.
+
+Eigen's time (for slices: the term CSR's) over the library's, medians, 4 KB pages:
+
+| | reference machine (Kaby Lake) | second machine (Zen 2) |
+|---|---|---|
+| `apply1`, N = 16 | 1.84 | 1.41 |
+| `apply1`, N = 64 … 65536 | 2.7–3.3 | 2.9–4.0 |
+| `apply1`, N ≥ 262144 | 1.84–1.91 | 2.20–2.26 |
+| `applyJC_modefast`, N = 64 … 65536 | 2.7–3.6 | 2.9–4.0 |
+| `applyJC_modefast`, N ≥ 262144 | 1.92–2.04 | 1.79–1.83 |
+| `applyJC_qbitfast`, N = 64 … 65536 | 1.5–2.2 | 1.5–1.7 |
+| `applyJC_qbitfast`, N ≥ 262144 | 0.85–1.05 | 0.80–0.87 |
+| `slices3`, contiguous axis, n = 16 … 100 | 2.3–3.2 | 1.5–2.9 |
+| `slices3`, strided axis, n = 30 and 100 | 1.9 and 2.3 | 1.65 and 2.2 |
+| `slices3`, strided axis, n = 16, 32, 64 | 1.1, 1.65, 2.0 | 0.72, 0.86, 1.06 |
+| `kernels` case D, strided axis, n = 32 (against the `-fcx-limited-range` build) | 1.82 (1.55) | 0.82 (0.73) |
+
+- **In cache the picture is the same**, with a larger advantage on Zen 2 from N = 1024 up (3.6–4.0× for N = 1024 … 65536) and a smaller one for the smallest operators.
+- **Out of cache too**: about 2× at rank 1 and with the mode first, and behind Eigen with the qubit first, on both machines.
+- **Strided slices whose stride is a multiple of 4 KB are the exception.** In `slices3` that is n = 16, 32 and 64 on axis 2. There the library is slower than the term CSR on Zen 2 or at parity with it, while it keeps its advantage on the reference machine. In case D, going from n = 30 to n = 32 slows the library's row shape 2.1× on Zen 2 and the term CSR 1.14×; one diagonal at a time becomes 20× slower. The cause is not established ([#39](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/39)).
+- **In absolute terms**, at N = 4096 the library's `apply1` takes 8.6 µs on the second machine against 14.7 µs on the reference machine, and Eigen's 34.5 µs against 40.0 µs.
+- **The reference machine's column against the rest of this page:** this session reproduces the in-cache ranges quoted elsewhere. For rank 1 out of cache it gives 1.84–1.91, below the 2.0–2.4 quoted, which was measured at c346b8a. The difference has not been examined ([#38](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/38)).
 
 ## The library's two loop shapes
 
@@ -434,6 +466,7 @@ Composition never meets the symbolic pass and sorting of a sparse product: the o
 
 - **"Today"** is the library as it is, in the default build, with both sides taking the slices in the same order. Ranges in cache span two builds of today's library (c346b8a, and one that differed only in `operator()`'s bounds), between which Eigen's speed moved by up to 20%.
 - **Out of cache** the figures are for 4 KB pages. On huge pages, input and output allocated back to back can cost the library up to about 3× (see "Distance on huge pages", [#26](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/26)).
+- **On another processor** the table reads differently (see "A second machine"). On a Zen 2 core, slices with a stride of a multiple of 4 KB are applied slower than by the term CSR, or at parity with it ([#39](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/39)).
 
 The format is not a large speed-up for every application, and should not be presented as one. Its advantages are:
 

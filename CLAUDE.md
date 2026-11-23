@@ -187,6 +187,11 @@ ctest --test-dir build --output-on-failure
 - **`benchmarks/performance.md` is the record of results and diagnosis**, and a page of the
   Doxygen site (linked from the README and from `operator()`). When numbers or the
   diagnosis change, update it rather than this file. In brief (2026-11-04):
+  - A second machine since 2026-11-23 (performance.md "A second machine"): a virtual machine on an
+    AMD EPYC (Zen 2) host. Same picture in cache (up to 4.0× over Eigen) and out of cache, except
+    that slices with a stride of a multiple of 4 KB (n = 16, 32, 64 on a strided axis) are slower
+    than the term CSR there, or at parity (#39; cause not established). Name it as on the page,
+    without where it is hosted.
   - The reference machine is a quiet i7-7700 desktop (Kaby Lake; GCC 16, Eigen 5.0.1;
     turbo and SMT off, pinned to a core without device interrupts). Every figure is a median
     over five separate processes. Speed-ups over Eigen depend on the processor, so give them
@@ -305,8 +310,9 @@ back (#18) are done (2026-11-07).
      strided slices (about 2× on contiguous ones and on whole states). Until it is measured on the
      reference machine, don't call a ratio to Eigen a comparison of formats.
    - #37: the raw results and the driver that produced them belong in the repository; today a quoted
-     range can't be checked per size. The driver is there (`benchmarks/run.sh`); the raw results, the
-     reduction script and `plot.py` reading them are open.
+     range can't be checked per size. The driver is there (`benchmarks/run.sh`), and the raw results of
+     its sessions (`benchmarks/results/`, one directory per session; its README lists them). Open: the
+     results of the earlier sessions, the reduction script, and `plot.py` reading them.
    - #38: three figures quoted under other conditions than stated (slice order and the 1.8× for
      adjacent slices: huge pages; out of cache starts at N = 65536 for Jaynes–Cummings).
    - #33: names in the global namespace (`dcomp`, `sqr`, `operator""i`, `FWD`, …): decide before
