@@ -234,7 +234,9 @@ ctest --test-dir build --output-on-failure
       doesn't. A test (`#27`) checks the choice bitwise: onto a nonzero dpsidt the shapes round
       differently.
   - In cache the library is 2.7–3.6× faster than Eigen at rank 1 and with the mode first
-    (1.8–2.2× at dimension 16), 1.4–2.2× with the qubit first. In cache, ratios to Eigen move
+    (1.8–2.0× at dimension 16), 1.5–2.2× with the qubit first (session of 2026-11-23, 134ddcf,
+    as all ratios of the page's summary and assessment; the sections between keep the figures
+    of their own, earlier sessions). In cache, ratios to Eigen move
     by up to 20% between builds, because Eigen's own speed depends on the code layout; the
     library's speed-up over its earlier versions doesn't.
   - Keep everything the application loops read local or by value (the diagonal pointer is
@@ -257,15 +259,16 @@ ctest --test-dir build --output-on-failure
     moved by more than 8% on huge pages, almost all of them the library's or the hand-written
     loops' (Eigen's in four, by 1.09–1.32×); scattered access
     (the old `SliceIterator` order) is instead 1.1–1.3× faster on huge pages (TLB).
-  - Out of cache, on 4 KB pages: 2.0–2.4× faster than Eigen, with the qubit first 0.9–1.1×
-    (still one diagonal at a time; 0.89× at N = 2²⁰). On huge pages these were 1.4–2.5× and
+  - Out of cache, on 4 KB pages: 1.8–2.0× faster than Eigen, with the qubit first 0.85–1.05×
+    (still one diagonal at a time; 0.85× at N = 2²⁰; at c346b8a the session of 2026-11-04 gave
+    2.0–2.3 and 0.9–1.1, difference not examined, #38). On huge pages these were 1.4–2.5× and
     0.6–0.8×. Once both are bandwidth bound, a format gains at most about 20%; single-threaded
     on the reference machine Eigen isn't.
   - In C++QED's slice-by-slice setting, the honest competitor is a CSR matrix of the term's
-    own space on the same slices. On 4 KB pages MultiDiagonal is 2.5–2.6× faster on contiguous
-    slices (n = 30 and 32) and 1.5–1.6× on strided ones (the row shape avoids the L1 set
-    conflicts of power-of-two strides); 1.3–2.0× against term CSR with `-fcx-limited-range`
-    (re-measured 2026-11-08). The earlier parity at n = 32 contiguous was the slow
+    own space on the same slices. On 4 KB pages MultiDiagonal is 2.3–2.5× faster on contiguous
+    slices (n = 30 and 32) and 1.6–1.8× on strided ones on the reference machine; 1.4–1.9×
+    against term CSR with `-fcx-limited-range` (session of 2026-11-23). Strides that are a
+    multiple of 4 KB cost both methods there, and on Zen 2 the library more (#39). The earlier parity at n = 32 contiguous was the slow
     distance. C++QED's `SliceIterator` used to produce the slices last
     dummy axis fastest, which cost every method 1.1–2.3× more; it takes them in memory order
     since 2026-11-04 (cppqed#90).
@@ -294,7 +297,7 @@ back (#18) are done (2026-11-07).
 
 1. Application performance (#1; see `benchmarks/performance.md`, next steps): A short
    axis 0 of a state larger than cache (qubit first) is still applied one diagonal at a time, at
-   0.9–1.1× of Eigen on 4 KB pages. The slow distance on huge pages is settled (#26): jemalloc
+   0.85–1.05× of Eigen on 4 KB pages. The slow distance on huge pages is settled (#26): jemalloc
    avoids it, and `StorageType` stays a plain `std::vector`; don't add an allocator unasked. (The hoisted loop,
    the multiplication in real arithmetic, the short axis 0, the row shape for long operands and
    strided views, the placement scan, the power-of-two investigation and the out-of-cache

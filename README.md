@@ -78,12 +78,12 @@ Application accumulates into its last argument and applies no factor $1/i$ (C++Q
 ## Performance
 
 On the reference machine (Intel Core i7-7700, GCC 16, Eigen 5.0.1), with the operator in cache, applying a `MultiDiagonal` is:
-- 2.7–3.6× faster than Eigen's sparse matrices for operators on one axis and on several axes (1.8–2.2× for the smallest, of dimension 16);
-- 1.4–2.2× faster with a qubit on axis 0.
+- 2.7–3.6× faster than Eigen's sparse matrices for operators on one axis and on several axes (1.8–2.0× for the smallest, of dimension 16);
+- 1.5–2.2× faster with a qubit on axis 0.
 
-Out of cache, where the operator is as large as the state, it is 2.0–2.4× faster than Eigen, and 0.9–1.1× as fast with a qubit on axis 0. These figures are on 4 KB pages; on transparent huge pages see the last point below. Once both sides are limited by memory bandwidth, no format gains much over a sparse matrix.
+Out of cache, where the operator is as large as the state, it is 1.8–2.0× faster than Eigen, and 0.85–1.05× as fast with a qubit on axis 0. These figures are on 4 KB pages; on transparent huge pages see the last point below. Once both sides are limited by memory bandwidth, no format gains much over a sparse matrix.
 
-These figures are for the default build of both, compiled for AVX2 (`-march=native`). On the x86-64 baseline (no `-march`), the library is typically 1.4–1.7× slower, and its advantage over Eigen in cache shrinks to 1.5–2.0×. In cache they move by up to 20% between builds, because Eigen's own speed depends on the layout of the code around it. They also depend on the processor: on a 2022 laptop core they were 1.5–2.4× and 1.0–1.6× in cache. `-fcx-limited-range` makes Eigen 10–17% faster and leaves the library unchanged, since its kernel multiplies in real arithmetic.
+These figures are for the default build of both, compiled for AVX2 (`-march=native`). On the x86-64 baseline (no `-march`), the library is typically 1.4–1.7× slower, and its advantage over Eigen in cache shrinks to 1.5–2.0×. In cache they move by up to 20% between builds, because Eigen's own speed depends on the layout of the code around it. They also depend on the processor: on a 2022 laptop core they were 1.5–2.4× and 1.0–1.6× in cache, and on a Zen 2 core they are 2.9–4.0× and 1.5–1.7×. `-fcx-limited-range` makes Eigen 10–17% faster and leaves the library unchanged, since its kernel multiplies in real arithmetic.
 
 The application loop was rewritten in three steps ([#1](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/1), [#23](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/23), [#25](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/25)). Before it, the Jaynes–Cummings coupling was 3.4–4.5× slower than Eigen. Since the last step, large operands and strided slices are applied with the diagonals of a row summed before one store, so the state is swept once rather than once per diagonal, and where input and output lie relative to each other within a page matters by at most about 10% rather than by up to 20% (and occasionally 2× for a whole process). What remains:
 - a qubit on axis 0 of a state larger than cache is still applied one diagonal at a time;
