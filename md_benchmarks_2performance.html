@@ -138,7 +138,11 @@ Setup</h1>
 <p class="startli">Figures marked "laptop" below come from there. The Eigen version matters less than the processor: on the reference machine, Eigen 3.4.0 and 5.0.1 differ by 0.8–1.2× in Eigen's own speed, and leave the library unchanged.</p>
 </li>
 </ul>
-<p>To reproduce (pin the runs to one core, e.g. with <code>taskset -c 1</code>):</p>
+<p>To reproduce a measuring session, use the driver <a href="https://github.com/WignerQuantumOptics/cppqed-multidiagonal/blob/main/benchmarks/run.sh"><code>benchmarks/run.sh</code></a>. It builds the executables, runs them in separate processes (five rounds, the builds interleaved, pinned to one core, on huge pages and on 4 KB pages), and keeps the CSV of every process together with a record of the machine and of the builds:</p>
+<div class="fragment"><div class="line">cmake -B build-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF</div>
+<div class="line">benchmarks/run.sh --core 1 results build-release=build-release</div>
+</div><!-- fragment --><p>The figures on this page predate the driver; they were measured with scripts that did the same by hand.</p>
+<p>The executables can also be run one by one (pin the runs to one core, e.g. with <code>taskset -c 1</code>):</p>
 <div class="fragment"><div class="line">cmake -B build-release -DCMAKE_BUILD_TYPE=Release</div>
 <div class="line">cmake --build build-release --target cppqed-multidiagonal-benchmarks cppqed-multidiagonal-kernels cppqed-multidiagonal-kernels-cxlr</div>
 <div class="line">./build-release/benchmarks/cppqed-multidiagonal-kernels        # cases A–F, default complex multiplication</div>
