@@ -10,10 +10,11 @@ One directory per measuring session, named by date and machine, exactly as [`ben
 | `LABEL/SUITE-PAGES-rROUND.csv` | the standard output of one process: suite `main`, `kernels` or `kernels-cxlr`; pages `thp` (as the system hands them out) or `4k` (`--no-thp`) |
 | `LABEL/SUITE-PAGES-rROUND.err` | its standard error |
 | `LABEL/build.log` | the output of the build step |
+| `REPORT.md` | generated from the above by [`benchmarks/reduce.py report`](../reduce.py): every value as the median over the processes, each implementation's time relative to the library's, and how well the processes agree |
 
 The only change made to the files is the `host:` line of `machine.txt`, which carries the name the machine has in [`performance.md`](../performance.md) instead of its host name.
 
-Figures quoted from a session are medians over its processes (the `rROUND` files of one suite and page mode).
+Figures quoted from a session are medians over its processes (the `rROUND` files of one suite and page mode). Look them up in the session's `REPORT.md`; `benchmarks/reduce.py ratios` puts sessions side by side.
 
 ## Sessions
 

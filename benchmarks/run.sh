@@ -40,6 +40,8 @@
 #   OUTDIR/LABEL/SUITE-PAGES-rROUND.csv      the standard output of one process
 #   OUTDIR/LABEL/SUITE-PAGES-rROUND.err      its standard error (validation, summaries of cases G to I)
 # In file names the colon of a suite's selection is written as a dot: kernels.D-4k-r1.csv.
+#
+# benchmarks/reduce.py turns OUTDIR into tables (medians over the processes, ratios, how well they agree).
 set -euo pipefail
 
 declare -A EXE=(

@@ -46,6 +46,14 @@ jobs:
           ./build/benchmarks/cppqed-multidiagonal-kernels --smoke > /dev/null
           ./build/benchmarks/cppqed-multidiagonal-kernels-cxlr --smoke > /dev/null
 
+      # the driver of a measuring session and the reduction of its results (#37); the timings mean nothing here
+      - name: Benchmark driver smoke run
+        if: matrix.build_type == 'Release'
+        run: |
+          benchmarks/run.sh --no-pin --smoke --rounds 2 "$RUNNER_TEMP/session" ci=build
+          benchmarks/reduce.py report "$RUNNER_TEMP/session" > /dev/null
+          benchmarks/reduce.py ratios ci="$RUNNER_TEMP/session":4k > /dev/null
+
   sanitizers:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
