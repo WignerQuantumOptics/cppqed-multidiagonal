@@ -20,7 +20,17 @@ Figures quoted from a session are medians over its processes (the `rROUND` files
 
 | directory | machine | revision | what |
 |---|---|---|---|
+| `2026-11-04-bench-remeasure` | the reference machine | c346b8a with the benchmarks' `--no-thp` | `kernels` and the main suite's `apply1` and `applyJC`, on huge pages and on 4 KB pages, five rounds |
+| `2026-11-05-bench-b5` | the reference machine | the working tree committed as 4186b8e | the main suite's `picture1`, `constructJC` and `slices3`, on 4 KB pages, five rounds |
+| `2026-11-08-bench-caseD4k` | the reference machine | e90ea79 | `kernels` case D, default and `-fcx-limited-range` builds, on 4 KB pages, five rounds |
 | `2026-11-23-bench` | the reference machine: Intel Core i7-7700 (Kaby Lake), GCC 16.2.1, Eigen 5.0.1 | 134ddcf | all three suites, on huge pages and on 4 KB pages, five rounds |
 | `2026-11-23-zen2-vm` | a virtual machine on an AMD EPYC (Zen 2) host, 16 vCPUs, KVM; GCC 16.2.0, Eigen 5.0.1 | 134ddcf | all three suites, on 4 KB pages, five rounds |
 
-The sessions behind the figures that `performance.md` quoted before 2026-11-23 were run with one-off scripts and are not here yet ([#37](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/37)).
+## Sessions from before the driver
+
+The sessions up to 2026-11-08 were run with one-off scripts. Each of them has, instead of `machine.txt` and `builds.txt`:
+
+- the script, as it was on the machine;
+- a `README.md` saying what was measured, from which source, where `performance.md` quotes it, and how the files were renamed to the layout above. The contents of the files are unchanged.
+
+The three above reproduce the figures that `performance.md` quotes from them. The other sessions behind the page are not here yet ([#37](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/issues/37)).

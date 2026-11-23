@@ -1,0 +1,22 @@
+start 2026-11-04T17:57:39+01:00  smt off  no_turbo 1  gov performance  thp [always] madvise never
+17:59:03 kdef.thp.1
+18:00:37 kdef.nothp.1
+18:00:51 bench.thp.1
+18:01:06 bench.nothp.1
+18:02:30 kdef.thp.2
+18:04:04 kdef.nothp.2
+18:04:18 bench.thp.2
+18:04:33 bench.nothp.2
+18:05:57 kdef.thp.3
+18:07:31 kdef.nothp.3
+18:07:45 bench.thp.3
+18:07:59 bench.nothp.3
+18:09:24 kdef.thp.4
+18:10:58 kdef.nothp.4
+18:11:12 bench.thp.4
+18:11:26 bench.nothp.4
+18:12:51 kdef.thp.5
+18:14:25 kdef.nothp.5
+18:14:39 bench.thp.5
+18:14:53 bench.nothp.5
+done 2026-11-04T18:14:53+01:00  smt off  no_turbo 1

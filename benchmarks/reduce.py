@@ -238,10 +238,9 @@ def resolve(argument):
     if path.rsplit(':', 1)[-1] in PAGES: path, pages = path.rsplit(':', 1)
     path = path.rstrip('/')
     if not os.path.isdir(path): die(f'{path}: no such directory')
-    if os.path.exists(os.path.join(path, 'machine.txt')):
-        labels = labelsOf(path)
-        if len(labels) != 1: die(f'{path} holds the builds {", ".join(labels)}: name one as {path}/LABEL')
-        path = os.path.join(path, labels[0])
+    labels = labelsOf(path)  # empty where the path is a build's directory itself
+    if len(labels) > 1: die(f'{path} holds the builds {", ".join(labels)}: name one as {path}/LABEL')
+    if labels: path = os.path.join(path, labels[0])
     configurations = readLabel(path)
     if not configurations: die(f'{path}: no results of benchmarks/run.sh found')
     modes = sorted({p for _, p in configurations})
