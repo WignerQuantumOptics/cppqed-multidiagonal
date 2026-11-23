@@ -44,18 +44,19 @@ var NAVTREE =
       [ "Setup", "md_benchmarks_2performance.html#autotoc_md19", null ],
       [ "Complex multiplication", "md_benchmarks_2performance.html#autotoc_md20", null ],
       [ "Instruction set", "md_benchmarks_2performance.html#autotoc_md21", null ],
-      [ "The library's two loop shapes", "md_benchmarks_2performance.html#autotoc_md22", [
-        [ "A short axis 0", "md_benchmarks_2performance.html#autotoc_md23", null ],
-        [ "Contiguous slices of a state larger than cache", "md_benchmarks_2performance.html#autotoc_md24", null ]
+      [ "A second machine", "md_benchmarks_2performance.html#autotoc_md22", null ],
+      [ "The library's two loop shapes", "md_benchmarks_2performance.html#autotoc_md23", [
+        [ "A short axis 0", "md_benchmarks_2performance.html#autotoc_md24", null ],
+        [ "Contiguous slices of a state larger than cache", "md_benchmarks_2performance.html#autotoc_md25", null ]
       ] ],
-      [ "Placement of the arrays", "md_benchmarks_2performance.html#autotoc_md25", [
-        [ "Distance on huge pages", "md_benchmarks_2performance.html#autotoc_md26", null ]
+      [ "Placement of the arrays", "md_benchmarks_2performance.html#autotoc_md26", [
+        [ "Distance on huge pages", "md_benchmarks_2performance.html#autotoc_md27", null ]
       ] ],
-      [ "The bandwidth ceiling", "md_benchmarks_2performance.html#autotoc_md27", null ],
-      [ "Operators applied slice by slice: C++QED's setting", "md_benchmarks_2performance.html#autotoc_md28", null ],
-      [ "The interaction picture", "md_benchmarks_2performance.html#autotoc_md29", null ],
-      [ "Composition and construction", "md_benchmarks_2performance.html#autotoc_md30", null ],
-      [ "Assessment and next steps", "md_benchmarks_2performance.html#autotoc_md31", null ]
+      [ "The bandwidth ceiling", "md_benchmarks_2performance.html#autotoc_md28", null ],
+      [ "Operators applied slice by slice: C++QED's setting", "md_benchmarks_2performance.html#autotoc_md29", null ],
+      [ "The interaction picture", "md_benchmarks_2performance.html#autotoc_md30", null ],
+      [ "Composition and construction", "md_benchmarks_2performance.html#autotoc_md31", null ],
+      [ "Assessment and next steps", "md_benchmarks_2performance.html#autotoc_md32", null ]
     ] ],
     [ "Todo List", "todo.html", null ],
     [ "Namespaces", "namespaces.html", [
