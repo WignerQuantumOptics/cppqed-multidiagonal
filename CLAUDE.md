@@ -176,8 +176,10 @@ ctest --test-dir build --output-on-failure
   twice: `cppqed-multidiagonal-kernels` and `cppqed-multidiagonal-kernels-cxlr`
   (`-fcx-limited-range`; Clang 18 also needs `-Wno-overriding-option`). It validates
   before timing too.
-- Output is CSV on stdout. `plot.py` reads `benchmarkMultiDiagonal`'s CSV
-  (`benchmark,impl,N,d,time_per_op_ns`); keep the two in sync.
+- Output is CSV on stdout. `plot.py` draws the main suite's figures from a session directory
+  (`plot.py SESSION[/LABEL][:PAGES] OUTDIR`, medians over the processes; it takes the layout from
+  `reduce.py`), or from `benchmarkMultiDiagonal`'s CSV (`benchmark,impl,N,d,time_per_op_ns`); keep
+  the columns in sync. It needs matplotlib; CI renders the figures of two sessions as an artifact.
 - Use `doNotOptimize` to prevent elision.
 - `--smoke` (both executables) shrinks the sizes. It is a CI correctness check only, and
   its timings are meaningless. CI runs all three binaries with it.
@@ -320,8 +322,8 @@ back (#18) are done (2026-11-07).
      reduction script (`benchmarks/reduce.py`). The sessions of 2026-11-03 to 11-08 on the reference
      machine are in too (21 directories: renamed to the driver's layout, each with its one-off script and
      a README; they reproduce the page's figures). Not in: two early sessions without a script (noise1,
-     eigen), and the laptop's. Open: the page's older tables regenerated from the files, and `plot.py`
-     reading the directories.
+     eigen), and the laptop's. `plot.py` reads the directories. Open: the page's older tables
+     regenerated from the files.
    - #38: three figures quoted under other conditions than stated (slice order and the 1.8× for
      adjacent slices: huge pages; out of cache starts at N = 65536 for Jaynes–Cummings).
    - #33: names in the global namespace (`dcomp`, `sqr`, `operator""i`, `FWD`, …): decide before

@@ -41,7 +41,7 @@ cmake -B build-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
 benchmarks/run.sh --core 1 results build-release=build-release
 ```
 
-[`benchmarks/reduce.py`](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/blob/main/benchmarks/reduce.py) turns such a directory into tables: `reduce.py report results` gives every value as the median over the processes, with each implementation's time relative to the library's, and `reduce.py ratios` puts sessions side by side.
+[`benchmarks/reduce.py`](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/blob/main/benchmarks/reduce.py) turns such a directory into tables: `reduce.py report results` gives every value as the median over the processes, with each implementation's time relative to the library's, and `reduce.py ratios` puts sessions side by side. [`benchmarks/plot.py`](https://github.com/WignerQuantumOptics/cppqed-multidiagonal/blob/main/benchmarks/plot.py) draws the main suite's figures from the same directory.
 
 The figures on this page predate the driver, except those of "A second machine"; they were measured with scripts that did the same by hand.
 

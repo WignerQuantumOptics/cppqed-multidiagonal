@@ -235,25 +235,30 @@ def report(session):
 
 # ── ratios ──────────────────────────────────────────────────────────────────
 
-def resolve(argument):
-    """NAME=SESSION[/LABEL][:PAGES] → (name, {(suite, pages): Configuration} restricted to one page mode, pages)."""
-    if '=' not in argument: die(f"expected NAME=SESSION[/LABEL][:PAGES], got '{argument}'")
-    name, path = argument.split('=', 1)
-    pages = None
-    if path.rsplit(':', 1)[-1] in PAGES: path, pages = path.rsplit(':', 1)
+def locate(argument):
+    """SESSION[/LABEL][:PAGES] → (the directory of one build's results, pages). plot.py uses it too."""
+    path, pages = argument, None
+    if ':' in path and path.rsplit(':', 1)[-1] in PAGES: path, pages = path.rsplit(':', 1)
     path = path.rstrip('/')
     if not os.path.isdir(path): die(f'{path}: no such directory')
     labels = labelsOf(path)  # empty where the path is a build's directory itself
     if len(labels) > 1: die(f'{path} holds the builds {", ".join(labels)}: name one as {path}/LABEL')
     if labels: path = os.path.join(path, labels[0])
-    configurations = readLabel(path)
-    if not configurations: die(f'{path}: no results of benchmarks/run.sh found')
-    modes = sorted({p for _, p in configurations})
+    modes = sorted({m['pages'] for m in map(RESULT_FILE.match, os.listdir(path)) if m})
+    if not modes: die(f'{path}: no results of benchmarks/run.sh found')
     if pages is None:
         if len(modes) != 1: die(f'{path} ran on {" and ".join(modes)}: choose with :thp or :4k')
         pages = modes[0]
     elif pages not in modes: die(f'{path} has no runs on {pages}')
-    return name, {s: c for (s, p), c in configurations.items() if p == pages}, pages
+    return path, pages
+
+
+def resolve(argument):
+    """NAME=SESSION[/LABEL][:PAGES] → (name, {suite: Configuration} of that page mode, pages)."""
+    if '=' not in argument: die(f"expected NAME=SESSION[/LABEL][:PAGES], got '{argument}'")
+    name, where = argument.split('=', 1)
+    path, pages = locate(where)
+    return name, {s: c for (s, p), c in readLabel(path).items() if p == pages}, pages
 
 
 def ratios(arguments):

@@ -1,7 +1,17 @@
 #!/usr/bin/env python3
-"""Render the cppqed-multidiagonal benchmark CSV into figures.
+# Part of the cppqed-multidiagonal benchmark suite. BSL-1.0.
+"""Renders the results of cppqed-multidiagonal-benchmarks (the main suite) into figures.
 
-Usage: benchmarks/plot.py [bench.csv] [outdir]
+usage: benchmarks/plot.py [SOURCE] [OUTDIR]
+
+SOURCE is one of
+  SESSION[/LABEL][:PAGES]  a session of benchmarks/run.sh, as benchmarks/reduce.py takes it: LABEL where the
+                           session holds several builds, PAGES (thp or 4k) where it ran on both. The main
+                           suite's files of all its processes are read, e.g.
+                             benchmarks/plot.py benchmarks/results/2026-11-23-bench:4k figures
+  FILE.csv                 the standard output of one process, or several concatenated
+  nothing                  the same from the standard input
+OUTDIR is where the figures go (default: the current directory).
 
 Writes:
   benchmarks.{pdf,png}  structural benchmarks — apply / compose / construct, rank 1 and rank 2, and a
@@ -9,25 +19,52 @@ Writes:
   picture.{pdf,png}     interaction-picture RHS evaluation (absolute times + speedup), and the cost of the
                         picture in the slice-by-slice setting
 
-Panels are emitted only for benchmarks present in the CSV, so partial runs
-(./benchmarkMultiDiagonal picture1 applyJC) plot without editing anything.
-Repeated (benchmark,impl,N) rows — e.g. concatenated CSVs from several runs —
-are reduced by median.
+Every point is the median over the processes read, as in reduce.py. Panels are emitted only for the
+benchmarks present, so partial runs (run.sh --suites main:picture1+applyJC) plot without editing anything.
+Needs matplotlib.
 """
 import csv, sys, os, math, collections, statistics
-import matplotlib.pyplot as plt
 
-path   = sys.argv[1] if len(sys.argv) > 1 else '/dev/stdin'
+source = sys.argv[1] if len(sys.argv) > 1 else '/dev/stdin'
 outdir = sys.argv[2] if len(sys.argv) > 2 else '.'
 
 # ── ingest ───────────────────────────────────────────────────────────────────
 
+def filesOf(source):
+    """The CSV files behind SOURCE, and what to call them in messages."""
+    if source in ('-', '/dev/stdin'): return ['/dev/stdin'], 'the standard input'
+    if os.path.isfile(source): return [source], source
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import reduce  # benchmarks/reduce.py: the layout of a session is defined there
+    directory, pages = reduce.locate(source)
+    names = sorted(f for f in os.listdir(directory) if (m := reduce.RESULT_FILE.match(f)) and m['pages'] == pages)
+    return [os.path.join(directory, f) for f in names], f'{directory} on {reduce.PAGES[pages]}'
+
 raw = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(list)))
 dvals = collections.defaultdict(set)
-with open(path) as f:
-    for row in csv.DictReader(f):
-        raw[row['benchmark']][row['impl']][int(row['N'])].append(float(row['time_per_op_ns']) * 1e-9)
-        dvals[row['benchmark']].add(int(row['d']))
+files, origin = filesOf(source)
+processes = 0
+for path in files:
+    with open(path, newline='') as f:
+        reader = csv.DictReader(f)
+        if 'benchmark' not in (reader.fieldnames or []): continue  # a process of kernels, or one that failed
+        processes += 1
+        for row in reader:
+            if row['benchmark'] == 'benchmark':  # the header again: the next of several concatenated outputs
+                processes += 1
+                continue
+            raw[row['benchmark']][row['impl']][int(row['N'])].append(float(row['time_per_op_ns']) * 1e-9)
+            dvals[row['benchmark']].add(int(row['d']))
+if not raw:
+    sys.exit(f'plot.py: no results of the main suite in {origin}')
+print(f'read {processes} process{"es" if processes != 1 else ""} of the main suite from {origin}')
+
+try:
+    import matplotlib
+except ImportError:
+    sys.exit('plot.py: matplotlib is needed for the figures (python3-matplotlib)')
+matplotlib.use('Agg')  # figures go to files; no display is needed
+import matplotlib.pyplot as plt
 
 data = {b: {i: sorted((N, statistics.median(ts)) for N, ts in per.items())
             for i, per in impls.items()}
@@ -149,6 +186,7 @@ if active:
     for ax in axes[len(active):]:
         ax.axis('off')
     fig.tight_layout()
+    os.makedirs(outdir, exist_ok=True)
     for ext in ('pdf', 'png'):
         fig.savefig(os.path.join(outdir, 'benchmarks.' + ext), dpi=200)
     print('wrote benchmarks.pdf / benchmarks.png  (%d panels)' % len(active))
@@ -205,6 +243,7 @@ if 'picture1' in data or slicesPicture:
                xlabel='term dimension $n$', ylabel='time ratio')
 
     fig.tight_layout()
+    os.makedirs(outdir, exist_ok=True)
     for ext in ('pdf', 'png'):
         fig.savefig(os.path.join(outdir, 'picture.' + ext), dpi=200)
     print('wrote picture.pdf / picture.png')

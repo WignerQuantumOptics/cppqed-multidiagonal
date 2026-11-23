@@ -42,6 +42,7 @@
 # In file names the colon of a suite's selection is written as a dot: kernels.D-4k-r1.csv.
 #
 # benchmarks/reduce.py turns OUTDIR into tables (medians over the processes, ratios, how well they agree).
+# benchmarks/plot.py draws the main suite's figures from it.
 set -euo pipefail
 
 declare -A EXE=(

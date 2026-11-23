@@ -54,6 +54,23 @@ jobs:
           benchmarks/reduce.py report "$RUNNER_TEMP/session" > /dev/null
           benchmarks/reduce.py ratios ci="$RUNNER_TEMP/session":4k > /dev/null
 
+      # plot.py on the driver's smoke session (a test of the script) and on the two sessions of 2026-11-23
+      # in the repository (figures worth looking at); the figures are kept with the run
+      - name: Figures
+        if: matrix.build_type == 'Release' && matrix.compiler == 'g++-14'
+        run: |
+          sudo apt-get install -y python3-matplotlib
+          benchmarks/plot.py "$RUNNER_TEMP/session":4k "$RUNNER_TEMP/figures/smoke"
+          benchmarks/plot.py benchmarks/results/2026-11-23-bench:4k "$RUNNER_TEMP/figures/2026-11-23-bench"
+          benchmarks/plot.py benchmarks/results/2026-11-23-zen2-vm "$RUNNER_TEMP/figures/2026-11-23-zen2-vm"
+
+      - name: Keep the figures
+        if: matrix.build_type == 'Release' && matrix.compiler == 'g++-14'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: figures
+          path: ${{ runner.temp }}/figures
+
   sanitizers:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
